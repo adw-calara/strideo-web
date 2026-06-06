@@ -1,0 +1,17 @@
+{
+  "name": "Strideo",
+  "short_name": "Strideo",
+  "description": "Strideo private wagering intelligence workspace.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#111111",
+  "icons": [
+    {
+      "src": "/icons/strideo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
