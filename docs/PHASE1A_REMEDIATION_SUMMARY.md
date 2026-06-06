@@ -18,10 +18,10 @@ code was written.
 
 ## Updated Counts
 
-- Application tables: 54
-- Default partition tables: 8
+- Application tables: 67
+- Default partition tables: 9
 - RLS policies: 35
-- Indexes: 75
+- Indexes: 94
 
 ## Remaining Risks
 
@@ -32,3 +32,6 @@ code was written.
 - Full mobile offline sync still needs conflict rules and sync checkpoints.
 - Provider identity reconciliation remains future work before multi-provider
   ingestion.
+- Data strategy operations remain future work: archive lifecycle jobs, feature
+  materialization, monthly retraining orchestration, and prediction partition
+  automation.

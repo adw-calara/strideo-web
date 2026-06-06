@@ -2,12 +2,13 @@
 
 ## Approval Status
 
-Remediated and ready for follow-up approval review.
+Remediated and ready for final approval review.
 
 The original review found blocking issues that prevented PR #5 from being
 approved for migration application planning. The migration design has now been
-updated to address those blockers. No migrations were applied as part of this
-review or remediation.
+updated to address those blockers and to integrate the approved historical data
+architecture and AI training strategy. No migrations were applied as part of
+this review or remediation.
 
 ## Review Scope
 
@@ -23,7 +24,11 @@ Reviewed:
 - `supabase/migrations/0009_audit_tables.sql`
 - `supabase/migrations/0010_rls_policies.sql`
 - `supabase/migrations/0011_indexes_and_partitions.sql`
+- `supabase/migrations/0012_data_architecture_and_training_tables.sql`
 - `docs/MIGRATION_REVIEW.md`
+- `docs/DATA_ARCHITECTURE_AND_AI_TRAINING.md`
+- `docs/PHASE1A_DATA_STRATEGY_IMPACT_REVIEW.md`
+- `docs/PHASE1A_DATA_STRATEGY_REMEDIATION.md`
 
 ## Verification Summary
 
@@ -41,6 +46,9 @@ Reviewed:
 - Strategy Marketplace foundations are present at the ownership/versioning
   level.
 - Append-only facts are compatible with future analytics warehouse export.
+- Historical archive metadata, source-file tracking, feature-store tables,
+  prediction runs/results, permanent prediction history, and the 30-day serving
+  layer are now represented in `0012_data_architecture_and_training_tables.sql`.
 
 ## Blocking Issues
 
@@ -157,6 +165,7 @@ Resolution:
 | Race-date lineage gaps | Composite `(id, race_date)` uniqueness and race-date FKs | Facts preserve partition and race snapshot integrity. |
 | Over-broad profile/strategy writes | Removed direct insert/update policies for sensitive tables | Future browser access can be granted with least privilege. |
 | Audit visibility | Removed direct `event_log` select policy | Audit payloads remain server-only. |
+| Historical data and AI training gaps | Added `0012_data_architecture_and_training_tables.sql` | Cold archive metadata, warm feature store, permanent prediction history, 30-day serving cache, and monthly training manifests are represented. |
 
 ## Non-Blocking Risks
 
@@ -165,6 +174,8 @@ Resolution:
   would leave earlier migrations without operational lineage constraints.
 - Default partitions are useful as a safety net, but monthly partition
   automation is still required before ingestion volume.
+- `prediction_results` also needs monthly partition automation before backfills
+  or live prediction volume.
 - Nullable `client_mutation_id` unique constraints allow multiple nulls, which
   is acceptable, but API code must require a non-null value for offline writes.
 - `strategy_feature_snapshots.feature_snapshot_id` is nullable while also part
@@ -173,6 +184,8 @@ Resolution:
   be revisited once feature and payload query patterns are known.
 - `service_role` access remains intact because the migrations do not alter
   service-role privileges.
+- Archive lifecycle, feature materialization, and monthly retraining
+  orchestration remain operational work outside this PR.
 
 ## Required Fixes
 
@@ -220,11 +233,19 @@ Before migration application planning:
 | Indexes support expected patterns | Pass | Race-day, feed, workflow, lineage, and audit indexes are covered. |
 | Supabase Data API settings are safe | Pass | No grants and no public access are added. |
 | Warehouse export compatibility | Pass | Append-only facts, partition keys, timestamps, and job lineage are present. |
+| Raw archive metadata | Pass | `raw_archive_objects`, `data_ingestion_batches`, and `source_data_files` were added. |
+| Feature store tables | Pass | Horse, trainer, jockey, track, and odds features were added. |
+| Prediction runs/results | Pass | `prediction_runs`, permanent `prediction_results`, and `live_prediction_cache` were added. |
+| 30-day live prediction retention | Pass | `live_prediction_cache.expires_at` is bounded to 30 days from generation. |
+| 5-year rolling training window | Pass | `model_training_datasets.lookback_years` defaults to 5 and stores explicit window dates. |
 
 ## Final Decision
 
-PR #5 remediation addresses the blocking design findings from the first review.
+PR #5 remediation addresses the blocking design findings from the first review
+and incorporates the approved historical data architecture and AI training
+strategy.
 
-Recommended next step: perform a follow-up apply-readiness review focused on SQL
-execution in a local/shadow database, Supabase Advisor checks, partition
-automation, and forward-only migration operations planning.
+Recommended next step: perform final approval review, then a separate
+apply-readiness review focused on SQL execution in a local/shadow database,
+Supabase Advisor checks, partition automation, and forward-only migration
+operations planning.
