@@ -22,6 +22,33 @@ This plan is not yet ready for SQL migration. The main gaps are structural:
 Recommendation: revise the schema plan once more before creating application
 tables.
 
+## V2 Resolution Checklist
+
+`PHASE1_SCHEMA_PLAN_V2.md` addresses the blockers identified in this review.
+This checklist records the resolution path, but does not approve table creation.
+
+| Blocker | V2 Resolution | Status |
+| --- | --- | --- |
+| Global Opportunity lifecycle mixed with user workflow state | V2 limits global Opportunity states to system lifecycle and moves watched/planned/placed workflow into `watchlist_items`, `daily_bet_sheet_entries`, `daily_bet_sheet_events`, and `user_recorded_wagers`. | Addressed in plan |
+| Missing multi-entry Opportunity model | V2 adds `opportunity_subjects` with subject roles for primary, include, exclude, key, under, over, contender, and fade. | Addressed in plan |
+| Wager legs stored only as JSON | V2 adds `wager_recommendation_legs` and `wager_recommendation_leg_entries`; JSON is downgraded to display/cache shape. | Addressed in plan |
+| User wagers conflated with system recommendations | V2 adds `user_recorded_wagers` and keeps recommendations immutable/system-generated. | Addressed in plan |
+| Recommendation replacement/version history missing | V2 adds `recommendation_version`, `supersedes_wager_recommendation_id`, validity windows, invalidation metadata, and indexes. | Addressed in plan |
+| Result correction/version handling missing | V2 replaces flat `results` with `result_versions` and `result_entries`, including correction references and versioned verification. | Addressed in plan |
+| Learning lineage too thin | V2 adds `feature_snapshots`, `prediction_outputs`, `model_training_runs`, `model_evaluation_runs`, and `model_promotions`. | Addressed in plan |
+| Entitlement/RLS model missing before shared reads | V2 adds `profiles`, `subscriptions`, `entitlements`, `profile_roles`, and explicit RLS policy classes before shared read exposure. | Addressed in plan |
+| Odds partitioning not race-date-aware | V2 adds `race_date` to `odds_snapshots` and recommends monthly range partitioning by `race_date`. | Addressed in plan |
+| Strategy Marketplace ownership/versioning retrofit risk | V2 adds `owner_user_id`, `visibility`, marketplace eligibility, parent strategy version, publication status, and license fields. | Addressed in plan |
+| Future mobile idempotency/offline support missing | V2 adds `client_mutation_id`, mutable-table `updated_at`, idempotency guidance, and future device/notification/sync tables. | Addressed in plan |
+
+### V2 Review Status
+
+Not approved for table creation yet.
+
+V2 appears to resolve the structural blockers at the planning level, but it
+still needs explicit approval before SQL migrations or application tables are
+created.
+
 ## 1. Opportunity Model
 
 ### Strengths
