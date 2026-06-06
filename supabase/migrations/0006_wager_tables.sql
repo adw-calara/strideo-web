@@ -84,6 +84,7 @@ create table public.wager_recommendation_legs (
   leg_role text not null,
   required_finish_position integer,
   created_at timestamptz not null default now(),
+  unique (id, race_date),
   unique (wager_recommendation_id, race_date, leg_number),
   foreign key (wager_recommendation_id, race_date) references public.wager_recommendations (id, race_date)
 );
@@ -93,13 +94,14 @@ comment on table public.wager_recommendation_legs is
 
 create table public.wager_recommendation_leg_entries (
   id uuid primary key default gen_random_uuid(),
-  wager_recommendation_leg_id uuid not null references public.wager_recommendation_legs (id),
+  wager_recommendation_leg_id uuid not null,
   race_date date not null,
   race_entry_id uuid not null,
   selection_role public.wager_selection_role not null,
   ordinal integer not null default 1,
   created_at timestamptz not null default now(),
   unique (wager_recommendation_leg_id, race_entry_id, selection_role),
+  foreign key (wager_recommendation_leg_id, race_date) references public.wager_recommendation_legs (id, race_date),
   foreign key (race_entry_id, race_date) references public.race_entries (id, race_date)
 );
 

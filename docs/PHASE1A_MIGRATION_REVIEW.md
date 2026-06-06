@@ -2,11 +2,12 @@
 
 ## Approval Status
 
-Not approved for migration application planning yet.
+Remediated and ready for follow-up approval review.
 
-PR #5 is strong as a migration-design draft, but it has several blocking issues
-that should be fixed before planning an apply step. No migrations were applied
-as part of this review.
+The original review found blocking issues that prevented PR #5 from being
+approved for migration application planning. The migration design has now been
+updated to address those blockers. No migrations were applied as part of this
+review or remediation.
 
 ## Review Scope
 
@@ -43,6 +44,8 @@ Reviewed:
 
 ## Blocking Issues
 
+Status: resolved in the migration design.
+
 ### 1. User-Owned Child Rows Can Reference Another User's Parent Rows
 
 Several user-owned child tables use `user_id = auth.uid()` in RLS, but their
@@ -64,12 +67,18 @@ An authenticated user with future table grants could insert a row with their own
 leaked. RLS would permit the child row because it only checks the child
 `user_id`.
 
-Required fix:
+Resolution:
 
-- Add composite uniqueness on parent tables, such as `(id, user_id)`.
-- Replace single-column parent FKs with composite FKs that include `user_id`.
-- Keep RLS `with check (user_id = auth.uid())`, and add parent ownership checks
-  where composite FKs are not practical.
+- Added `(id, user_id)` uniqueness to `daily_bet_sheets`,
+  `daily_bet_sheet_entries`, and `user_recorded_wagers`.
+- Replaced vulnerable single-column parent references with composite
+  owner-scoped foreign keys:
+  `daily_bet_sheet_entries(daily_bet_sheet_id, user_id)`,
+  `daily_bet_sheet_events(daily_bet_sheet_id, user_id)`,
+  `daily_bet_sheet_events(daily_bet_sheet_entry_id, user_id, daily_bet_sheet_id)`,
+  `user_recorded_wagers(daily_bet_sheet_entry_id, user_id)`, and
+  `user_wager_results(user_recorded_wager_id, user_id)`.
+- Kept owner-based RLS checks on user workflow tables.
 
 ### 2. Partition-Key Integrity Is Missing On Several Cross-Table Facts
 
@@ -91,15 +100,16 @@ Risk:
 Rows can connect facts from different race dates or races, weakening partition
 pruning assumptions and allowing invalid analytics joins.
 
-Required fix:
+Resolution:
 
-- Add composite uniqueness where needed, for example
-  `wager_recommendation_legs(id, race_date)` and
-  `result_versions(id, race_date)`.
-- Use composite FKs such as
-  `(wager_recommendation_leg_id, race_date)`,
-  `(result_version_id, race_date)`, and
-  `(closing_odds_snapshot_id, race_date)`.
+- Added `(id, race_date)` uniqueness to `wager_recommendation_legs` and
+  `result_versions`.
+- Replaced `wager_recommendation_leg_entries.wager_recommendation_leg_id` with
+  a composite `(wager_recommendation_leg_id, race_date)` FK.
+- Replaced result references in `result_entries` and `recommendation_results`
+  with composite `(result_version_id, race_date)` FKs.
+- Added `(closing_odds_snapshot_id, race_date)` FK from
+  `recommendation_results` to `odds_snapshots`.
 
 ### 3. Profile And Strategy Update Policies Are Too Broad For Future Grants
 
@@ -113,15 +123,13 @@ User-editable writes could modify sensitive or server-controlled fields such as
 `profiles.status`, `profiles.default_plan`, strategy publication fields, license
 fields, or validation fields.
 
-Required fix:
+Resolution:
 
-- Either remove direct browser update policies for server-owned fields and route
-  writes through server-side APIs, or pair future grants with explicit
-  column-level privileges.
-- Split user-editable profile fields from entitlement/status fields if column
-  grants become awkward.
-- Keep Marketplace publication, license, validation, and status transitions
-  server-owned.
+- Removed direct authenticated insert/update policies for `profiles`.
+- Removed direct authenticated insert/update policies for `strategies`.
+- Removed direct authenticated insert/update policies for `strategy_versions`.
+- Kept owner select policies so future browser reads can be planned separately
+  from server-owned mutation paths.
 
 ### 4. Event Log User Policy Could Expose Sensitive Audit Payloads Later
 
@@ -134,11 +142,21 @@ Audit payloads can contain operational context, agent outputs, provider payloads
 or debugging details that should not be browser-readable even when related to a
 user.
 
-Required fix:
+Resolution:
 
-- Remove this policy for MVP, or replace it with a sanitized user-facing
-  notification/activity table.
-- Keep `event_log` server-only unless payload shape is explicitly constrained.
+- Removed `event_log_select_own_user_events`.
+- `event_log` remains RLS-enabled with no browser-facing policy.
+- Administrative and agent access is preserved through server-side/service-role
+  paths, not browser grants.
+
+## Resolution Section
+
+| Blocker | Addressed By | Result |
+| --- | --- | --- |
+| Cross-user parent/child relationships | Composite `(id, user_id)` uniqueness and owner-scoped FKs | Child rows cannot reference another user's parent row. |
+| Race-date lineage gaps | Composite `(id, race_date)` uniqueness and race-date FKs | Facts preserve partition and race snapshot integrity. |
+| Over-broad profile/strategy writes | Removed direct insert/update policies for sensitive tables | Future browser access can be granted with least privilege. |
+| Audit visibility | Removed direct `event_log` select policy | Audit payloads remain server-only. |
 
 ## Non-Blocking Risks
 
@@ -160,13 +178,11 @@ Required fix:
 
 Before migration application planning:
 
-1. Add user-scoped composite FKs for user-owned child tables.
-2. Add partition-key composite FKs for wager legs, result entries,
-   recommendation results, and closing odds snapshots.
-3. Restrict profile and strategy write surfaces before any browser grants are
-   planned.
-4. Remove or defer the direct `event_log` user select policy.
-5. Update `docs/MIGRATION_REVIEW.md` counts and risk notes after schema fixes.
+1. Re-run static SQL review after remediation.
+2. Perform a Supabase dry-run or local shadow-database migration test before any
+   live apply step.
+3. Keep browser grants deferred until RLS policy tests exist.
+4. Update migration application planning with partition automation.
 
 ## Recommended Changes
 
@@ -188,17 +204,17 @@ Before migration application planning:
 | --- | --- | --- |
 | Migration order is valid | Mostly pass | Late-bound audit FKs are valid but could be cleaner. |
 | Table dependencies resolve | Pass | Tables referenced by FKs exist before use. |
-| FKs reference existing tables | Pass | Some FKs need stronger composite keys. |
-| Partitioned tables are valid | Mostly pass | Parent PKs/uniques include partition keys; add more composite child FKs. |
-| RLS policies are safe | Blocked | Owner checks are too narrow for child-parent ownership and too broad for updates. |
+| FKs reference existing tables | Pass | Composite owner and race-date FKs were added where required. |
+| Partitioned tables are valid | Pass | Parent PKs/uniques include partition keys and child FKs preserve race dates. |
+| RLS policies are safe | Pass | Browser mutation policies were narrowed and audit select was removed. |
 | No broad grants exist | Pass | No new grants in Phase 1A files. |
 | No `SECURITY DEFINER` functions exist | Pass | None found. |
 | User-owned tables include `user_id` | Pass | Required user workflow tables include `user_id`. |
 | Opportunity history is append-only | Pass | Events, scores, explanations, and visibility events preserve history. |
 | Recommendations and user wagers are separated | Pass | System and user wager tables are distinct. |
-| Wager legs and entries are normalized | Mostly pass | Normalize exists; add leg/date composite integrity. |
+| Wager legs and entries are normalized | Pass | Leg/date composite integrity was added. |
 | Recommendation versioning is preserved | Pass | Supersession and recommendation events preserve history. |
-| Result correction history is preserved | Mostly pass | Versioning exists; add composite result/date integrity. |
+| Result correction history is preserved | Pass | Composite result/date integrity was added. |
 | Mobile idempotency fields exist | Pass | Primary user workflow tables include `client_mutation_id`. |
 | Marketplace foundations exist | Pass | Ownership, versioning, visibility, publication, license, and validation are present. |
 | Indexes support expected patterns | Pass | Race-day, feed, workflow, lineage, and audit indexes are covered. |
@@ -207,8 +223,8 @@ Before migration application planning:
 
 ## Final Decision
 
-PR #5 is not approved for migration application planning yet.
+PR #5 remediation addresses the blocking design findings from the first review.
 
-After the required fixes are made and reviewed, it should be eligible for a
-second review focused on apply readiness, Supabase Advisor checks, and migration
-rollback/forward-only operations planning.
+Recommended next step: perform a follow-up apply-readiness review focused on SQL
+execution in a local/shadow database, Supabase Advisor checks, partition
+automation, and forward-only migration operations planning.

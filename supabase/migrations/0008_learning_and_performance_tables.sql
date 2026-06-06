@@ -149,7 +149,7 @@ create table public.recommendation_results (
   race_date date not null,
   wager_recommendation_id uuid not null,
   opportunity_id uuid not null,
-  result_version_id uuid not null references public.result_versions (id),
+  result_version_id uuid not null,
   performance_run_id uuid references public.performance_runs (id),
   verification_status public.verification_status not null default 'pending',
   stake public.nonnegative_numeric,
@@ -163,7 +163,9 @@ create table public.recommendation_results (
   primary key (id, race_date),
   unique (wager_recommendation_id, race_date, result_version_id),
   foreign key (wager_recommendation_id, race_date) references public.wager_recommendations (id, race_date),
-  foreign key (opportunity_id, race_date) references public.opportunities (id, race_date)
+  foreign key (opportunity_id, race_date) references public.opportunities (id, race_date),
+  foreign key (result_version_id, race_date) references public.result_versions (id, race_date),
+  foreign key (closing_odds_snapshot_id, race_date) references public.odds_snapshots (id, race_date)
 ) partition by range (race_date);
 
 comment on table public.recommendation_results is
@@ -190,7 +192,7 @@ comment on table public.recommendation_result_events is
 create table public.user_wager_results (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
-  user_recorded_wager_id uuid not null references public.user_recorded_wagers (id),
+  user_recorded_wager_id uuid not null,
   result_version_id uuid references public.result_versions (id),
   verification_status public.verification_status not null default 'pending',
   stake public.nonnegative_numeric,
@@ -202,7 +204,8 @@ create table public.user_wager_results (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (user_id, user_recorded_wager_id, result_version_id),
-  unique (user_id, client_mutation_id)
+  unique (user_id, client_mutation_id),
+  foreign key (user_recorded_wager_id, user_id) references public.user_recorded_wagers (id, user_id)
 );
 
 comment on table public.user_wager_results is

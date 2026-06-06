@@ -73,17 +73,6 @@ create policy profiles_select_own
   to authenticated
   using (user_id = auth.uid());
 
-create policy profiles_insert_own
-  on public.profiles for insert
-  to authenticated
-  with check (user_id = auth.uid());
-
-create policy profiles_update_own
-  on public.profiles for update
-  to authenticated
-  using (user_id = auth.uid())
-  with check (user_id = auth.uid());
-
 create policy subscriptions_select_own
   on public.subscriptions for select
   to authenticated
@@ -256,17 +245,6 @@ create policy strategies_select_owner
   to authenticated
   using (owner_user_id = auth.uid());
 
-create policy strategies_insert_owner
-  on public.strategies for insert
-  to authenticated
-  with check (owner_user_id = auth.uid());
-
-create policy strategies_update_owner
-  on public.strategies for update
-  to authenticated
-  using (owner_user_id = auth.uid())
-  with check (owner_user_id = auth.uid());
-
 create policy strategy_versions_select_owner
   on public.strategy_versions for select
   to authenticated
@@ -278,43 +256,6 @@ create policy strategy_versions_select_owner
         and s.owner_user_id = auth.uid()
     )
   );
-
-create policy strategy_versions_insert_owner
-  on public.strategy_versions for insert
-  to authenticated
-  with check (
-    exists (
-      select 1
-      from public.strategies s
-      where s.id = strategy_versions.strategy_id
-        and s.owner_user_id = auth.uid()
-    )
-  );
-
-create policy strategy_versions_update_owner
-  on public.strategy_versions for update
-  to authenticated
-  using (
-    exists (
-      select 1
-      from public.strategies s
-      where s.id = strategy_versions.strategy_id
-        and s.owner_user_id = auth.uid()
-    )
-  )
-  with check (
-    exists (
-      select 1
-      from public.strategies s
-      where s.id = strategy_versions.strategy_id
-        and s.owner_user_id = auth.uid()
-    )
-  );
-
-create policy event_log_select_own_user_events
-  on public.event_log for select
-  to authenticated
-  using (user_id = auth.uid());
 
 -- Intentionally no GRANT statements here.
 -- Supabase Data API access must be granted table-by-table only after RLS policy

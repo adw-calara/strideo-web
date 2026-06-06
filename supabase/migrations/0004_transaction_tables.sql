@@ -126,6 +126,7 @@ create table public.result_versions (
   source_job_run_id uuid,
   created_at timestamptz not null default now(),
   unique (race_id, race_date, result_version),
+  unique (id, race_date),
   foreign key (race_id, race_date) references public.races (id, race_date)
 );
 
@@ -134,7 +135,7 @@ comment on table public.result_versions is
 
 create table public.result_entries (
   id uuid primary key default gen_random_uuid(),
-  result_version_id uuid not null references public.result_versions (id),
+  result_version_id uuid not null,
   race_entry_id uuid not null,
   race_date date not null,
   finish_position integer,
@@ -146,6 +147,7 @@ create table public.result_entries (
   payload jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   unique (result_version_id, race_entry_id),
+  foreign key (result_version_id, race_date) references public.result_versions (id, race_date),
   foreign key (race_entry_id, race_date) references public.race_entries (id, race_date)
 );
 

@@ -116,6 +116,7 @@ create table public.daily_bet_sheets (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (user_id, sheet_date),
+  unique (id, user_id),
   unique (user_id, client_mutation_id)
 );
 
@@ -125,7 +126,7 @@ comment on table public.daily_bet_sheets is
 create table public.daily_bet_sheet_entries (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
-  daily_bet_sheet_id uuid not null references public.daily_bet_sheets (id) on delete cascade,
+  daily_bet_sheet_id uuid not null,
   opportunity_id uuid,
   opportunity_race_date date,
   wager_recommendation_id uuid,
@@ -138,7 +139,10 @@ create table public.daily_bet_sheet_entries (
   deleted_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
+  unique (id, user_id),
+  unique (id, user_id, daily_bet_sheet_id),
   unique (user_id, client_mutation_id),
+  foreign key (daily_bet_sheet_id, user_id) references public.daily_bet_sheets (id, user_id) on delete cascade,
   foreign key (opportunity_id, opportunity_race_date) references public.opportunities (id, race_date),
   foreign key (wager_recommendation_id, wager_recommendation_race_date)
     references public.wager_recommendations (id, race_date)
@@ -150,14 +154,17 @@ comment on table public.daily_bet_sheet_entries is
 create table public.daily_bet_sheet_events (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
-  daily_bet_sheet_id uuid not null references public.daily_bet_sheets (id) on delete cascade,
-  daily_bet_sheet_entry_id uuid references public.daily_bet_sheet_entries (id) on delete cascade,
+  daily_bet_sheet_id uuid not null,
+  daily_bet_sheet_entry_id uuid,
   event_type text not null,
   event_at timestamptz not null default now(),
   client_mutation_id text,
   payload jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
-  unique (user_id, client_mutation_id)
+  unique (user_id, client_mutation_id),
+  foreign key (daily_bet_sheet_id, user_id) references public.daily_bet_sheets (id, user_id) on delete cascade,
+  foreign key (daily_bet_sheet_entry_id, user_id, daily_bet_sheet_id)
+    references public.daily_bet_sheet_entries (id, user_id, daily_bet_sheet_id) on delete cascade
 );
 
 comment on table public.daily_bet_sheet_events is
@@ -166,7 +173,7 @@ comment on table public.daily_bet_sheet_events is
 create table public.user_recorded_wagers (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
-  daily_bet_sheet_entry_id uuid references public.daily_bet_sheet_entries (id),
+  daily_bet_sheet_entry_id uuid,
   wager_recommendation_id uuid,
   wager_recommendation_race_date date,
   race_id uuid not null,
@@ -183,7 +190,9 @@ create table public.user_recorded_wagers (
   deleted_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
+  unique (id, user_id),
   unique (user_id, client_mutation_id),
+  foreign key (daily_bet_sheet_entry_id, user_id) references public.daily_bet_sheet_entries (id, user_id),
   foreign key (race_id, race_date) references public.races (id, race_date),
   foreign key (wager_recommendation_id, wager_recommendation_race_date)
     references public.wager_recommendations (id, race_date)

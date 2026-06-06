@@ -29,7 +29,7 @@ Counts:
 
 - Application tables: 54
 - Default partition tables: 8
-- RLS policies: 42
+- RLS policies: 35
 - Indexes: 75
 
 ## Requirement Coverage
@@ -108,7 +108,12 @@ Analytics warehouse compatibility:
 - RLS is enabled on every application table in the public schema.
 - Default partition tables also enable RLS in `0011_indexes_and_partitions.sql`.
 - User-owned tables have owner-only policies using `auth.uid()`.
+- User-owned child tables use owner-scoped composite foreign keys so child rows
+  cannot point at another user's parent records.
 - System-owned tables remain deny-by-default for browser roles.
+- Profile, strategy, and strategy-version writes are server-owned for MVP; direct
+  browser update policies are intentionally deferred.
+- `event_log` remains server-only and has no browser select policy.
 - No broad `anon` grants are added.
 - No broad `authenticated` grants are added.
 - No public table access is introduced by these migrations.
@@ -148,6 +153,20 @@ Indexes cover:
 - Agent/job audit timelines.
 
 JSONB GIN indexes are intentionally deferred until query patterns are proven.
+
+## Phase 1A Remediation Notes
+
+The follow-up review in `docs/PHASE1A_MIGRATION_REVIEW.md` identified four
+blocking issues. The migration design has been updated as follows:
+
+- User-owned child rows now reference parent rows through composite foreign keys
+  that include `user_id`.
+- Race-date facts now preserve partition lineage through composite foreign keys
+  that include `race_date`.
+- Direct browser write policies for `profiles`, `strategies`, and
+  `strategy_versions` were removed from the design.
+- The user-facing `event_log` select policy was removed so audit data remains
+  server-only.
 
 ## Not Included
 
