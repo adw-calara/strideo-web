@@ -16,9 +16,11 @@ No migrations were applied. No Supabase Dev tables were created. No live databas
 
 ## Supabase Project
 
-Requested Supabase project ID: `ntxxtakbggtljjbalgris`
+Confirmed Supabase Dev project ref: `ntxtakbggtljjbalgris`
 
-Pre-execution note: existing repository documentation references `strideo-dev` with project ref `ntxtakbggtljjbalgris`. Before any future execution, the operator must reconcile this one-character difference and confirm the exact Supabase Dev project ref in the Supabase dashboard or MCP project list.
+Confirmed Supabase Dev URL: `https://ntxtakbggtljjbalgris.supabase.co`
+
+Pre-execution note: a prior Phase 1F blocker request contained the typo `ntxxtakbggtljjbalgris`. The correct project ref is `ntxtakbggtljjbalgris`, confirmed by the Supabase project URL, `.env.example`, `AGENTS.md`, and existing migration execution planning docs.
 
 ## Required Execution Options
 
@@ -125,4 +127,4 @@ Option D should be treated as a last resort because manual SQL execution has the
 
 ## Required Next Decision
 
-Before Phase 1F can resume, choose one execution path and confirm the exact Supabase Dev project ref. No migration execution should proceed until the project ref mismatch is resolved.
+Before Phase 1F can resume, choose one execution path and re-confirm the Supabase Dev project ref as `ntxtakbggtljjbalgris` immediately before execution.

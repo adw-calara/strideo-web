@@ -12,9 +12,11 @@ No migrations were applied to Supabase Dev. No application tables were created. 
 
 ## Target Project
 
-Requested Supabase project ID: `ntxxtakbggtljjbalgris`
+Confirmed Supabase Dev project ref: `ntxtakbggtljjbalgris`
 
-Pre-execution note: repository documentation currently references `strideo-dev` with project ref `ntxtakbggtljjbalgris`. The exact Supabase Dev project ref must be confirmed before any future execution.
+Confirmed Supabase Dev URL: `https://ntxtakbggtljjbalgris.supabase.co`
+
+Pre-execution note: a prior Phase 1F blocker request contained the typo `ntxxtakbggtljjbalgris`. The correct project ref is `ntxtakbggtljjbalgris`, confirmed by the Supabase project URL, `.env.example`, `AGENTS.md`, and existing migration execution planning docs.
 
 ## Migrations Applied
 
