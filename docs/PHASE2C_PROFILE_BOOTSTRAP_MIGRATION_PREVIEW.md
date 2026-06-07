@@ -2,42 +2,72 @@
 
 ## Summary
 
-This preview describes the append-only migration:
+This preview describes the revised Phase 2C bootstrap approach in PR #24.
+
+Pending migration:
 
 ```text
 supabase/migrations/0015_profile_bootstrap.sql
 ```
 
-The migration is prepared but not applied.
+The migration is prepared but not applied. It is now an intentional no-op
+marker because the original `auth.users` trigger approach failed in Supabase
+Dev before being recorded in migration history.
 
-## What The Trigger Does
+## Why The Approach Changed
 
-The migration creates `private.bootstrap_new_user_profile()` and attaches it to `auth.users` with an `after insert` trigger named:
+The original migration attempted to create an after-insert trigger on
+`auth.users`:
 
 ```text
 on_auth_user_created_bootstrap_profile
 ```
 
-When Supabase Auth creates a new user, the trigger:
+Dev execution failed with:
 
-1. Inserts one baseline row into `public.profiles`.
-2. Inserts one baseline role row into `public.profile_roles`.
-3. Uses `on conflict do nothing` so repeated execution cannot create duplicates.
+```text
+ERROR: 42501: must be owner of relation users
+```
 
-The migration also includes an idempotent backfill for existing `auth.users` rows so existing Dev users get the same baseline profile and `user` role when the migration is applied.
+Migration `0015_profile_bootstrap` was not applied. Dev migration history
+remained at `0001` through `0014`, and production was not touched.
+
+Because the available Dev execution path cannot create triggers on `auth.users`,
+Phase 2C now uses a server-side bootstrap path instead of a database trigger.
+
+## Selected Bootstrap Architecture
+
+Selected approach: server-only service-role bootstrap helper.
+
+New server-only helpers:
+
+- `lib/env/server.ts`
+- `lib/supabase/admin.ts`
+- `lib/auth/profile-bootstrap.ts`
+
+The protected profile loader calls the bootstrap helper only when:
+
+1. A current authenticated server session is present.
+2. The current user's app profile is missing.
+3. Server bootstrap environment variables are available.
+
+The helper derives the user from the current authenticated server session. It
+does not accept an arbitrary `user_id` from the browser or assign caller-selected
+roles.
 
 ## Tables Written
 
-The migration writes only:
+The server bootstrap path writes only:
 
 - `public.profiles`
 - `public.profile_roles`
 
-It does not alter unrelated tables, indexes, grants, policies, schemas, or data.
+No migration in this revision writes data. Runtime writes happen only from
+server code using the current authenticated session and the service-role client.
 
 ## Role Assigned
 
-The migration assigns only:
+The server bootstrap path assigns only:
 
 ```text
 user
@@ -48,78 +78,94 @@ It does not assign:
 - `operator`
 - `admin`
 
-Operator/admin assignment remains a separate server-owned process that must be designed and reviewed independently.
+Operator/admin assignment remains a separate server-owned process that must be
+designed and reviewed independently.
 
 ## Security Model
 
-The bootstrap function is created in the `private` schema and marked `security definer` so it can perform trusted bootstrap writes without adding browser insert policies.
+The revised path keeps database access narrow:
 
-Security controls:
+- No trigger is created on `auth.users`.
+- No browser insert/update/delete policies are added for `profile_roles`.
+- No RLS policies are broadened.
+- No table grants are broadened.
+- The service-role key is used only in server-only modules.
+- The service-role key is not exposed through `NEXT_PUBLIC_*` variables.
+- The helper bootstraps only the current authenticated user from server session
+  claims.
+- Inserts are idempotent through conflict-safe upserts.
 
-- Function search path is set explicitly.
-- Function execution is revoked from `public`, `anon`, and `authenticated`.
-- Auth metadata is used only as optional display data.
-- Auth metadata is not used for authorization or role assignment.
-- Inserts are conflict-safe and idempotent.
-- The trigger uses trusted `auth.users.id` as `profiles.user_id` and `profile_roles.user_id`.
+The migration file remains as a no-op marker so Phase 2C migration history can
+advance without altering the database after the trigger approach was rejected by
+Dev execution permissions.
 
 ## Why Browser Clients Still Cannot Write Roles
 
-The migration does not add any `insert`, `update`, or `delete` policy for `public.profile_roles`.
+The revised migration does not add any `insert`, `update`, or `delete` policy for
+`public.profile_roles`.
 
-The migration does not add broad browser grants.
+The revised app code does not expose service-role credentials to the browser.
 
 Existing role RLS remains read-only and owner-scoped:
 
 - `profile_roles_select_own`
 
-That means browser clients can continue to read their own trusted role rows when table access is available, but they are not given a path to assign or mutate roles.
+Browser clients can continue to read their own trusted role rows when table
+access is available, but they are not given a path to assign or mutate roles.
 
 ## Dev Verification Checklist
 
-Before applying to Dev:
+Before applying the revised migration to Dev:
 
 1. Confirm target project is `strideo-dev`.
 2. Confirm project ref is `ntxtakbggtljjbalgris`.
 3. Confirm migrations `0001` through `0014` are already applied.
 4. Confirm `0015_profile_bootstrap` is pending.
 5. Confirm production credentials and refs are not used.
-6. Review the migration SQL and confirm it is append-only.
+6. Review the migration SQL and confirm it does not create triggers, grants,
+   policies, tables, indexes, or data changes.
 
-After applying to Dev:
+After applying the revised migration to Dev:
 
 1. Confirm migration history includes `0015_profile_bootstrap`.
-2. Confirm function exists in `private`.
-3. Confirm trigger exists on `auth.users`.
-4. Confirm function execute is not granted to `public`, `anon`, or `authenticated`.
-5. Confirm every existing auth user has one `public.profiles` row.
-6. Confirm every existing auth user has one baseline `user` role.
-7. Create a new Dev auth user and confirm profile and `user` role are created automatically.
-8. Confirm no `operator` or `admin` role is auto-assigned.
-9. Confirm a signed-in user can read their own profile/role through existing app loading.
-10. Confirm browser clients still cannot insert/update/delete `profile_roles`.
-11. Run Supabase advisors if available.
-12. Run `npm run lint`, `npm run build`, and `git diff --check` after any related app copy changes.
+2. Confirm no trigger exists on `auth.users` from Phase 2C.
+3. Confirm no `private.bootstrap_new_user_profile()` trigger function exists
+   from the previous approach.
+4. Sign in through the app with a Dev user.
+5. Confirm the server bootstrap path creates or ensures one `public.profiles`
+   row for the current user.
+6. Confirm the server bootstrap path creates or ensures one baseline `user` role
+   for the current user.
+7. Confirm no `operator` or `admin` role is auto-assigned.
+8. Confirm browser clients still cannot insert/update/delete `profile_roles`.
+9. Confirm the service-role key is present only in server environment secrets.
+10. Run `npm run lint`, `npm run build`, and `git diff --check`.
 
 ## Rollback And Mitigation Notes
 
-If Dev execution fails before commit, stop on the first error and do not retry blindly.
+If Dev execution of the revised migration fails, stop on the first error and do
+not retry blindly.
 
-If the trigger causes an issue after Dev execution, the mitigation migration should be append-only and may:
+Because the revised migration is a no-op marker, rollback should focus on app
+code if runtime bootstrap behavior is incorrect:
 
-- Drop `on_auth_user_created_bootstrap_profile` from `auth.users`.
-- Drop or replace `private.bootstrap_new_user_profile()`.
-- Leave already-created baseline `profiles` rows in place unless a separately reviewed data cleanup is approved.
-- Leave baseline `user` roles in place unless a separately reviewed data cleanup is approved.
+- Disable the server bootstrap helper call from the profile loader.
+- Preserve existing `profiles` rows unless separately reviewed cleanup is
+  approved.
+- Preserve baseline `user` roles unless separately reviewed cleanup is approved.
+- Do not delete `operator` or `admin` role rows as part of profile bootstrap
+  mitigation.
 
-Do not edit or remove `0015_profile_bootstrap.sql` after it is merged or applied.
+Do not edit or remove `0015_profile_bootstrap.sql` after it is merged or
+applied.
 
 ## Safety
 
-- Supabase touched: no
-- Migration created: yes
+- Supabase touched: no during revision
+- Migration created: yes, revised pending 0015
 - Migration applied: no
-- Existing migration files modified: no
+- Existing migration files modified: only pending unapplied 0015 in this PR
 - RLS broadened: no
+- Browser role writes added: no
 - Production touched: no
 - Secrets included: no

@@ -12,6 +12,11 @@ Phase 2C Dev execution was authorized for Supabase Dev, but migration `0015_prof
 - Production touched: no
 - Existing migration files modified locally after execution: no
 
+PR #24 has since been revised to replace the failed `auth.users` trigger
+approach with a server-only profile bootstrap path. The revised pending `0015`
+does not create a trigger, function, grant, policy, table, index, or data
+change.
+
 ## Pre-Execution Gates
 
 - Supabase Dev MCP access was available.
@@ -36,6 +41,26 @@ Failed to apply database migration: ERROR: 42501: must be owner of relation user
 The error occurred while attempting to create or replace the trigger on `auth.users`.
 
 No retry or alternate SQL execution was attempted.
+
+## Revised PR #24 Approach
+
+The failed trigger approach is no longer the proposed Phase 2C implementation.
+
+Revised architecture:
+
+- Use a server-only service-role bootstrap helper.
+- Derive the user from the current authenticated server session.
+- Write only the current user's `public.profiles` row when missing.
+- Write only the current user's baseline `public.profile_roles` row with role
+  `user`.
+- Do not accept an arbitrary browser-provided `user_id`.
+- Do not assign `operator` or `admin`.
+- Do not add browser insert/update/delete policies for `profile_roles`.
+- Do not broaden RLS or table grants.
+
+The revised pending migration remains append-only relative to `main`, but it is
+now a no-op marker because no database change is required for the server-side
+bootstrap path.
 
 ## Migration History Verification
 
@@ -114,8 +139,10 @@ Results:
 
 - Production remains untouched.
 - Migration `0015_profile_bootstrap` remains pending.
-- The current MCP migration execution path does not have ownership privileges required to create a trigger on `auth.users`.
-- Future options should be reviewed before retrying:
-  - apply through a Supabase-supported migration path with sufficient ownership for `auth.users` triggers, or
-  - revise the bootstrap architecture to avoid direct `auth.users` trigger creation.
-- Do not modify or reattempt migration execution until the required ownership path is confirmed.
+- The current MCP migration execution path does not have ownership privileges
+  required to create a trigger on `auth.users`.
+- PR #24 has been revised to avoid direct `auth.users` trigger creation.
+- The revised path should be verified in Dev through app sign-in/profile loading
+  after the no-op marker migration is applied.
+- Do not apply to production until Dev verification is completed and production
+  execution is separately authorized.

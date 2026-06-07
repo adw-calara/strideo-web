@@ -30,7 +30,7 @@ export default async function SettingsPage() {
         {
           title: "Profile bootstrap",
           description:
-            "Profile creation is deferred until an approved insert policy or server bootstrap path exists.",
+            "Missing app profiles are ensured through the server bootstrap path without browser role writes.",
         },
       ]}
     />
