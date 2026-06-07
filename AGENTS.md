@@ -1,148 +1,119 @@
 # AGENTS.md
 
-## Purpose
-
-This file guides Codex and human collaborators working on Strideo. Read `/PRD.md` before planning or writing application code. The PRD is the product source of truth.
-
-## Product Direction
+## Strideo
 
 Strideo is an AI-powered wagering intelligence platform for horseplayers.
 
-Primary product concept:
+Product source of truth:
 
-- `Opportunity` is the core object.
-- Every recommendation, alert, wager, result, and performance metric links back to an Opportunity.
-- Nothing important is overwritten.
-- Race, strategy, recommendation, wager, and outcome data should be measured and retained.
+- `PRD.md`
+- `docs/ARCHITECTURE.md`
+- `docs/ROADMAP.md`
+- `docs/ARCHITECTURE_REVIEW.md`
 
-Tagline:
+Core product rule: `Opportunity` is the central object. Recommendations, alerts, wagers, results, explanations, and performance metrics should link back to an Opportunity wherever possible.
 
-> Find the Edge. Improve Every Race.
-
-## Current Repository Context
+## Repository
 
 - Framework: Next.js App Router
-- Language: TypeScript
+- Runtime/language: TypeScript, React
 - Styling: Tailwind CSS and shadcn/ui-style components
 - Backend: Supabase PostgreSQL
 - Auth: Supabase Auth with SSR cookies
-- Supabase project name: `strideo-dev`
-- Supabase project ref: `ntxtakbggtljjbalgris`
-- Supabase MCP server: `supabase_strideo`
+- Dev Supabase project: `strideo-dev`
+- Dev Supabase ref: `ntxtakbggtljjbalgris`
 - Local app URL: `http://localhost:3000`
-- Initial allowed user: `adw@calara.ai`
 
-## Operating Rules
+## Branching Rules
 
-- Do not write application code until PRD, architecture, roadmap, and architecture review are in place for the requested scope.
-- Prefer small, product-aligned changes over broad rewrites.
-- Keep Opportunity, append-only history, and measurable outcomes at the center of data model decisions.
-- Avoid hard-coding racing assumptions that should live in strategy/model configuration.
-- Do not commit `.env.local`, service-role keys, API secrets, or private credentials.
-- Never expose Supabase service-role or secret keys in browser code or `NEXT_PUBLIC_*` env vars.
-- Use `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for Supabase browser/SSR clients.
-- Use Supabase MCP for project inspection, SQL iteration, advisors, and schema review when available.
-- Before making database changes, document the intended tables, RLS model, indexes, and migration order.
-- Enable RLS on any table exposed through Supabase APIs.
-- Do not use user-editable metadata for authorization decisions.
+- Create feature branches from latest `origin/main`.
+- Use the `codex/` branch prefix unless the user requests another name.
+- Keep changes small and scoped to the requested task.
+- Do not mix application, documentation, and database changes unless the task explicitly requires it.
+- Open a PR when requested or when a task is complete and ready for review.
 
-## Agent Responsibilities From PRD
+## Secret Handling
 
-These product agents are conceptual system components. They do not all need to be independent services in the MVP.
+- Never commit secrets.
+- Never commit `.env`, `.env.local`, service-role keys, database passwords, API keys, access tokens, or private credentials.
+- Never put Supabase service-role or secret keys in browser code or `NEXT_PUBLIC_*` variables.
+- Browser/SSR clients must use `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+- If credentials are unavailable, prepare files only and state clearly that nothing was applied.
 
-### Race Data Agent
+## Supabase Environments
 
-Imports tracks, races, entries, odds, and results from racing data providers.
+- Use Supabase Dev/Staging for validation when available.
+- Never touch production Supabase unless the user explicitly authorizes production work in the current task.
+- Always confirm the project name and ref before any Supabase operation.
+- For Strideo Dev, confirm `strideo-dev` and `ntxtakbggtljjbalgris`.
+- Do not assume a previous session's Supabase connection is still valid.
 
-### Horse Intelligence Agent
+## Migration Rules
 
-Builds horse profiles, surface/distance statistics, and historical performance features.
+- Do not create, edit, or apply migrations unless explicitly requested.
+- Migration files are append-only.
+- Do not rewrite migration history.
+- Do not rename, reorder, squash, or delete existing migration files.
+- Before database changes, document intended tables, RLS model, indexes, and migration order.
+- Enable RLS on tables exposed through Supabase APIs.
+- Inspect SQL before execution.
+- Stop on the first migration error and report the blocker.
+- If Supabase credentials or execution tools are unavailable, prepare files only and say migrations were not applied.
 
-### Prediction Agent
+## Codex May Do
 
-Generates rankings, win probabilities, and confidence scores.
+- Read the repo, inspect docs, and summarize current state.
+- Edit application, docs, or configuration files within the requested scope.
+- Create branches, commits, and PRs when requested.
+- Run local verification commands.
+- Prepare migration files when explicitly requested, without applying them unless separately authorized.
+- Use Supabase MCP, CLI, or direct database tools only when available and authorized for the target environment.
 
-### Value Agent
+## Codex May Not Do
 
-Compares model probability to market probability and creates edge/value/opportunity scores.
+- Touch production Supabase without explicit authorization.
+- Apply migrations without explicit authorization.
+- Modify existing migration history.
+- Commit secrets or private credentials.
+- Use user-editable metadata for authorization decisions.
+- Expose service-role keys or secret keys to browser code.
+- Make broad rewrites unrelated to the task.
 
-### Strategy Agent
+## Verification
 
-Evaluates single-horse and multi-horse strategies and creates strategy matches and Opportunities.
+Available package scripts:
 
-### Wager Construction Agent
+```bash
+npm run dev
+npm run build
+npm run start
+npm run lint
+```
 
-Converts Opportunities into recommended wagers, starting with win/place/show, exacta, and trifecta structures.
-
-### Race Analyst Agent
-
-Creates race narratives and Opportunity explanations.
-
-### Alert Agent
-
-Creates Opportunity and strategy alerts and maintains alert history.
-
-### Bet Sheet Agent
-
-Manages daily bet sheets, entries, statuses, and result tracking.
-
-### Strideo Assistant Agent
-
-Handles search, navigation, analysis, and recommendations through natural language.
-
-### Performance Verification Agent
-
-Measures ROI, win rate, sample size, strategy performance, Opportunity performance, and model performance.
-
-### Strideo Intelligence Agent
-
-Improves prediction models, strategy models, scoring weights, and learning loops over time.
-
-## MVP Build Priorities
-
-1. Authenticated product shell.
-2. Reference and transaction racing data schema.
-3. Opportunity data model and scoring history.
-4. Strategy matching and wager recommendation persistence.
-5. Daily bet sheet workflow.
-6. Performance verification loop.
-7. Assistant search/navigation over real Strideo data.
-
-## Required Verification
-
-Run before handoff when application code changes:
+Standard verification before handoff when application code changes:
 
 ```bash
 npm run lint
 npm run build
 ```
 
-For Supabase/database changes:
+For documentation-only changes, run `npm run lint` when safe.
 
-- Inspect generated SQL before execution.
-- Confirm RLS policies match expected user access.
-- Run Supabase advisors when available.
-- Document any tables, policies, triggers, functions, or seed data changed.
+For Supabase/database work, also document:
 
-## Important Files
+- target project name and ref
+- execution path used
+- migrations created or applied
+- RLS policies changed
+- advisors or verification queries run
+- any tables, policies, triggers, functions, indexes, grants, or seed data changed
 
-- `/PRD.md` - product requirements and product source of truth.
-- `/AGENTS.md` - agent operating instructions.
-- `/docs/ARCHITECTURE.md` - target technical architecture.
-- `/docs/ROADMAP.md` - phased product and engineering roadmap.
-- `/docs/ARCHITECTURE_REVIEW.md` - architecture review before app-code implementation.
-- `/lib/auth-policy.ts` - current email allowlist policy.
-- `/lib/supabase/server.ts` - server Supabase client.
-- `/lib/supabase/client.ts` - browser Supabase client.
-- `/lib/supabase/proxy.ts` - session refresh and route protection.
-- `/proxy.ts` - Next proxy entry point.
+## Handoff
 
-## Handoff Format
+Summarize:
 
-When finishing work, summarize:
-
-- What changed.
-- What PRD requirement it supports.
-- What was verified.
-- Any Supabase/database changes made.
-- Any remaining architecture or product decisions.
+- what changed
+- what was verified
+- whether Supabase was touched
+- whether migrations were created or applied
+- remaining risks or decisions
