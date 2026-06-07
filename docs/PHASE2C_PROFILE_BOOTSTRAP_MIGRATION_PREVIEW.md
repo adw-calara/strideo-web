@@ -45,10 +45,11 @@ New server-only helpers:
 - `lib/supabase/admin.ts`
 - `lib/auth/profile-bootstrap.ts`
 
-The protected profile loader calls the bootstrap helper only when:
+The protected profile loader calls the bootstrap helper when:
 
 1. A current authenticated server session is present.
-2. The current user's app profile is missing.
+2. The current user's app profile is missing, or the app profile exists but the
+   baseline `user` role is missing.
 3. Server bootstrap environment variables are available.
 
 The helper derives the user from the current authenticated server session. It
@@ -94,6 +95,11 @@ The revised path keeps database access narrow:
 - The helper bootstraps only the current authenticated user from server session
   claims.
 - Inserts are idempotent through conflict-safe upserts.
+- Profile and baseline role are both ensured on each bootstrap attempt. A
+  profile row that already exists does not prevent retrying a missing baseline
+  `user` role.
+- If bootstrap cannot write the profile or baseline role, the profile context
+  reports an unavailable state instead of silently granting elevated access.
 
 The migration file remains as a no-op marker so Phase 2C migration history can
 advance without altering the database after the trigger approach was rejected by
@@ -137,9 +143,11 @@ After applying the revised migration to Dev:
 6. Confirm the server bootstrap path creates or ensures one baseline `user` role
    for the current user.
 7. Confirm no `operator` or `admin` role is auto-assigned.
-8. Confirm browser clients still cannot insert/update/delete `profile_roles`.
-9. Confirm the service-role key is present only in server environment secrets.
-10. Run `npm run lint`, `npm run build`, and `git diff --check`.
+8. If the profile exists but the baseline `user` role is missing, confirm the
+   next protected profile load creates the missing baseline role.
+9. Confirm browser clients still cannot insert/update/delete `profile_roles`.
+10. Confirm the service-role key is present only in server environment secrets.
+11. Run `npm run lint`, `npm run build`, and `git diff --check`.
 
 ## Rollback And Mitigation Notes
 

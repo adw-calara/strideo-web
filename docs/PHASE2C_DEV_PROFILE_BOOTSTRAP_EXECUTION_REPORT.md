@@ -53,6 +53,10 @@ Revised architecture:
 - Write only the current user's `public.profiles` row when missing.
 - Write only the current user's baseline `public.profile_roles` row with role
   `user`.
+- Retry bootstrap when either the profile row is missing or the baseline `user`
+  role is missing.
+- Report bootstrap write failures as an unavailable profile context instead of
+  silently continuing with incomplete trusted role state.
 - Do not accept an arbitrary browser-provided `user_id`.
 - Do not assign `operator` or `admin`.
 - Do not add browser insert/update/delete policies for `profile_roles`.
@@ -144,5 +148,7 @@ Results:
 - PR #24 has been revised to avoid direct `auth.users` trigger creation.
 - The revised path should be verified in Dev through app sign-in/profile loading
   after the no-op marker migration is applied.
+- Dev app-path verification should include the resilience case where the profile
+  exists but the baseline `user` role is missing.
 - Do not apply to production until Dev verification is completed and production
   execution is separately authorized.

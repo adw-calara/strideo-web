@@ -96,6 +96,17 @@ function hasReadError([profileResult, rolesResult]: ProfileReadResult) {
   return Boolean(profileResult.error || rolesResult.error);
 }
 
+function getRoles([, rolesResult]: ProfileReadResult) {
+  return rolesResult.data?.map((row) => row.role) ?? [];
+}
+
+function needsProfileBootstrap(profileReadResult: ProfileReadResult) {
+  const [profileResult] = profileReadResult;
+  const roles = getRoles(profileReadResult);
+
+  return !profileResult.data || !roles.includes("user");
+}
+
 export async function loadCurrentProfileContext(): Promise<AuthProfileContext | null> {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();
@@ -123,12 +134,18 @@ export async function loadCurrentProfileContext(): Promise<AuthProfileContext | 
   let profileReadResult = await readProfileRows(supabase, claims.sub);
   let bootstrapMessage: string | null = null;
 
-  if (!hasReadError(profileReadResult) && !profileReadResult[0].data) {
+  if (!hasReadError(profileReadResult) && needsProfileBootstrap(profileReadResult)) {
     const bootstrapResult = await ensureCurrentUserProfileBootstrap();
     bootstrapMessage = bootstrapResult.message;
 
     if (bootstrapResult.status === "ensured") {
       profileReadResult = await readProfileRows(supabase, claims.sub);
+    } else {
+      return {
+        ...baseContext,
+        loadStatus: "unavailable",
+        loadMessage: bootstrapMessage,
+      };
     }
   }
 
@@ -141,8 +158,8 @@ export async function loadCurrentProfileContext(): Promise<AuthProfileContext | 
     };
   }
 
-  const [profileResult, rolesResult] = profileReadResult;
-  const roles = rolesResult.data?.map((row) => row.role) ?? [];
+  const [profileResult] = profileReadResult;
+  const roles = getRoles(profileReadResult);
   const primaryRole = getPrimaryRole(roles);
   const defaultPlan = profileResult.data?.default_plan ?? null;
   const accessLabel = getAccessLabel(primaryRole, defaultPlan);

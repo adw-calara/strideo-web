@@ -76,6 +76,7 @@ export async function ensureCurrentUserProfileBootstrap(): Promise<ProfileBootst
 
   return {
     status: "ensured",
-    message: "Baseline profile and user role were ensured by the server bootstrap path.",
+    message:
+      "Baseline profile and user role were ensured by the server bootstrap path.",
   };
 }
