@@ -5,14 +5,17 @@ import { LogoutButton } from "@/components/logout-button";
 import { AppSectionNav } from "@/components/navigation/app-section-nav";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { Badge } from "@/components/ui/badge";
+import type { AuthProfileContext } from "@/lib/auth/profile-context";
 
 export function AppShell({
   children,
-  userEmail,
+  profile,
 }: {
   children: React.ReactNode;
-  userEmail: string;
+  profile: AuthProfileContext;
 }) {
+  const identityLabel = profile.displayName ?? profile.email;
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       <header className="border-b">
@@ -27,7 +30,8 @@ export function AppShell({
             <div className="flex items-center gap-3">
               <div className="hidden items-center gap-2 text-sm text-muted-foreground sm:flex">
                 <CircleUser aria-hidden="true" className="size-4" />
-                <span>{userEmail}</span>
+                <span>{identityLabel}</span>
+                <Badge variant="outline">{profile.accessLabel}</Badge>
               </div>
               <ThemeSwitcher />
               <LogoutButton />

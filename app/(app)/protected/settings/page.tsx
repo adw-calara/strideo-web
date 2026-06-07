@@ -1,6 +1,9 @@
 import { SectionPage } from "@/components/dashboard/section-page";
+import { loadCurrentProfileContext } from "@/lib/auth/profile-context";
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const profile = await loadCurrentProfileContext();
+
   return (
     <SectionPage
       eyebrow="Settings"
@@ -20,8 +23,14 @@ export default function SettingsPage() {
         },
         {
           title: "Access",
+          description: profile?.isInternal
+            ? "Internal access placeholders are visible for trusted operator/admin roles."
+            : "User access is active. Internal controls stay hidden unless trusted roles are assigned.",
+        },
+        {
+          title: "Profile bootstrap",
           description:
-            "Role-aware controls are deferred until the product access model is explicitly verified.",
+            "Profile creation is deferred until an approved insert policy or server bootstrap path exists.",
         },
       ]}
     />
