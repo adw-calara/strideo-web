@@ -5,6 +5,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { EnvVarWarning } from "@/components/env-var-warning";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { isAllowedEmail } from "@/lib/auth-policy";
+import { loadCurrentProfileContext } from "@/lib/auth/profile-context";
 import { isFoundationEnvReady } from "@/lib/env/server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -59,7 +60,13 @@ async function AuthenticatedAppLayout({
     redirect("/auth/error?code=unauthorized_email");
   }
 
-  return <AppShell userEmail={email}>{children}</AppShell>;
+  const profile = await loadCurrentProfileContext();
+
+  if (!profile) {
+    redirect("/auth/login");
+  }
+
+  return <AppShell profile={profile}>{children}</AppShell>;
 }
 
 export default function ProtectedLayout({
