@@ -2,114 +2,125 @@
 
 ## Summary
 
-Phase 2C Dev execution was authorized for Supabase Dev, but migration `0015_profile_bootstrap` did not apply.
+Phase 2C Dev verification was authorized for Supabase Dev after PR #24 pivoted
+from an `auth.users` trigger to a server-only profile bootstrap path.
 
 - Dev project: `strideo-dev`
 - Dev project ref: `ntxtakbggtljjbalgris`
-- Migration attempted: `0015_profile_bootstrap`
 - Migration file: `supabase/migrations/0015_profile_bootstrap.sql`
-- Migration applied: no
+- Revised migration design: no-op marker only
+- Revised migration applied to Dev: yes
 - Production touched: no
-- Existing migration files modified locally after execution: no
+- Existing migration files modified locally after verification: no
 
-PR #24 has since been revised to replace the failed `auth.users` trigger
-approach with a server-only profile bootstrap path. The revised pending `0015`
-does not create a trigger, function, grant, policy, table, index, or data
-change.
+## Prior Failed Trigger Attempt
 
-## Pre-Execution Gates
+The original Phase 2C migration attempted to create an after-insert trigger on
+`auth.users`.
 
-- Supabase Dev MCP access was available.
-- Target project identity was confirmed as `strideo-dev` / `ntxtakbggtljjbalgris`.
-- Migration history showed migrations `0001` through `0014` applied before execution.
-- Migration `0015` was not present in migration history before execution.
-- Production project credentials, refs, and targets were not used.
-- Existing Dev auth user count before backfill: `0`
-
-No auth user emails or IDs were printed.
-
-## Execution Result
-
-Migration application stopped on the first error.
-
-Error:
+Dev execution failed before migration history was updated:
 
 ```text
 Failed to apply database migration: ERROR: 42501: must be owner of relation users
 ```
 
-The error occurred while attempting to create or replace the trigger on `auth.users`.
+The failed trigger approach was not retried. PR #24 was revised to avoid direct
+`auth.users` trigger creation.
 
-No retry or alternate SQL execution was attempted.
+## Pre-Verification Gates
 
-## Revised PR #24 Approach
+- Supabase Dev MCP access was available.
+- Target project identity was confirmed as `strideo-dev` / `ntxtakbggtljjbalgris`.
+- Migration history showed migrations `0001` through `0014` applied before
+  applying the revised marker migration.
+- Migration `0015_profile_bootstrap` was pending before marker application.
+- Local `0015_profile_bootstrap.sql` was confirmed marker-only. With comments
+  stripped, the SQL is:
 
-The failed trigger approach is no longer the proposed Phase 2C implementation.
+```sql
+begin;
+commit;
+```
 
-Revised architecture:
+- Production project credentials, refs, and targets were not used.
+- Existing Dev auth user count before verification: `0`
 
-- Use a server-only service-role bootstrap helper.
-- Derive the user from the current authenticated server session.
-- Write only the current user's `public.profiles` row when missing.
-- Write only the current user's baseline `public.profile_roles` row with role
-  `user`.
-- Retry bootstrap when either the profile row is missing or the baseline `user`
-  role is missing.
-- Report bootstrap write failures as an unavailable profile context instead of
-  silently continuing with incomplete trusted role state.
-- Do not accept an arbitrary browser-provided `user_id`.
-- Do not assign `operator` or `admin`.
-- Do not add browser insert/update/delete policies for `profile_roles`.
-- Do not broaden RLS or table grants.
+No auth user emails or IDs were printed.
 
-The revised pending migration remains append-only relative to `main`, but it is
-now a no-op marker because no database change is required for the server-side
-bootstrap path.
+## 0015 Status And Applied Result
 
-## Migration History Verification
+The revised no-op marker migration was applied to Dev.
 
-Post-attempt migration history still shows only migrations `0001` through `0014`.
+Post-application migration history includes:
 
-Migration `0015_profile_bootstrap` is not recorded as applied.
+```text
+0015_profile_bootstrap
+```
+
+No schema, policy, grant, trigger, function, index, or data change is expected
+from this marker migration.
 
 ## Function And Trigger Verification
 
-Post-attempt verification confirmed:
+Post-marker verification confirmed the previous trigger approach is absent:
 
-- `private.bootstrap_new_user_profile()` exists: no
-- `on_auth_user_created_bootstrap_profile` trigger on `auth.users` exists: no
+- `private.bootstrap_new_user_profile()` count: `0`
+- `on_auth_user_created_bootstrap_profile` trigger on `auth.users` count: `0`
 
-The failed migration did not leave the intended function or trigger behind.
+## Bootstrap Verification Result
 
-## Backfill Verification
+Live app-path bootstrap verification was not fully executed in this environment.
 
-Existing Dev auth user count before backfill: `0`
+Reason:
 
-Post-attempt counts:
+- Dev currently has `0` auth users.
+- Local runtime has the public Supabase values, but `SUPABASE_SERVICE_ROLE_KEY`
+  is not present in `.env.local` or the shell environment.
+- Creating a temporary auth user and exercising the server-only bootstrap path
+  requires a safe Auth Admin path plus service-role runtime configuration.
+- Direct SQL insertion into `auth.users` was intentionally not attempted because
+  it is not a safe supported Auth Admin flow.
+
+Code-level verification remains covered by lint/build, and database posture was
+verified after applying the marker migration.
+
+## Missing-Role Retry Verification Result
+
+Live missing-role retry verification was skipped for the same reason as the
+app-path bootstrap verification: there is no Dev auth user to exercise, and the
+local app runtime does not have the service-role key required by the server-only
+bootstrap helper.
+
+The committed app logic now retries bootstrap when either:
+
+- the current user's `public.profiles` row is missing, or
+- the current user's baseline `public.profile_roles` row with role `user` is
+  missing.
+
+If bootstrap cannot write the profile or baseline role, the profile context
+returns an `unavailable` state instead of silently continuing with incomplete
+trusted role state.
+
+## Role Assignment Verification
+
+Post-marker database counts:
 
 - Auth users: `0`
 - Profiles: `0`
 - Baseline `user` roles: `0`
 - Elevated `operator` or `admin` roles: `0`
 
-Because there were no Dev auth users and the migration did not apply, no backfill rows were created.
-
-## Role Assignment Verification
-
-No baseline or elevated roles were created by this attempt.
-
-Verified elevated role count:
-
-- `operator` / `admin`: `0`
+No `operator` or `admin` roles were created.
 
 ## RLS, Policy, And Grant Verification
 
-Post-attempt verification confirmed:
+Post-marker verification confirmed:
 
 - `profile_roles` policies remain read-only:
   - `profile_roles_select_own`
   - command: `SELECT`
   - role: `authenticated`
+- `profile_roles` browser write policy count: `0`
 - Public tables checked for RLS: `76`
 - Public tables with RLS enabled: `76`
 - Public tables with RLS disabled: none
@@ -117,11 +128,29 @@ Post-attempt verification confirmed:
 
 Access behavior and RLS posture remain unchanged.
 
-## Test User Trigger Verification
+## Dashboard/Profile Context Verification
 
-Skipped.
+Dashboard/profile context runtime verification was not fully executed against a
+signed-in Dev user because the local app runtime does not have
+`SUPABASE_SERVICE_ROLE_KEY` and Dev currently has no auth users.
 
-Reason: migration `0015_profile_bootstrap` did not apply, so the trigger does not exist. Creating a temporary auth user would not verify the intended trigger behavior. No direct `auth.users` insertion or cleanup was attempted because that would not be a safe supported Auth Admin flow through the available execution path.
+The server-only code path was verified locally through:
+
+- `npm run lint`
+- `npm run build`
+
+The build completed successfully with the revised profile context and
+server-only bootstrap modules.
+
+## Test User Cleanup
+
+No temporary Dev auth user was created.
+
+Cleanup result: not needed.
+
+Reason skipped: creating and cleaning up a test auth user was not safe/supported
+without service-role runtime configuration or an Auth Admin tool path. Direct
+`auth.users` SQL manipulation was not attempted.
 
 ## Local Verification
 
@@ -129,26 +158,25 @@ Commands run:
 
 ```bash
 npm run lint
+npm run build
 git diff --check
-git diff --name-status -- supabase/migrations
+sed '/^[[:space:]]*--/d;/^[[:space:]]*$/d' supabase/migrations/0015_profile_bootstrap.sql
 ```
 
 Results:
 
 - `npm run lint`: passed
+- `npm run build`: passed
 - `git diff --check`: passed
-- Migration file diff after execution: none
+- Marker-only SQL check: passed
 
 ## Remaining Warnings And Follow-Ups
 
 - Production remains untouched.
-- Migration `0015_profile_bootstrap` remains pending.
-- The current MCP migration execution path does not have ownership privileges
-  required to create a trigger on `auth.users`.
-- PR #24 has been revised to avoid direct `auth.users` trigger creation.
-- The revised path should be verified in Dev through app sign-in/profile loading
-  after the no-op marker migration is applied.
-- Dev app-path verification should include the resilience case where the profile
-  exists but the baseline `user` role is missing.
-- Do not apply to production until Dev verification is completed and production
-  execution is separately authorized.
+- The revised marker migration is applied in Dev.
+- Live app-path bootstrap and missing-role retry verification still need a Dev
+  auth user plus service-role runtime configuration.
+- Do not apply to production until Dev app-path verification is completed and
+  production execution is separately authorized.
+- Operator/admin role assignment remains a separate reviewed server-owned
+  process.
