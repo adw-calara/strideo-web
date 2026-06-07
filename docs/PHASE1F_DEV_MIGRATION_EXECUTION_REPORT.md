@@ -1,95 +1,142 @@
 # Phase 1F Dev Migration Execution Report
 
-Status: BLOCKED - NO LIVE DATABASE CHANGES MADE
+Status: COMPLETE - DEV MIGRATIONS APPLIED
 
-Date: June 6, 2026
+Date: June 7, 2026
 
 ## Summary
 
-Phase 1F Supabase Dev migration execution was authorized, but execution could not begin because the current Codex session does not expose Supabase MCP tools and the local Supabase CLI is not installed.
+Phase 1F Supabase Dev migration execution was authorized and completed against the confirmed Strideo Dev project.
 
-No migrations were applied to Supabase Dev. No application tables were created. No live database changes were made.
+All migrations `0001` through `0012` were applied in order through the Supabase MCP connector. Execution stopped on no errors because no migration errors occurred.
+
+Production was not touched.
 
 ## Target Project
 
-Confirmed Supabase Dev project ref: `ntxtakbggtljjbalgris`
+- Supabase project name: `strideo-dev`
+- Supabase project ref: `ntxtakbggtljjbalgris`
+- Supabase project URL: `https://ntxtakbggtljjbalgris.supabase.co`
+- Database engine: Postgres 17
 
-Confirmed Supabase Dev URL: `https://ntxtakbggtljjbalgris.supabase.co`
+## Authorization
 
-Pre-execution note: a prior Phase 1F blocker request contained the typo `ntxxtakbggtljjbalgris`. The correct project ref is `ntxtakbggtljjbalgris`, confirmed by the Supabase project URL, `.env.example`, `AGENTS.md`, and existing migration execution planning docs.
+User authorized:
+
+```text
+Authorize Phase 1F migration execution on Supabase dev project strideo-dev / ntxtakbggtljjbalgris. Apply migrations 0001 through 0012 in order. Stop on first error. Do not touch production.
+```
+
+## Execution Path
+
+- Tooling: Supabase MCP connector
+- Execution method: `apply_migration`
+- Target: Dev project only
+- Production touched: no
+- Secrets printed or stored: no
 
 ## Migrations Applied
 
-None.
+Applied in order:
 
-The planned migration order remains:
+1. `0001_security_hardening`
+2. `0002_extensions_and_types`
+3. `0003_reference_tables`
+4. `0004_transaction_tables`
+5. `0005_opportunity_tables`
+6. `0006_wager_tables`
+7. `0007_user_and_entitlement_tables`
+8. `0008_learning_and_performance_tables`
+9. `0009_audit_tables`
+10. `0010_rls_policies`
+11. `0011_indexes_and_partitions`
+12. `0012_data_architecture_and_training_tables`
 
-1. `0001_security_hardening.sql`
-2. `0002_extensions_and_types.sql`
-3. `0003_reference_tables.sql`
-4. `0004_transaction_tables.sql`
-5. `0005_opportunity_tables.sql`
-6. `0006_wager_tables.sql`
-7. `0007_user_and_entitlement_tables.sql`
-8. `0008_learning_and_performance_tables.sql`
-9. `0009_audit_tables.sql`
-10. `0010_rls_policies.sql`
-11. `0011_indexes_and_partitions.sql`
-12. `0012_data_architecture_and_training_tables.sql`
+Supabase migration history after execution:
+
+```text
+20260607143207 0001_security_hardening
+20260607143238 0002_extensions_and_types
+20260607143312 0003_reference_tables
+20260607143356 0004_transaction_tables
+20260607143452 0005_opportunity_tables
+20260607143531 0006_wager_tables
+20260607143625 0007_user_and_entitlement_tables
+20260607143740 0008_learning_and_performance_tables
+20260607143820 0009_audit_tables
+20260607143911 0010_rls_policies
+20260607144006 0011_indexes_and_partitions
+20260607144134 0012_data_architecture_and_training_tables
+```
 
 ## Verification Results
 
-Final database verification was not run because no migrations were applied.
+Read-only verification queries and Supabase MCP inspection confirmed:
 
-Pending verification items:
+- Public base tables: `76`
+- RLS-enabled public tables: `76`
+- RLS policies: `35`
+- Foreign keys: `230`
+- Indexes: `259`
+- `pgcrypto` installed: yes, version `1.3`
+- `btree_gin` installed: yes, version `1.3`
+- Public table grants to `anon` or `authenticated`: none found
+- Public `SECURITY DEFINER` functions: `public.rls_auto_enable`
 
-- Confirm `pgcrypto` extension.
-- Confirm `btree_gin` extension.
-- Confirm table count.
-- Confirm RLS-enabled table count.
-- Confirm policy count.
-- Confirm foreign key count.
-- Confirm index count.
-- Confirm no broad grants.
-- Confirm no unexpected `SECURITY DEFINER` functions.
-- Confirm exposed tables/functions status.
+`public.rls_auto_enable` existed before the application schema and was handled by `0001_security_hardening`, which revoked execute from `public`, `anon`, and `authenticated`, and granted execute only to `postgres` and `service_role`.
 
-## Errors Encountered
+## Advisors
 
-Execution blocker:
+Supabase security advisors were run after migration execution.
 
-- Supabase MCP tools are not exposed in this Codex session.
-- Supabase CLI is not installed locally.
+Observed security advisor output:
 
-## Fixes Made
+- `INFO` findings for `rls_enabled_no_policy` on many server-owned/reference/audit/model tables.
+- This is expected for the current schema posture because RLS is enabled broadly, but browser-facing grants and shared read policies are intentionally deferred until entitlement and RLS policy tests are reviewed.
+- User-owned workflow tables and private strategy reads have initial owner policies.
+- No broad browser table grants were found in verification.
 
-No database fixes were made.
+Supabase performance advisors were run after migration execution.
 
-Documentation added:
+Observed performance advisor output:
 
-- `docs/PHASE1F_EXECUTION_BLOCKER.md`
-- `docs/PHASE1F_DEV_MIGRATION_EXECUTION_REPORT.md`
+- `INFO` findings for unindexed foreign keys.
+- `INFO` findings for unused indexes.
+- Unused-index findings are expected immediately after schema creation because no application workload has run.
+- Unindexed foreign key findings should be reviewed in the next schema-hardening pass before ingestion or user workflow volume begins.
+
+## Database Changes Made
+
+Created the Phase 1 schema foundation for:
+
+- Supabase security hardening and default privilege posture
+- Extensions, private schema, enums, and domains
+- Racing reference tables
+- Race transaction, entry, odds, and result tables
+- Strategy and Opportunity aggregate tables
+- Wager recommendation structures
+- User identity, entitlement, watchlist, bet sheet, recorded wager, and alert preference tables
+- Learning lineage and performance verification tables
+- Agent job, audit, and event log tables
+- Default partitions and access-path indexes
+- Historical archive, feature-store, prediction, and live prediction cache tables
+- RLS enablement and initial owner policies
+
+## Data State
+
+- Seed data inserted: none
+- Application rows inserted: none
+- Public table row counts observed through MCP table listing: `0`
+
+## Remaining Follow-Up
+
+- Review performance advisor unindexed foreign-key findings and create a follow-up append-only migration if needed.
+- Keep `rls_enabled_no_policy` findings documented as intentional until browser-facing grants and policy tests are approved.
+- Generate Supabase TypeScript types when the application starts consuming the schema.
+- Build ingestion only after operational partition strategy and provider endpoint scope are confirmed.
 
 ## Final Dev Database Status
 
-Unknown from this session because live Supabase verification could not be performed.
+Phase 1F migration execution is complete on Supabase Dev.
 
-Known operational status:
-
-- No live database changes were made by this Phase 1F attempt.
-- No migrations were applied by this Phase 1F attempt.
-- No application data was seeded.
-- No application UI was written.
-- The Racing API was not connected.
-- OpenAI was not connected.
-
-## Next Recommended Phase
-
-Resolve the Phase 1F execution blocker before proceeding.
-
-Recommended path:
-
-1. Reconnect Supabase MCP tools in Codex, or install and authenticate the Supabase CLI locally.
-2. Confirm the exact Supabase Dev project ref.
-3. Re-run Phase 1F pre-execution checks.
-4. Apply migrations one at a time only after the target project and execution tooling are confirmed.
+No production Supabase project was touched.
