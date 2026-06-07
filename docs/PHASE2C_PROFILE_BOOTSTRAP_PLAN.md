@@ -2,15 +2,22 @@
 
 ## Summary
 
-Phase 2C plans the safest way to create an app profile and baseline user role for a newly authenticated Strideo user without weakening RLS.
+Phase 2C plans the safest way to create an app profile and baseline user role
+for a newly authenticated Strideo user without weakening RLS.
 
-Recommended approach: create an append-only migration with a private database function and trigger on `auth.users` insert.
+Revised recommended approach: use a server-only service-role bootstrap path that
+creates the current user's profile and baseline `user` role without adding
+browser write access to role tables.
 
-No migration is created in this planning phase.
+Revision note: the original trigger-on-`auth.users` approach was prepared in PR
+#24 but failed in Supabase Dev with `ERROR: 42501: must be owner of relation
+users`. Migration `0015_profile_bootstrap` was not applied, and production was
+not touched. The revised approach avoids creating triggers on `auth.users`.
 
 ## Current Blocker
 
-Phase 2B can load profile and role context, but it cannot create missing profile rows.
+Phase 2B can load profile and role context, but it cannot create missing profile
+rows through browser/session-scoped table writes.
 
 Current blocker:
 
@@ -20,25 +27,20 @@ Current blocker:
 - `profile_roles` has owner-scoped `select` policy only.
 - There are no `insert` or `update` policies for `profiles`.
 - There are no write policies for `profile_roles`.
-- Phase 1 security hardening intentionally removed broad default grants to `anon` and `authenticated`.
-- Existing migrations intentionally defer browser-facing grants until RLS and entitlement tests are approved.
+- Phase 1 security hardening intentionally removed broad default grants to
+  `anon` and `authenticated`.
+- Existing migrations intentionally defer browser-facing grants until RLS and
+  entitlement tests are approved.
 
-The app therefore must not use a browser/session-driven insert to create a profile yet.
+The app therefore must not use a browser/session-driven insert to create trusted
+profile role data.
 
 ## Existing Schema Findings
 
-### Profile Table
-
-Canonical table:
+Canonical profile table:
 
 ```text
 public.profiles
-```
-
-Created by:
-
-```text
-supabase/migrations/0007_user_and_entitlement_tables.sql
 ```
 
 Important columns:
@@ -49,23 +51,11 @@ Important columns:
 - `email text`
 - `status public.profile_status not null default 'active'`
 - `default_plan public.subscription_plan not null default 'free'`
-- `created_at timestamptz not null default now()`
-- `updated_at timestamptz not null default now()`
 
-The table comment says authorization must rely on trusted identity, entitlements, and roles, not user-editable fields.
-
-### Role Table
-
-Canonical table:
+Canonical role table:
 
 ```text
 public.profile_roles
-```
-
-Created by:
-
-```text
-supabase/migrations/0007_user_and_entitlement_tables.sql
 ```
 
 Important columns:
@@ -74,43 +64,21 @@ Important columns:
 - `user_id uuid not null references auth.users (id) on delete cascade`
 - `role public.profile_role not null`
 - `created_by_user_id uuid references auth.users (id)`
-- `created_at timestamptz not null default now()`
 - `unique (user_id, role)`
 
-The table comment says trusted operator/admin role assignments are server-only and must not rely on user-editable metadata.
-
-### Enums And Types
-
-Created by:
+Relevant enum:
 
 ```text
-supabase/migrations/0002_extensions_and_types.sql
+public.profile_role: user, operator, admin
 ```
-
-Relevant enums:
-
-- `public.profile_status`: `active`, `disabled`, `deleted`
-- `public.profile_role`: `user`, `operator`, `admin`
-- `public.subscription_plan`: `free`, `pro`, `elite`
-
-### RLS Policies
-
-Created by `0010_rls_policies.sql`, optimized by `0014_rls_initplan_optimization.sql`.
 
 Current relevant policies:
 
 - `profiles_select_own` on `public.profiles`
 - `profile_roles_select_own` on `public.profile_roles`
 
-Both policies are read-only and owner-scoped.
-
-There are no profile or role write policies.
-
-### Triggers And Functions
-
-Local migration review found no current profile bootstrap trigger or function on `auth.users`.
-
-`0001_security_hardening.sql` references an existing `public.rls_auto_enable()` security definer helper, but that function is unrelated to profile creation and has execute revoked from public browser roles.
+Both policies are read-only and owner-scoped. There are no profile or role write
+policies.
 
 ## Bootstrap Options Compared
 
@@ -122,47 +90,43 @@ Description:
 - Attach it to `auth.users` with an `after insert` trigger.
 - Insert a baseline row into `public.profiles`.
 - Insert a baseline `user` role into `public.profile_roles`.
-- Use `on conflict do nothing` for idempotency.
 
 Security:
 
-- Best fit for least privilege if the function is private, narrowly scoped, and not executable by `anon` or `authenticated`.
-- Keeps profile and baseline role creation inside the database, tied to trusted `auth.users`.
+- Keeps profile and baseline role creation inside the database.
 - Avoids service-role secrets in app runtime paths.
 - Does not require broad browser write grants.
-- Must not assign `operator` or `admin` from user metadata.
 
-Maintainability:
+Dev execution finding:
 
-- Reliable and automatic for every new auth user.
-- Works regardless of whether signup happens through the web app, admin-created user, or Supabase Auth UI/API.
-- Requires careful migration review because it touches `auth.users`.
+- This approach failed through the available Dev migration path because the
+  execution role was not the owner of `auth.users`.
+- Do not retry this path unless a Supabase-supported execution path with the
+  required ownership is explicitly confirmed and authorized.
 
-RLS impact:
-
-- Does not require relaxing browser RLS write policies.
-- Existing owner-scoped read policies remain valid.
-- The trigger writes as a privileged database function, so the function body must be minimal and auditable.
-
-### Option B: Server-Side Route Or Action Using Service Role
+### Option B: Server-Side Route Or Helper Using Service Role
 
 Description:
 
-- Add a server route or action that uses `SUPABASE_SERVICE_ROLE_KEY` to upsert `profiles` and baseline `profile_roles`.
-- Call the route after login or during protected layout/profile loading.
+- Add server-only code that uses `SUPABASE_SERVICE_ROLE_KEY` to upsert
+  `profiles` and baseline `profile_roles`.
+- Call the helper during protected profile loading when a current user's profile
+  is missing.
 
 Security:
 
 - Keeps browser clients from writing roles directly.
-- Introduces service-role handling into the app runtime, which increases blast radius if misused.
-- Requires careful environment isolation so the key never reaches browser code.
-- Must avoid using user-editable metadata for role assignment.
+- Requires strict server-only isolation so the service-role key never reaches
+  browser code.
+- Must derive the user from the current authenticated server session.
+- Must not accept arbitrary `user_id` or role values from clients.
+- Must not use user-editable metadata for role assignment.
 
 Maintainability:
 
-- Easier to iterate in app code than a database trigger.
-- Coupled to app login/profile loading paths; users created outside the app may not bootstrap until they visit the app.
-- Requires robust idempotency and error handling in application code.
+- Easier to iterate in app code than an `auth.users` trigger.
+- Users created outside the app may not bootstrap until they visit the app.
+- Requires idempotency and clear runtime error handling.
 
 RLS impact:
 
@@ -175,49 +139,37 @@ Description:
 
 - Grant authenticated users insert access to `profiles`.
 - Add `profiles_insert_own` with `with check (user_id = (select auth.uid()))`.
-- Optionally let users update safe fields such as `display_name`.
 
 Security:
 
-- Acceptable only for tightly scoped user-editable profile fields.
-- Does not safely cover `profile_roles`, because users must not assign roles to themselves.
-- Requires explicit grants and policies, increasing the browser-facing surface area.
-- Easy to accidentally include fields that should remain trusted/server-owned.
-
-Maintainability:
-
-- Simple for client-side profile creation.
-- Requires careful field-level conventions because Postgres RLS policies do not directly restrict individual columns.
-
-RLS impact:
-
-- Broadens browser write surface for `profiles`.
+- Does not safely cover `profile_roles`, because users must not assign roles to
+  themselves.
+- Broadens the browser-facing write surface.
 - Still needs a separate server/database path for baseline role creation.
-- Not ideal as the primary bootstrap strategy.
 
 ## Recommended Approach
 
-Use Option A: database trigger on `auth.users` insert.
+Use Option B: server-side helper using the Supabase service role.
 
-This best matches Strideo's current security posture:
+This now best matches Strideo's security posture and Dev execution constraints:
 
 - `profile_roles` is documented as trusted/server-only.
 - Phase 1 intentionally avoided broad browser grants.
 - Phase 2B already treats profile bootstrap as a missing trusted backend path.
-- A trigger can create exactly the baseline `profiles` row and baseline `user` role without letting the browser write trusted data.
+- Dev migration execution cannot create the originally proposed trigger on
+  `auth.users`.
+- A server-only helper can create exactly the baseline `profiles` row and
+  baseline `user` role without letting the browser write trusted data.
 
-The trigger should create only:
+The server bootstrap path should create only:
 
 - `profiles.user_id`
 - `profiles.email`
-- optional `profiles.display_name` from trusted or cautiously treated auth fields
 - default `profiles.status = active`
 - default `profiles.default_plan = free`
 - `profile_roles.role = user`
 
 It must not create `operator` or `admin` roles.
-
-Operator/admin assignment should remain a separate admin-only process, likely via a future reviewed server-only path.
 
 ## Proposed Migration
 
@@ -227,102 +179,53 @@ Future append-only migration filename:
 supabase/migrations/0015_profile_bootstrap.sql
 ```
 
-Proposed outline:
+Revised outline:
 
-1. Create or replace private function:
-
-```sql
-create or replace function private.bootstrap_new_user_profile()
-returns trigger
-language plpgsql
-security definer
-set search_path = public, auth, extensions
-as $$
-begin
-  insert into public.profiles (user_id, email, display_name)
-  values (
-    new.id,
-    new.email,
-    nullif(coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name'), '')
-  )
-  on conflict (user_id) do nothing;
-
-  insert into public.profile_roles (user_id, role)
-  values (new.id, 'user')
-  on conflict (user_id, role) do nothing;
-
-  return new;
-end;
-$$;
-```
-
-2. Revoke function execution from public browser roles:
-
-```sql
-revoke execute on function private.bootstrap_new_user_profile() from public;
-revoke execute on function private.bootstrap_new_user_profile() from anon;
-revoke execute on function private.bootstrap_new_user_profile() from authenticated;
-```
-
-3. Drop and recreate a same-name auth trigger idempotently:
-
-```sql
-drop trigger if exists on_auth_user_created_bootstrap_profile on auth.users;
-
-create trigger on_auth_user_created_bootstrap_profile
-  after insert on auth.users
-  for each row execute function private.bootstrap_new_user_profile();
-```
-
-4. Backfill existing auth users in Dev with baseline profile and `user` role.
-
-Backfill must be reviewed carefully and should use idempotent inserts:
-
-```sql
-insert into public.profiles (user_id, email)
-select id, email
-from auth.users
-on conflict (user_id) do nothing;
-
-insert into public.profile_roles (user_id, role)
-select id, 'user'::public.profile_role
-from auth.users
-on conflict (user_id, role) do nothing;
-```
-
-5. Do not add browser write policies for `profile_roles`.
-
-6. Consider a separate future migration for user-editable `profiles.display_name` updates only after field-level expectations and tests are defined.
+1. Keep `0015_profile_bootstrap.sql` as an append-only no-op marker.
+2. Do not create triggers on `auth.users`.
+3. Do not create exposed `SECURITY DEFINER` RPC functions.
+4. Do not add browser write policies for `profile_roles`.
+5. Add server-only app code that:
+   - derives the user from the current authenticated server session,
+   - uses the service role only in server-only modules,
+   - creates `public.profiles` idempotently for the current user,
+   - creates `public.profile_roles` idempotently with role `user` only,
+   - never accepts arbitrary `user_id` or role values from the browser.
+6. Consider a separate future migration for user-editable
+   `profiles.display_name` updates only after field-level expectations and
+   tests are defined.
 
 ## Required App-Code Changes
 
-After the future migration is created and applied to Dev:
-
-- Keep Phase 2B read-only profile loading.
-- Remove or soften the "bootstrap blocked" dashboard copy once profile rows are automatically created.
-- Add a profile refresh path after login if needed.
-- Add a settings form for `display_name` only if a future `profiles_update_own` policy is approved.
+- Keep Phase 2B owner-scoped profile/role reads.
+- Call the server bootstrap helper when the protected profile loader finds a
+  missing app profile.
+- Re-read profile/role rows after successful bootstrap.
+- Keep service-role usage isolated to server-only modules.
+- Add a settings form for `display_name` only if a future `profiles_update_own`
+  policy is approved.
 - Do not add browser role mutation.
 - Keep admin/operator UI gated by trusted `profile_roles` reads.
 
 ## RLS And Security Impact
 
-Recommended trigger approach:
+Revised server-only approach:
 
 - Does not require broad authenticated insert/update grants.
 - Does not weaken current owner-scoped read policies.
 - Keeps role assignment out of browser clients.
-- Avoids introducing service-role credentials into application code.
-- Uses trusted `auth.users.id` as the source for `profiles.user_id`.
-- Treats auth metadata only as optional display data, never authorization data.
+- Uses service-role credentials only in server-only application modules.
+- Uses the current authenticated server session as the source for
+  `profiles.user_id`.
+- Does not use user-editable metadata for authorization or role assignment.
 
 Risk areas to review before execution:
 
-- The function is `security definer`; its search path and privileges must be explicit.
-- The function must live in `private`, not an exposed schema intended for Data API RPC.
-- Execute privileges must be revoked from public browser roles.
-- The trigger must be idempotent.
-- Backfill should be Dev-tested before production authorization.
+- The service-role key must never be exposed to browser code.
+- The helper must not accept arbitrary user or role input from clients.
+- Bootstrap writes must be idempotent.
+- Runtime bootstrap behavior should be Dev-tested before production
+  authorization.
 
 ## Dev Verification Checklist
 
@@ -334,25 +237,26 @@ Before applying the future migration:
 4. Inspect generated SQL and verify it is append-only.
 5. Confirm no production credentials or project refs are used.
 
-After applying to Dev:
+After applying the no-op marker migration to Dev and testing the app path:
 
 1. Confirm migration history shows `0015_profile_bootstrap`.
-2. Create or identify a Dev auth user.
-3. Confirm `public.profiles` contains exactly one row for that user.
-4. Confirm `public.profile_roles` contains baseline `user` role for that user.
-5. Confirm no `operator` or `admin` roles are auto-assigned.
-6. Confirm a signed-in user can read their own profile and roles.
-7. Confirm a signed-in user cannot read another user's profile or roles.
-8. Confirm browser clients cannot insert or update `profile_roles`.
-9. Confirm function execute is not granted to `anon` or `authenticated`.
+2. Confirm no Phase 2C trigger exists on `auth.users`.
+3. Sign in with a Dev auth user.
+4. Confirm `public.profiles` contains exactly one row for that user.
+5. Confirm `public.profile_roles` contains baseline `user` role for that user.
+6. Confirm no `operator` or `admin` roles are auto-assigned.
+7. Confirm a signed-in user can read their own profile and roles.
+8. Confirm a signed-in user cannot read another user's profile or roles.
+9. Confirm browser clients cannot insert or update `profile_roles`.
 10. Run relevant Supabase security/performance advisors if available.
-11. Run `npm run lint`, `npm run build`, and `git diff --check` after any app copy changes.
+11. Run `npm run lint`, `npm run build`, and `git diff --check` after any app
+    code changes.
 
 ## Production Safety Notes
 
-- Production remains untouched in Phase 2C planning.
-- Do not apply `0015_profile_bootstrap.sql` to production until Dev execution is verified and separately authorized.
-- Production rollout should include a backfill count and duplicate check before execution.
+- Production remains untouched in Phase 2C planning and revision.
+- Do not apply `0015_profile_bootstrap.sql` to production until Dev execution
+  and app-path verification are completed and separately authorized.
 - Operator/admin role assignment must remain a separate reviewed process.
 - Do not use user-editable metadata for authorization decisions.
 - Do not expose service-role credentials to browser or client-side code.

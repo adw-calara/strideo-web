@@ -195,13 +195,13 @@ export default async function ProtectedPage() {
           <CardHeader>
             <CardTitle>Access posture</CardTitle>
             <CardDescription>
-              Profile bootstrap remains deferred until an approved insert path
-              exists for `profiles`.
+              Profile bootstrap runs through a server-only path when the
+              protected shell loads a missing app profile.
             </CardDescription>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            Existing RLS was not broadened, and the app does not use service
-            role credentials.
+            Existing RLS was not broadened, and service-role credentials stay
+            out of browser code.
           </CardContent>
         </Card>
       </section>

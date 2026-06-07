@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { ensureCurrentUserProfileBootstrap } from "./profile-bootstrap";
 
 export type ProfileRole = "user" | "operator" | "admin";
 export type ProfileLoadStatus = "loaded" | "missing" | "unavailable";
@@ -39,6 +40,8 @@ type RoleRow = {
   role: ProfileRole;
 };
 
+type ProfileReadResult = Awaited<ReturnType<typeof readProfileRows>>;
+
 const rolePriority: Record<ProfileRole, number> = {
   user: 0,
   operator: 1,
@@ -71,6 +74,39 @@ function getAccessLabel(role: ProfileRole, plan: AuthProfileContext["defaultPlan
   return "User";
 }
 
+async function readProfileRows(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+) {
+  return Promise.all([
+    supabase
+      .from("profiles")
+      .select("display_name,email,status,default_plan")
+      .eq("user_id", userId)
+      .maybeSingle<ProfileRow>(),
+    supabase
+      .from("profile_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .returns<RoleRow[]>(),
+  ]);
+}
+
+function hasReadError([profileResult, rolesResult]: ProfileReadResult) {
+  return Boolean(profileResult.error || rolesResult.error);
+}
+
+function getRoles([, rolesResult]: ProfileReadResult) {
+  return rolesResult.data?.map((row) => row.role) ?? [];
+}
+
+function needsProfileBootstrap(profileReadResult: ProfileReadResult) {
+  const [profileResult] = profileReadResult;
+  const roles = getRoles(profileReadResult);
+
+  return !profileResult.data || !roles.includes("user");
+}
+
 export async function loadCurrentProfileContext(): Promise<AuthProfileContext | null> {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();
@@ -95,22 +131,25 @@ export async function loadCurrentProfileContext(): Promise<AuthProfileContext | 
     isAdmin: false,
   };
 
-  const [profileResult, rolesResult] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("display_name,email,status,default_plan")
-      .eq("user_id", claims.sub)
-      .maybeSingle<ProfileRow>(),
-    supabase
-      .from("profile_roles")
-      .select("role")
-      .eq("user_id", claims.sub)
-      .returns<RoleRow[]>(),
-  ]);
+  let profileReadResult = await readProfileRows(supabase, claims.sub);
+  let bootstrapMessage: string | null = null;
 
-  const hasReadError = Boolean(profileResult.error || rolesResult.error);
+  if (!hasReadError(profileReadResult) && needsProfileBootstrap(profileReadResult)) {
+    const bootstrapResult = await ensureCurrentUserProfileBootstrap();
+    bootstrapMessage = bootstrapResult.message;
 
-  if (hasReadError) {
+    if (bootstrapResult.status === "ensured") {
+      profileReadResult = await readProfileRows(supabase, claims.sub);
+    } else {
+      return {
+        ...baseContext,
+        loadStatus: "unavailable",
+        loadMessage: bootstrapMessage,
+      };
+    }
+  }
+
+  if (hasReadError(profileReadResult)) {
     return {
       ...baseContext,
       loadStatus: "unavailable",
@@ -119,7 +158,8 @@ export async function loadCurrentProfileContext(): Promise<AuthProfileContext | 
     };
   }
 
-  const roles = rolesResult.data?.map((row) => row.role) ?? [];
+  const [profileResult] = profileReadResult;
+  const roles = getRoles(profileReadResult);
   const primaryRole = getPrimaryRole(roles);
   const defaultPlan = profileResult.data?.default_plan ?? null;
   const accessLabel = getAccessLabel(primaryRole, defaultPlan);
@@ -137,7 +177,9 @@ export async function loadCurrentProfileContext(): Promise<AuthProfileContext | 
     isAdmin: primaryRole === "admin",
     loadStatus: profileResult.data ? "loaded" : "missing",
     loadMessage: profileResult.data
-      ? "Profile and role data loaded through existing owner-scoped policies."
-      : "No app profile exists yet. Bootstrap needs an approved insert path before the app can create one.",
+      ? (bootstrapMessage ??
+        "Profile and role data loaded through existing owner-scoped policies.")
+      : (bootstrapMessage ??
+        "No app profile exists yet. Bootstrap needs the server bootstrap path to complete."),
   };
 }
