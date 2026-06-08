@@ -2,8 +2,8 @@
 
 ## Summary
 
-Phase 2D attempted Dev runtime verification for the revised server-only
-service-role profile bootstrap path.
+Phase 2D reran Dev runtime verification for the revised server-only
+service-role profile bootstrap path after local runtime secrets were configured.
 
 - Dev project: `strideo-dev`
 - Dev project ref: `ntxtakbggtljjbalgris`
@@ -12,22 +12,20 @@ service-role profile bootstrap path.
 - Migrations applied: no
 - Existing migration files modified: no
 
-Runtime bootstrap verification could not be fully completed in this local
-environment because the app runtime does not have `SUPABASE_SERVICE_ROLE_KEY`
-available and Dev currently has zero auth users.
+Runtime verification found a real blocker: the local app can authenticate a
+Dev test user, but the current server-side bootstrap helper cannot create
+`public.profiles` or `public.profile_roles` rows because Supabase REST table
+access returns `403` for the service-role client on `public.profiles`.
 
 ## Environment Presence Check
 
 Values were not printed.
 
 - `NEXT_PUBLIC_SUPABASE_URL`: present
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`:
-  present
-- `SUPABASE_SERVICE_ROLE_KEY`: missing
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`: present
+- `SUPABASE_SERVICE_ROLE_KEY`: present
 
-The missing service-role runtime key prevents the server-only bootstrap helper
-from creating `public.profiles` and `public.profile_roles` rows during a local
-runtime verification.
+`.env.local` remains ignored by git and was not committed.
 
 ## Dev Project And Migration Status
 
@@ -36,69 +34,72 @@ Supabase Dev MCP access was available.
 - Target project confirmed: `strideo-dev`
 - Target project ref confirmed: `ntxtakbggtljjbalgris`
 - Migration history includes `0015_profile_bootstrap`
-- Existing Dev auth user count: `0`
+- Existing Dev auth user count before runtime test: `0`
 
 No Dev user emails or IDs were printed.
 
 ## Test Method
 
-The intended test method was:
+Runtime verification used the supported Supabase Auth Admin API to create a
+temporary Dev-only auth user. The app was then exercised through the local Next
+dev server and browser automation:
 
-1. Use a supported Auth Admin/API flow to create or use a Dev-only test auth
-   user.
-2. Sign in or simulate an authenticated server session through the app runtime.
-3. Load the protected dashboard/profile context.
-4. Confirm the server-only bootstrap helper creates or ensures:
-   - one `public.profiles` row for the current user
-   - one `public.profile_roles` row with role `user`
-5. Remove the baseline `user` role and reload protected context to verify the
-   missing-role retry path.
-6. Clean up the test user and associated rows through a supported cleanup path.
+1. Create temporary Dev auth user with Auth Admin API.
+2. Start local app runtime with `.env.local`.
+3. Sign in through the app login form.
+4. Load the protected dashboard route.
+5. Check whether runtime bootstrap created profile and baseline role rows.
+6. Clean up the temporary auth user and any associated rows.
 
-This live runtime path was not executed because:
-
-- Dev has zero existing auth users.
-- The local app runtime is missing `SUPABASE_SERVICE_ROLE_KEY`.
-- There is no safe Auth Admin tool path available in this environment.
-- Direct SQL insertion into `auth.users` was intentionally not attempted because
-  it is not a supported Auth Admin flow and would not accurately verify the app
-  runtime.
+Direct SQL insertion into `auth.users` was not attempted.
 
 ## Bootstrap Verification Result
 
-Live app runtime bootstrap verification: not completed.
+Live app runtime bootstrap verification: failed.
 
-Reason: missing service-role runtime configuration plus no Dev auth user to
-exercise.
+Observed result:
 
-Code-level bootstrap behavior remains in place:
+- Temporary Dev auth user creation through Auth Admin API: passed
+- App login flow: passed
+- Protected route load: passed
+- `public.profiles` row created for test user: no
+- baseline `public.profile_roles` row with role `user` created for test user:
+  no
 
-- Bootstrap derives the user from the authenticated server session.
-- Bootstrap does not accept arbitrary `user_id` from the browser.
-- Bootstrap writes only to `public.profiles` and `public.profile_roles`.
-- Bootstrap assigns only baseline role `user`.
-- Bootstrap does not assign `operator` or `admin`.
-- Bootstrap is server-only and uses the service-role client only in server-only
-  modules.
+The runtime blocker is service-role REST table access:
+
+- Direct REST check against `public.profiles` with the service-role key returned
+  status `403`.
+- Supabase JS `.from("profiles")` and `.from("profile_roles")` service-role
+  table access failed.
+- Database grant inspection showed `service_role` currently has only
+  `REFERENCES`, `TRIGGER`, and `TRUNCATE` privileges on `public.profiles` and
+  `public.profile_roles`, not the table privileges needed by the current
+  `.from(...).upsert(...)` bootstrap helper.
+
+No browser role-write policies were added, and RLS was not broadened during
+this test.
 
 ## Missing-Role Retry Result
 
-Live missing-role retry verification: not completed.
+Live missing-role retry verification: blocked.
 
-Reason: the runtime bootstrap path could not be exercised without a Dev auth
-user and service-role runtime configuration.
+Reason: initial runtime bootstrap did not create the baseline `user` role, so
+there was no successfully bootstrapped state from which to remove and recreate
+the role through the protected profile context.
 
-Committed code behavior:
+The committed app logic still retries bootstrap when either:
 
-- If the profile row is missing, protected profile loading attempts bootstrap.
-- If the profile row exists but the baseline `user` role is missing, protected
-  profile loading also attempts bootstrap.
-- If bootstrap fails, the profile context returns an unavailable state rather
-  than silently treating incomplete role state as elevated access.
+- the current user's `public.profiles` row is missing, or
+- the current user's baseline `public.profile_roles` row with role `user` is
+  missing.
+
+That retry path still requires a server-side write path that can access
+`public.profiles` and `public.profile_roles`.
 
 ## Role Assignment Verification
 
-Database-side Dev verification showed:
+Database-side Dev verification after cleanup showed:
 
 - Auth users: `0`
 - Profiles: `0`
@@ -121,15 +122,17 @@ No RLS policies were broadened.
 No browser role-write policies were added.
 No public browser grants were added.
 
+Service-role grants on `public.profiles` and `public.profile_roles` were also
+inspected. The current grants do not include the table privileges needed by the
+runtime `.from(...).upsert(...)` helper.
+
 ## Cleanup Result
 
-No temporary Dev auth user was created.
+Temporary Dev auth user cleanup: passed.
 
-Cleanup result: not needed.
-
-Reason: creating a temporary auth user was not safe/supported without
-service-role runtime configuration or an Auth Admin tool path. Direct
-`auth.users` SQL manipulation was not attempted.
+Cleanup used the supported Auth Admin API and explicit cleanup attempts for
+associated `public.profiles` and `public.profile_roles` rows. Final Dev counts
+returned to zero auth users, zero profiles, and zero profile roles.
 
 ## Local Verification
 
@@ -149,13 +152,16 @@ Results:
 
 ## Remaining Follow-Ups
 
-- Add `SUPABASE_SERVICE_ROLE_KEY` to the local or Dev runtime environment using
-  a secure secret store, not the repo.
-- Create or use a Dev-only auth user through a supported Auth Admin/API flow.
-- Re-run Phase 2D runtime verification against the protected dashboard/profile
-  context.
+- Create a follow-up plan or migration for the server-owned bootstrap write
+  path.
+- Options to evaluate:
+  - grant the needed `service_role` table privileges on `public.profiles` and
+    `public.profile_roles`, or
+  - move bootstrap writes behind a reviewed SQL function/RPC or other
+    server-owned path that does not broaden browser access.
+- Re-run Phase 2D runtime verification after the server-owned write path is
+  fixed.
 - Verify the missing-role retry path by removing only the baseline `user` role
-  for the test user, reloading protected context, and confirming role recreation.
-- Clean up the test auth user and associated profile/role rows through a
-  supported path.
+  for the test user, reloading protected context, and confirming role
+  recreation.
 - Production remains untouched and must not be used for this verification.
