@@ -1,7 +1,16 @@
-import { Activity, Clock, ShieldCheck, Target, UserRound } from "lucide-react";
+import Link from "next/link";
+import {
+  Activity,
+  ArrowRight,
+  ShieldCheck,
+  Target,
+  Trophy,
+  UserRound,
+} from "lucide-react";
 
 import { loadCurrentProfileContext } from "@/lib/auth/profile-context";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -24,10 +33,10 @@ const statusCards = [
     icon: ShieldCheck,
   },
   {
-    title: "Today",
-    value: "Awaiting imports",
-    description: "Race cards and odds will appear after data ingestion.",
-    icon: Clock,
+    title: "Race Cards",
+    value: "Available in Dev",
+    description: "View seeded cards, entries, odds, and results.",
+    icon: Trophy,
   },
   {
     title: "Performance",
@@ -58,9 +67,8 @@ export default async function ProtectedPage() {
             Find the Edge. Improve Every Race.
           </h1>
           <p className="mt-2 text-muted-foreground">
-            The protected shell can now identify the authenticated user and
-            attempt owner-scoped profile and role reads using the existing
-            Strideo schema.
+            The protected shell now identifies the authenticated user and
+            surfaces the first database-backed race-card workflow.
           </p>
         </div>
       </section>
@@ -169,6 +177,14 @@ export default async function ProtectedPage() {
                 <CardDescription className="mt-2">
                   {card.description}
                 </CardDescription>
+                {card.title === "Race Cards" ? (
+                  <Button asChild variant="outline" className="mt-4 w-full">
+                    <Link href="/protected/races">
+                      Open races
+                      <ArrowRight aria-hidden="true" className="size-4" />
+                    </Link>
+                  </Button>
+                ) : null}
               </CardContent>
             </Card>
           );
@@ -185,7 +201,10 @@ export default async function ProtectedPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
-            <p>Races: today&apos;s cards, entries, odds, and results.</p>
+            <p>
+              Races: protected cards, entries, odds, and results are available
+              now.
+            </p>
             <p>Predictions: rankings, probability, confidence, and edge.</p>
             <p>Strategies: strategy definitions, matches, and opportunities.</p>
             <p>Data Imports: provider ingestion and validation status.</p>
