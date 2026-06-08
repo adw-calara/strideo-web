@@ -29,13 +29,40 @@ import { cn } from "@/lib/utils";
 
 type StatusTone = "default" | "secondary" | "outline";
 
-const statusTone: Record<string, StatusTone> = {
-  official: "default",
-  resulted: "secondary",
-  scheduled: "outline",
-  open: "secondary",
-  closed: "secondary",
-  cancelled: "outline",
+const raceStatusDisplay: Record<
+  string,
+  { label: string; helper: string; tone: StatusTone }
+> = {
+  official: {
+    label: "Official result",
+    helper: "Results are final",
+    tone: "default",
+  },
+  resulted: {
+    label: "Completed",
+    helper: "Results are posted",
+    tone: "secondary",
+  },
+  scheduled: {
+    label: "Scheduled",
+    helper: "Results pending",
+    tone: "outline",
+  },
+  open: {
+    label: "Open",
+    helper: "Race card is active",
+    tone: "secondary",
+  },
+  closed: {
+    label: "Closed",
+    helper: "Awaiting result",
+    tone: "secondary",
+  },
+  cancelled: {
+    label: "Cancelled",
+    helper: "Not active",
+    tone: "outline",
+  },
 };
 
 function titleCase(value: string) {
@@ -82,12 +109,23 @@ export function formatRaceTitle(race: RaceDetail) {
 }
 
 function formatDistance(race: RaceDetail) {
-  return race.distanceText ?? (race.distanceYards ? `${race.distanceYards} yards` : "Distance pending");
+  return (
+    race.distanceText ??
+    (race.distanceYards ? `${race.distanceYards} yards` : "Distance pending")
+  );
 }
 
 export function RaceStatusBadge({ status }: { status: string }) {
+  const display = raceStatusDisplay[status] ?? {
+    label: titleCase(status),
+    helper: "Status available",
+    tone: "outline" as StatusTone,
+  };
+
   return (
-    <Badge variant={statusTone[status] ?? "outline"}>{titleCase(status)}</Badge>
+    <Badge variant={display.tone} title={display.helper}>
+      {display.label}
+    </Badge>
   );
 }
 
@@ -113,7 +151,10 @@ export function RaceEmptyState({ message }: { message: string }) {
     <Card>
       <CardHeader>
         <CardTitle>No race cards yet</CardTitle>
-        <CardDescription>{message}</CardDescription>
+        <CardDescription>
+          {message} Race cards will appear here after Dev fixture or provider
+          data is available.
+        </CardDescription>
       </CardHeader>
     </Card>
   );
@@ -139,14 +180,14 @@ export function RaceListHeader({
           Race Cards
         </h1>
         <p className="mt-2 text-muted-foreground">
-          Protected race-card data from the canonical race, entry, odds, and
-          result tables.
+          Review protected race facts, runners, market snapshots, and results
+          before Strideo adds prediction and Opportunity workflows.
         </p>
       </div>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 rounded-md border bg-muted/30 p-4 sm:grid-cols-3">
         <RaceMetric label="Race dates" value={dateCount} />
         <RaceMetric label="Race cards" value={raceCount} />
-        <RaceMetric label="Data scope" value="Race facts only" />
+        <RaceMetric label="Current scope" value="Race facts only" />
       </div>
     </section>
   );
@@ -225,12 +266,26 @@ function RaceListCard({ race }: { race: RaceListItem }) {
 export function RaceDetailHeader({ race }: { race: RaceDetail }) {
   return (
     <section className="flex flex-col gap-5">
-      <Button asChild variant="ghost" size="sm" className="w-fit px-0">
-        <Link href="/protected/races">
-          <ArrowLeft aria-hidden="true" className="size-4" />
-          Back to races
+      <nav
+        aria-label="Breadcrumb"
+        className="flex flex-wrap items-center gap-2 text-sm"
+      >
+        <Link
+          href="/protected"
+          className="text-muted-foreground hover:text-foreground"
+        >
+          Dashboard
         </Link>
-      </Button>
+        <span className="text-muted-foreground">/</span>
+        <Link
+          href="/protected/races"
+          className="text-muted-foreground hover:text-foreground"
+        >
+          Races
+        </Link>
+        <span className="text-muted-foreground">/</span>
+        <span className="font-medium">Race {race.raceNumber}</span>
+      </nav>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <div className="mb-3 flex flex-wrap items-center gap-3">
@@ -248,6 +303,12 @@ export function RaceDetailHeader({ race }: { race: RaceDetail }) {
             <span>{race.surface?.name ?? "Surface pending"}</span>
           </p>
         </div>
+        <Button asChild variant="outline" size="sm" className="w-fit">
+          <Link href="/protected/races">
+            <ArrowLeft aria-hidden="true" className="size-4" />
+            Race list
+          </Link>
+        </Button>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <RaceMetric
@@ -281,7 +342,9 @@ export function RaceEntriesTable({ entries }: { entries: RaceCardEntry[] }) {
       <Card>
         <CardHeader>
           <CardTitle>Entries</CardTitle>
-          <CardDescription>No entries are available for this race.</CardDescription>
+          <CardDescription>
+            No entries are available for this race.
+          </CardDescription>
         </CardHeader>
       </Card>
     );
@@ -292,7 +355,7 @@ export function RaceEntriesTable({ entries }: { entries: RaceCardEntry[] }) {
       <CardHeader>
         <CardTitle>Entries</CardTitle>
         <CardDescription>
-          Runners, connections, morning line, latest odds, and result position.
+          Runners, connections, morning line, latest odds, and result status.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -308,7 +371,7 @@ export function RaceEntriesTable({ entries }: { entries: RaceCardEntry[] }) {
                 <th className="py-3 pr-4 font-medium">M/L</th>
                 <th className="py-3 pr-4 font-medium">Latest odds</th>
                 <th className="py-3 pr-4 font-medium">Status</th>
-                <th className="py-3 font-medium">Result</th>
+                <th className="py-3 font-medium">Result status</th>
               </tr>
             </thead>
             <tbody>
@@ -333,9 +396,13 @@ export function RaceEntriesTable({ entries }: { entries: RaceCardEntry[] }) {
                   </td>
                   <td className="py-3 pr-4">{titleCase(entry.status)}</td>
                   <td className="py-3">
-                    {entry.result?.finishPosition
-                      ? `${entry.result.finishPosition}`
-                      : "Pending"}
+                    {entry.result?.finishPosition ? (
+                      <Badge variant="secondary">
+                        Finish {entry.result.finishPosition}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline">Pending result</Badge>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -356,9 +423,9 @@ export function RaceResultSection({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Results</CardTitle>
+          <CardTitle>Results pending</CardTitle>
           <CardDescription>
-            Final result data is not available for this race yet.
+            Official result rows are not available for this race yet.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -376,7 +443,9 @@ export function RaceResultSection({
             </CardTitle>
             <CardDescription>
               Version {results.resultVersion} from {results.source}
-              {results.officialAt ? `, official ${formatRaceTime(results.officialAt)}` : ""}
+              {results.officialAt
+                ? `, official ${formatRaceTime(results.officialAt)}`
+                : ""}
             </CardDescription>
           </div>
           <RaceStatusBadge status={results.status} />
