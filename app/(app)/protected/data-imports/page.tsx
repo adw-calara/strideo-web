@@ -1,29 +1,30 @@
-import { SectionPage } from "@/components/dashboard/section-page";
+import {
+  ImportBatchCard,
+  ImportStatusEmptyState,
+  ImportStatusHeader,
+} from "@/components/imports/import-status-display";
+import { listImportBatches } from "@/lib/imports/data-access";
 
-export default function DataImportsPage() {
+export default async function DataImportsPage() {
+  const result = await listImportBatches();
+
+  if (result.status === "empty") {
+    return (
+      <div className="flex flex-col gap-6">
+        <ImportStatusHeader summary={result.summary} />
+        <ImportStatusEmptyState message={result.message} />
+      </div>
+    );
+  }
+
   return (
-    <SectionPage
-      eyebrow="Data Imports"
-      title="Provider Data Imports"
-      status="Deferred"
-      description="A protected operational view for ingestion batches, provider files, validation status, and job runs."
-      items={[
-        {
-          title: "Provider files",
-          description:
-            "Raw archive objects and source files will document exactly what data entered Strideo.",
-        },
-        {
-          title: "Ingestion batches",
-          description:
-            "Batch status and validation output will make data quality visible before recommendations are generated.",
-        },
-        {
-          title: "Job history",
-          description:
-            "Import and model jobs will preserve execution history instead of overwriting operational state.",
-        },
-      ]}
-    />
+    <div className="flex flex-col gap-6">
+      <ImportStatusHeader summary={result.summary} />
+      <div className="flex flex-col gap-4">
+        {result.batches.map((batch) => (
+          <ImportBatchCard key={batch.id} batch={batch} />
+        ))}
+      </div>
+    </div>
   );
 }
