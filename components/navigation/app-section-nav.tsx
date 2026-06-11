@@ -6,6 +6,7 @@ import {
   Brain,
   DatabaseZap,
   LayoutDashboard,
+  Signal,
   Settings,
   Target,
   Trophy,
@@ -23,6 +24,11 @@ const navItems = [
     href: "/protected/races",
     label: "Races",
     icon: Trophy,
+  },
+  {
+    href: "/protected/opportunities",
+    label: "Opportunities",
+    icon: Signal,
   },
   {
     href: "/protected/predictions",
