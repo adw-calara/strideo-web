@@ -53,11 +53,10 @@ Current implementation:
 - `@supabase/ssr` handles cookie-backed sessions.
 - `proxy.ts` delegates to `lib/supabase/proxy.ts`.
 - `/protected` requires a Supabase session.
-- `STRIDEO_ALLOWED_EMAILS` restricts the initial workspace to `adw@calara.ai`.
 
 Target evolution:
 
-- Replace email allowlisting with durable profiles, subscriptions, and role/plan entitlements.
+- Add durable profiles, subscriptions, and role/plan entitlements when product authorization needs them.
 - Keep authorization server-enforced through RLS and server-side checks.
 - Store role/plan data in trusted tables or Supabase app metadata, not user-editable metadata.
 

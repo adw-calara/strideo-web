@@ -1,6 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { isAllowedEmail } from "../auth-policy";
 import { getPublicEnv, hasPublicEnv } from "../env/public";
 
 export async function updateSession(request: NextRequest) {
@@ -63,21 +62,13 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (isProtectedRoute && user && !isAllowedEmail(user.email)) {
-    await supabase.auth.signOut();
-    const url = request.nextUrl.clone();
-    url.pathname = "/auth/error";
-    url.searchParams.set("code", "unauthorized_email");
-    return NextResponse.redirect(url);
-  }
-
-  if (request.nextUrl.pathname === "/" && user && isAllowedEmail(user.email)) {
+  if (request.nextUrl.pathname === "/" && user) {
     const url = request.nextUrl.clone();
     url.pathname = "/protected";
     return NextResponse.redirect(url);
   }
 
-  if (isAuthRoute && user && isAllowedEmail(user.email)) {
+  if (isAuthRoute && user) {
     const url = request.nextUrl.clone();
     url.pathname = "/protected";
     return NextResponse.redirect(url);
