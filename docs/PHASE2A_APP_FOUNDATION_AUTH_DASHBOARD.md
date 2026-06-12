@@ -12,7 +12,7 @@ The work keeps the product centered on Opportunity-driven workflows while avoidi
 - No Supabase values are hardcoded.
 - Login, signup, password reset, password update, and sign-out flows use the existing Supabase client helpers.
 - The protected app layout verifies Supabase Auth claims server-side before rendering `/protected` routes.
-- The existing email allowlist remains enforced through `lib/auth-policy.ts` and the proxy/session path.
+- Protected routes rely on a valid Supabase session rather than a local email allowlist.
 
 ## Dashboard Shell
 

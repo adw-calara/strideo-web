@@ -1,5 +1,6 @@
 "use client";
 
+import { normalizeAuthRedirect } from "@/lib/auth/redirects";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
@@ -11,7 +12,7 @@ export function AuthCallbackHandler() {
   useEffect(() => {
     const completeAuth = async () => {
       const code = searchParams.get("code");
-      const next = searchParams.get("next") ?? "/";
+      const next = normalizeAuthRedirect(searchParams.get("next"));
 
       if (!code) {
         router.replace("/auth/error?error=No auth code");

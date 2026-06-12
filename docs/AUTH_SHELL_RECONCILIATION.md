@@ -49,7 +49,7 @@ origin/main
 Reviewed stale local files against main:
 
 - `lib/supabase/proxy.ts`
-- `lib/auth-policy.ts`
+- legacy email allowlist helper
 - `app/protected/page.tsx`
 - `app/protected/layout.tsx`
 - `app/page.tsx`
@@ -67,7 +67,6 @@ Reviewed current main files:
 - `components/layout/foundation-shell.tsx`
 - `components/navigation/foundation-nav.tsx`
 - `lib/supabase/proxy.ts`
-- `lib/auth-policy.ts`
 - `lib/env/public.ts`
 - `lib/env/server.ts`
 
@@ -98,11 +97,11 @@ Decision: no stale code ported.
 
 ### Email Allowlist
 
-Status: already present on `origin/main`.
+Status: removed after initial auth foundation work.
 
-The main branch keeps the `adw@calara.ai` fallback allowlist and reads `STRIDEO_ALLOWED_EMAILS` through server env helpers.
+Protected routes now rely on a valid Supabase session rather than a local email allowlist.
 
-Decision: no stale code ported.
+Decision: do not reintroduce the stale local allowlist helper.
 
 ### Session Proxy
 
