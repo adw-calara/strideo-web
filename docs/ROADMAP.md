@@ -190,6 +190,6 @@ Goal: build long-term moat.
 
 - Choose the first race-data import scope and provider endpoint.
 - Decide initial schema migration boundaries.
-- Decide whether MVP auth should remain single-user allowlist or move immediately to profiles/subscriptions.
+- Decide when product authorization moves from valid-session access to profiles/subscriptions.
 - Define the first Opportunity scoring formula.
 - Define whether initial agent jobs run as Vercel cron, Supabase Edge Functions, or manual admin actions.

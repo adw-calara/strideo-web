@@ -137,12 +137,13 @@ Current state:
 
 - Supabase Auth is connected.
 - Protected routes redirect signed-out users.
-- Initial email allowlist is in place.
+- Protected routes require a valid Supabase session.
 - Local env uses a publishable key.
 
 Risks:
 
-- Email allowlist is not a long-term authorization model.
+- Durable profile, subscription, and entitlement checks are still needed for
+  product-level authorization.
 - Future tables must not be exposed without RLS.
 - Service-role keys must not enter client-side env or app bundles.
 - Assistant tools could become a data-exfiltration path if not scoped.

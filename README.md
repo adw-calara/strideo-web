@@ -15,7 +15,6 @@ Fill in the Supabase values from the project Connect/API settings:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your-project-url
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
-STRIDEO_ALLOWED_EMAILS=adw@calara.ai
 ```
 
 Supabase currently recommends publishable keys for browser/server SSR clients. Do not put a secret or service-role key in `NEXT_PUBLIC_*` variables.
@@ -23,9 +22,9 @@ Supabase currently recommends publishable keys for browser/server SSR clients. D
 ## Routes
 
 - `/` is public.
-- `/auth/login` signs in with Supabase Auth and defaults to `adw@calara.ai`.
-- `/auth/sign-up` creates the Supabase Auth user for `adw@calara.ai`.
-- `/protected` requires a valid Supabase session and an email in `STRIDEO_ALLOWED_EMAILS`.
+- `/auth/login` signs in with Supabase Auth.
+- `/auth/sign-up` creates a Supabase Auth user.
+- `/protected` requires a valid Supabase session.
 
 ## Development
 

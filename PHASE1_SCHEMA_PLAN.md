@@ -577,7 +577,7 @@ Shared read data:
 - Pro/Elite gating should use trusted `profiles`, `subscriptions`, or
   `app_metadata`, never `user_metadata`.
 - Initial MVP can expose read-only racing/opportunity data to authenticated
-  allowlisted users only.
+  users only.
 
 Server-only writes:
 

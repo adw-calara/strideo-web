@@ -180,8 +180,6 @@ Environment classes:
   - Stripe keys
   - webhook secrets
   - Supabase service-role key, if ever needed
-- Local development controls:
-  - `STRIDEO_ALLOWED_EMAILS`
 
 Rules:
 

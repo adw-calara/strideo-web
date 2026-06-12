@@ -16,13 +16,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-const allowedEmail = "adw@calara.ai";
-
 export function LoginForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
-  const [email, setEmail] = useState(allowedEmail);
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,16 +31,10 @@ export function LoginForm({
     setIsLoading(true);
     setError(null);
 
-    if (email.trim().toLowerCase() !== allowedEmail) {
-      setError(`Use ${allowedEmail} to access Strideo.`);
-      setIsLoading(false);
-      return;
-    }
-
     try {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
       if (error) throw error;
@@ -60,9 +52,7 @@ export function LoginForm({
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">Sign in to Strideo</CardTitle>
-          <CardDescription>
-            Use the Calara account authorized for this workspace.
-          </CardDescription>
+          <CardDescription>Use your Strideo account credentials.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin}>
@@ -72,7 +62,7 @@ export function LoginForm({
                 <Input
                   id="email"
                   type="email"
-                  placeholder={allowedEmail}
+                  placeholder="you@example.com"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}

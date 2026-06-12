@@ -123,7 +123,7 @@ The most recent protected Race Card UI runtime verification confirmed:
 ## Current Protected Race-Card User Flow
 
 1. User signs in to the protected app.
-2. Protected layout validates the Supabase SSR session and Strideo allowlist.
+2. Protected layout validates the Supabase SSR session.
 3. Profile context loads or server-bootstrap ensures the profile and baseline
    `user` role.
 4. User opens `/protected/races`.

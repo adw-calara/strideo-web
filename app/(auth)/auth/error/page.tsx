@@ -11,7 +11,7 @@ async function ErrorContent({
   if (params?.code === "unauthorized_email") {
     return (
       <p className="text-sm text-muted-foreground">
-        This Strideo workspace is restricted to adw@calara.ai.
+        This account is not authorized for the Strideo workspace.
       </p>
     );
   }
