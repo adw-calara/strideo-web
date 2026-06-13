@@ -7,6 +7,24 @@ export const EMPTY_RACE_DATA_MESSAGE =
 
 export type RaceDataStatus = "loaded" | "empty";
 
+const DEFAULT_RACE_WINDOW_DAYS = 7;
+const DEFAULT_RACE_LIST_LIMIT = 50;
+const DEFAULT_RACE_LIST_OFFSET = 0;
+const MAX_RACE_LIST_LIMIT = 100;
+const RACE_DATE_SUMMARY_ROW_LIMIT = 500;
+
+type RaceReadWindow = {
+  startDate: string;
+  endDate: string;
+};
+
+export type RaceReadWindowOptions = {
+  startDate?: string;
+  endDate?: string;
+  limit?: number;
+  offset?: number;
+};
+
 export type RaceReference = {
   id: string;
   provider: string;
@@ -510,6 +528,129 @@ function raceListMessage(count: number) {
     : EMPTY_RACE_DATA_MESSAGE;
 }
 
+function normalizeDateOption(value: string | undefined) {
+  const date = value?.slice(0, 10);
+
+  return date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null;
+}
+
+function normalizeRaceListLimit(value: number | undefined) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return DEFAULT_RACE_LIST_LIMIT;
+  }
+
+  return Math.min(Math.max(Math.trunc(value), 1), MAX_RACE_LIST_LIMIT);
+}
+
+function normalizeRaceListOffset(value: number | undefined) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return DEFAULT_RACE_LIST_OFFSET;
+  }
+
+  return Math.max(Math.trunc(value), 0);
+}
+
+function addDays(dateString: string, days: number) {
+  const date = new Date(`${dateString}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+
+  return date.toISOString().slice(0, 10);
+}
+
+function orderRaceWindow(startDate: string, endDate: string): RaceReadWindow {
+  return startDate <= endDate
+    ? { startDate, endDate }
+    : { startDate: endDate, endDate: startDate };
+}
+
+async function findNearestUpcomingRaceDate(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  raceDate: string,
+) {
+  const { data, error } = await supabase
+    .from("races")
+    .select("race_date")
+    .gte("race_date", raceDate)
+    .order("race_date", { ascending: true })
+    .limit(1)
+    .returns<Array<{ race_date: string }>>();
+
+  if (error) {
+    raiseRaceDataError("default race window upcoming lookup", error.message);
+  }
+
+  return data?.[0]?.race_date ?? null;
+}
+
+async function findLatestPastRaceDate(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  raceDate: string,
+) {
+  const { data, error } = await supabase
+    .from("races")
+    .select("race_date")
+    .lte("race_date", raceDate)
+    .order("race_date", { ascending: false })
+    .limit(1)
+    .returns<Array<{ race_date: string }>>();
+
+  if (error) {
+    raiseRaceDataError("default race window past lookup", error.message);
+  }
+
+  return data?.[0]?.race_date ?? null;
+}
+
+async function resolveRaceReadWindow(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  options: RaceReadWindowOptions,
+): Promise<RaceReadWindow> {
+  const explicitStartDate = normalizeDateOption(options.startDate);
+  const explicitEndDate = normalizeDateOption(options.endDate);
+
+  if (explicitStartDate && explicitEndDate) {
+    return orderRaceWindow(explicitStartDate, explicitEndDate);
+  }
+
+  if (explicitStartDate) {
+    return {
+      startDate: explicitStartDate,
+      endDate: addDays(explicitStartDate, DEFAULT_RACE_WINDOW_DAYS - 1),
+    };
+  }
+
+  if (explicitEndDate) {
+    return {
+      startDate: addDays(explicitEndDate, -(DEFAULT_RACE_WINDOW_DAYS - 1)),
+      endDate: explicitEndDate,
+    };
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const upcomingRaceDate = await findNearestUpcomingRaceDate(supabase, today);
+
+  if (upcomingRaceDate) {
+    return {
+      startDate: upcomingRaceDate,
+      endDate: addDays(upcomingRaceDate, DEFAULT_RACE_WINDOW_DAYS - 1),
+    };
+  }
+
+  const latestPastRaceDate = await findLatestPastRaceDate(supabase, today);
+
+  if (latestPastRaceDate) {
+    return {
+      startDate: addDays(latestPastRaceDate, -(DEFAULT_RACE_WINDOW_DAYS - 1)),
+      endDate: latestPastRaceDate,
+    };
+  }
+
+  return {
+    startDate: today,
+    endDate: addDays(today, DEFAULT_RACE_WINDOW_DAYS - 1),
+  };
+}
+
 async function fetchRaceForLookup(raceId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -526,12 +667,18 @@ async function fetchRaceForLookup(raceId: string) {
   return data?.[0] ?? null;
 }
 
-export async function listRaceDates(): Promise<RaceDateListResult> {
+export async function listRaceDates(
+  options: RaceReadWindowOptions = {},
+): Promise<RaceDateListResult> {
   const supabase = await createClient();
+  const window = await resolveRaceReadWindow(supabase, options);
   const { data, error } = await supabase
     .from("races")
     .select("race_date,track_id")
+    .gte("race_date", window.startDate)
+    .lte("race_date", window.endDate)
     .order("race_date", { ascending: false })
+    .range(0, RACE_DATE_SUMMARY_ROW_LIMIT - 1)
     .returns<Array<{ race_date: string; track_id: string }>>();
 
   if (error) {
@@ -567,13 +714,21 @@ export async function listRaceDates(): Promise<RaceDateListResult> {
   };
 }
 
-export async function listRaces(): Promise<RaceListResult> {
+export async function listRaces(
+  options: RaceReadWindowOptions = {},
+): Promise<RaceListResult> {
   const supabase = await createClient();
+  const window = await resolveRaceReadWindow(supabase, options);
+  const limit = normalizeRaceListLimit(options.limit);
+  const offset = normalizeRaceListOffset(options.offset);
   const { data: raceRows, error: raceError } = await supabase
     .from("races")
     .select(raceSelect)
+    .gte("race_date", window.startDate)
+    .lte("race_date", window.endDate)
     .order("race_date", { ascending: false })
     .order("race_number", { ascending: true })
+    .range(offset, offset + limit - 1)
     .returns<RawRaceRow[]>();
 
   if (raceError) {
@@ -591,6 +746,8 @@ export async function listRaces(): Promise<RaceListResult> {
   }
 
   const raceIds = raceData.map((race) => race.id);
+  // Keep entry counting scoped to the visible race page/window so provider-scale
+  // data does not pull every entry ID into app memory.
   const { data: entryRows, error: entryError } = await supabase
     .from("race_entries")
     .select("race_id")
