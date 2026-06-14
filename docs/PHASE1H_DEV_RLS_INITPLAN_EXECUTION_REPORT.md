@@ -7,7 +7,7 @@ Phase 1H-B migration `0014_rls_initplan_optimization` was applied to Supabase De
 - Dev project: `strideo-dev`
 - Dev project ref: `ntxtakbggtljjbalgris`
 - Migration applied: `0014_rls_initplan_optimization`
-- Migration file: `supabase/migrations/0014_rls_initplan_optimization.sql`
+- Migration file: `supabase/migrations/20260607184154_0014_rls_initplan_optimization.sql`
 - Production touched: no
 - Existing migration files modified locally after execution: no
 

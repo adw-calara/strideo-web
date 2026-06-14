@@ -10,7 +10,7 @@ application code was written.
 ## What Changed
 
 - Added a new design migration:
-  `supabase/migrations/0012_data_architecture_and_training_tables.sql`.
+  `supabase/migrations/20260607144134_0012_data_architecture_and_training_tables.sql`.
 - Added documentation for the three-tier data architecture and AI training
   strategy.
 - Updated review and remediation docs with new counts, lineage coverage, and

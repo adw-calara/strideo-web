@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/admin";
 
 export const EMPTY_IMPORT_STATUS_MESSAGE =
   "No import batches are available yet.";
@@ -223,7 +223,7 @@ function summarizeImportBatches(
 }
 
 export async function listImportBatches(): Promise<ImportStatusListResult> {
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("data_ingestion_batches")
     .select(

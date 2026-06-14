@@ -78,18 +78,18 @@ Execution rules:
 
 Migration order:
 
-1. `supabase/migrations/0001_security_hardening.sql`
-2. `supabase/migrations/0002_extensions_and_types.sql`
-3. `supabase/migrations/0003_reference_tables.sql`
-4. `supabase/migrations/0004_transaction_tables.sql`
-5. `supabase/migrations/0005_opportunity_tables.sql`
-6. `supabase/migrations/0006_wager_tables.sql`
-7. `supabase/migrations/0007_user_and_entitlement_tables.sql`
-8. `supabase/migrations/0008_learning_and_performance_tables.sql`
-9. `supabase/migrations/0009_audit_tables.sql`
-10. `supabase/migrations/0010_rls_policies.sql`
-11. `supabase/migrations/0011_indexes_and_partitions.sql`
-12. `supabase/migrations/0012_data_architecture_and_training_tables.sql`
+1. `supabase/migrations/20260607143207_0001_security_hardening.sql`
+2. `supabase/migrations/20260607143238_0002_extensions_and_types.sql`
+3. `supabase/migrations/20260607143312_0003_reference_tables.sql`
+4. `supabase/migrations/20260607143356_0004_transaction_tables.sql`
+5. `supabase/migrations/20260607143452_0005_opportunity_tables.sql`
+6. `supabase/migrations/20260607143531_0006_wager_tables.sql`
+7. `supabase/migrations/20260607143625_0007_user_and_entitlement_tables.sql`
+8. `supabase/migrations/20260607143740_0008_learning_and_performance_tables.sql`
+9. `supabase/migrations/20260607143820_0009_audit_tables.sql`
+10. `supabase/migrations/20260607143911_0010_rls_policies.sql`
+11. `supabase/migrations/20260607144006_0011_indexes_and_partitions.sql`
+12. `supabase/migrations/20260607144134_0012_data_architecture_and_training_tables.sql`
 
 ## Verification Queries After Execution
 

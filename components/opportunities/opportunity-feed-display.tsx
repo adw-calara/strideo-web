@@ -1,4 +1,6 @@
+import Link from "next/link";
 import {
+  ArrowRight,
   CalendarDays,
   EyeOff,
   FileText,
@@ -9,6 +11,7 @@ import {
 import type { ReactNode } from "react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -309,6 +312,17 @@ export function OpportunityFeedCard({
               )
             }
           />
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+          <p className="text-sm text-muted-foreground">
+            This Opportunity stays linked to the source race context.
+          </p>
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/protected/races/${opportunity.raceId}`}>
+              Open linked race
+              <ArrowRight aria-hidden="true" className="size-4" />
+            </Link>
+          </Button>
         </div>
       </CardContent>
     </Card>

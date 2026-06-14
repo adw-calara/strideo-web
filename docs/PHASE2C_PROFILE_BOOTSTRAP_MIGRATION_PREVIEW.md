@@ -7,7 +7,7 @@ This preview describes the revised Phase 2C bootstrap approach in PR #24.
 Pending migration:
 
 ```text
-supabase/migrations/0015_profile_bootstrap.sql
+supabase/migrations/20260607202021_0015_profile_bootstrap.sql
 ```
 
 The migration is prepared but not applied. It is now an intentional no-op

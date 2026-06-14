@@ -54,6 +54,8 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const user = data?.claims;
   const isAuthRoute = request.nextUrl.pathname.startsWith("/auth");
+  const isPasswordUpdateRoute =
+    request.nextUrl.pathname === "/auth/update-password";
   const isProtectedRoute = request.nextUrl.pathname.startsWith("/protected");
 
   if (isProtectedRoute && !user) {
@@ -68,7 +70,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (isAuthRoute && user) {
+  if (isAuthRoute && user && !isPasswordUpdateRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/protected";
     return NextResponse.redirect(url);

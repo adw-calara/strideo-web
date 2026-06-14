@@ -22,7 +22,7 @@ Production remains untouched.
 - `docs/PHASE1H_DB_ADVISOR_CLEANUP_PLAN.md`
 - `docs/PHASE1F_DEV_MIGRATION_EXECUTION_REPORT.md`
 - `docs/PHASE1G_DEV_MIGRATION_EXECUTION_REPORT.md`
-- `supabase/migrations/0010_rls_policies.sql`
+- `supabase/migrations/20260607143911_0010_rls_policies.sql`
 
 No Supabase inspection was performed for this analysis. The findings are based on the documented Phase 1G advisor category and local RLS policy definitions.
 
@@ -53,7 +53,7 @@ user_id = (select auth.uid())
 If fixes are authorized, use this append-only migration filename:
 
 ```text
-supabase/migrations/0014_rls_initplan_optimization.sql
+supabase/migrations/20260607184154_0014_rls_initplan_optimization.sql
 ```
 
 ## Policy Findings
@@ -194,7 +194,7 @@ Do not fix in this task:
 Recommended future migration:
 
 ```text
-supabase/migrations/0014_rls_initplan_optimization.sql
+supabase/migrations/20260607184154_0014_rls_initplan_optimization.sql
 ```
 
 The future migration should:

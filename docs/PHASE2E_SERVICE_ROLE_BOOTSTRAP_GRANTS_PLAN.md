@@ -158,7 +158,7 @@ This is the safer path for this repo right now because:
 Future append-only migration filename:
 
 ```text
-supabase/migrations/0016_service_role_bootstrap_grants.sql
+supabase/migrations/20260608130553_0016_service_role_bootstrap_grants.sql
 ```
 
 Exact proposed grants:

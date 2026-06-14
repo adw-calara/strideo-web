@@ -6,7 +6,7 @@ Date: June 9, 2026
 
 This report documents Dev-only runtime verification for the protected Race Card
 UI using the existing authenticated read access from
-`supabase/migrations/0018_authenticated_race_data_read_access.sql`.
+`supabase/migrations/20260608135732_0018_authenticated_race_data_read_access.sql`.
 
 No migration was created or applied during this verification. Production was
 not touched.

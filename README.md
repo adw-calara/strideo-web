@@ -38,6 +38,23 @@ Open http://localhost:3000.
 ## Verification
 
 ```bash
+npm run verify
 npm run lint
 npm run build
 ```
+
+## Database Migrations
+
+Use the timestamped Supabase CLI workflow in
+[`docs/SUPABASE_MIGRATION_WORKFLOW.md`](docs/SUPABASE_MIGRATION_WORKFLOW.md).
+
+Before and after applying Dev migrations:
+
+```bash
+npm run db:migrations:check
+npm run db:migrations:dry-run
+```
+
+Linked Supabase database scripts load local, gitignored env files such as
+`.env.local`. Set `SUPABASE_DB_PASSWORD` locally before running linked migration
+or database lint commands.

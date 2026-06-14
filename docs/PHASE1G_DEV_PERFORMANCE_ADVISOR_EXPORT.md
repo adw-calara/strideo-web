@@ -165,6 +165,6 @@ These findings should wait until real workload or a more specific query path exi
 
 ## Migration Status
 
-- Migration created locally: yes, `supabase/migrations/0013_fk_index_hardening.sql`
+- Migration created locally: yes, `supabase/migrations/20260607162142_0013_fk_index_hardening.sql`
 - Migration applied to Dev: no
 - Production touched: no

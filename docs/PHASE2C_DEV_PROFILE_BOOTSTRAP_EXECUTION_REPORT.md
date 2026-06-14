@@ -7,7 +7,7 @@ from an `auth.users` trigger to a server-only profile bootstrap path.
 
 - Dev project: `strideo-dev`
 - Dev project ref: `ntxtakbggtljjbalgris`
-- Migration file: `supabase/migrations/0015_profile_bootstrap.sql`
+- Migration file: `supabase/migrations/20260607202021_0015_profile_bootstrap.sql`
 - Revised migration design: no-op marker only
 - Revised migration applied to Dev: yes
 - Production touched: no
@@ -160,7 +160,7 @@ Commands run:
 npm run lint
 npm run build
 git diff --check
-sed '/^[[:space:]]*--/d;/^[[:space:]]*$/d' supabase/migrations/0015_profile_bootstrap.sql
+sed '/^[[:space:]]*--/d;/^[[:space:]]*$/d' supabase/migrations/20260607202021_0015_profile_bootstrap.sql
 ```
 
 Results:

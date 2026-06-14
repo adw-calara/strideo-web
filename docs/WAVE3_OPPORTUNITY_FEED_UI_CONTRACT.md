@@ -6,7 +6,7 @@ This contract prepares the future protected Opportunity Feed UI before any UI or
 data-access implementation begins.
 
 The future feed must use only the read-only, column-level authenticated access
-granted by `supabase/migrations/0020_opportunity_read_access.sql`. It must keep
+granted by `supabase/migrations/20260610161128_0020_opportunity_read_access.sql`. It must keep
 global Opportunity display data separate from user workflow state, wager
 execution, raw import lineage, model internals, and performance claims.
 
