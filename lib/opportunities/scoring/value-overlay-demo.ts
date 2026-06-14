@@ -23,8 +23,21 @@ export type OpportunityCandidateScore = {
   inputs: {
     deterministicSeed: number;
     marketProbabilitySource: OpportunityFeatures["odds"]["marketProbabilitySource"];
+    morningLineImpliedProbability: number | null;
+    latestOddsImpliedProbability: number | null;
     oddsSnapshotCount: number;
     impliedProbabilityDelta: number | null;
+  };
+  signals: {
+    seedSignal: number;
+    postPositionSignal: number;
+    marketMovementSignal: number;
+    confidenceBase: number;
+    morningLineConfidence: number;
+    latestOddsConfidence: number;
+    openingOddsConfidence: number;
+    oddsDepthConfidence: number;
+    fieldSizePenalty: number;
   };
 };
 
@@ -55,6 +68,16 @@ export function scoreOpportunityCandidate(
           -0.04,
           0.04,
         );
+  const confidenceBase = 36;
+  const morningLineConfidence =
+    features.odds.morningLineImpliedProbability === null ? 0 : 6;
+  const latestOddsConfidence = features.odds.latestOddsSnapshotId ? 12 : 0;
+  const openingOddsConfidence = features.marketMovement.openingOddsSnapshotId
+    ? 8
+    : 0;
+  const oddsDepthConfidence =
+    Math.min(features.marketMovement.oddsSnapshotCount, 6) * 3;
+  const fieldSizePenalty = Math.max(entryCount - 12, 0) * 1.5;
   const placeholderProbability = round(
     clamp(
       marketImpliedProbability + seedSignal + postPositionSignal + movementSignal,
@@ -65,11 +88,12 @@ export function scoreOpportunityCandidate(
   const edge = round(placeholderProbability - marketImpliedProbability);
   const confidence = round(
     clamp(
-      38 +
-        (features.odds.latestOddsSnapshotId ? 12 : 0) +
-        (features.marketMovement.openingOddsSnapshotId ? 8 : 0) +
-        Math.min(features.marketMovement.oddsSnapshotCount, 6) * 3 -
-        Math.max(entryCount - 12, 0) * 1.5,
+      confidenceBase +
+        morningLineConfidence +
+        latestOddsConfidence +
+        openingOddsConfidence +
+        oddsDepthConfidence -
+        fieldSizePenalty,
       0,
       100,
     ),
@@ -92,8 +116,21 @@ export function scoreOpportunityCandidate(
     inputs: {
       deterministicSeed: features.deterministicSeed,
       marketProbabilitySource: features.odds.marketProbabilitySource,
+      morningLineImpliedProbability: features.odds.morningLineImpliedProbability,
+      latestOddsImpliedProbability: features.odds.latestOddsImpliedProbability,
       oddsSnapshotCount: features.marketMovement.oddsSnapshotCount,
       impliedProbabilityDelta: features.marketMovement.impliedProbabilityDelta,
+    },
+    signals: {
+      seedSignal: round(seedSignal),
+      postPositionSignal: round(postPositionSignal),
+      marketMovementSignal: round(movementSignal),
+      confidenceBase,
+      morningLineConfidence,
+      latestOddsConfidence,
+      openingOddsConfidence,
+      oddsDepthConfidence,
+      fieldSizePenalty,
     },
   };
 }

@@ -355,7 +355,11 @@ async function ensureOpportunityChildren({
       .eq("opportunity_id", opportunity.id)
       .eq("race_date", opportunity.race_date)
       .eq("explanation_version", EXPLANATION_VERSION)
-      .contains("factors", [{ score_input_key: payload.score_input_key }])
+      .filter(
+        "factors",
+        "cs",
+        JSON.stringify([{ score_input_key: payload.score_input_key }]),
+      )
       .limit(1)
       .maybeSingle<ChildIdRow>();
 
