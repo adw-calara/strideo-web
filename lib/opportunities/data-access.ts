@@ -74,6 +74,11 @@ export type OpportunityFeedItem = {
   latestExplanation: OpportunityFeedExplanation | null;
 };
 
+export type OpportunityDetailItem = OpportunityFeedItem & {
+  scoreHistory: OpportunityFeedScore[];
+  explanationHistory: OpportunityFeedExplanation[];
+};
+
 export type OpportunityFeedSummary = {
   opportunityCount: number;
   subjectCount: number;
@@ -85,6 +90,12 @@ export type OpportunityFeedResult = {
   status: OpportunityFeedDataStatus;
   opportunities: OpportunityFeedItem[];
   summary: OpportunityFeedSummary;
+  message: string;
+};
+
+export type OpportunityDetailResult = {
+  status: OpportunityFeedDataStatus;
+  opportunity: OpportunityDetailItem | null;
   message: string;
 };
 
@@ -393,39 +404,12 @@ function summarizeOpportunityFeed(
   );
 }
 
-export async function listOpportunityFeed(): Promise<OpportunityFeedResult> {
-  const supabase = await createClient();
-  const { data: opportunityRows, error: opportunityError } = await supabase
-    .from("opportunities")
-    .select(opportunitySelect)
-    .not("published_at", "is", null)
-    .lte("published_at", new Date().toISOString())
-    .in("state", ["published", "closed", "resulted", "verified"])
-    .order("published_at", { ascending: false, nullsFirst: false })
-    .order("first_detected_at", { ascending: false })
-    .limit(50)
-    .returns<RawOpportunityRow[]>();
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
-  if (opportunityError) {
-    raiseOpportunityFeedError("Opportunity list");
-  }
-
-  const opportunities = opportunityRows ?? [];
-
-  if (opportunities.length === 0) {
-    return {
-      status: "empty",
-      opportunities: [],
-      summary: {
-        opportunityCount: 0,
-        subjectCount: 0,
-        scoreCount: 0,
-        explanationCount: 0,
-      },
-      message: EMPTY_OPPORTUNITY_FEED_MESSAGE,
-    };
-  }
-
+async function hydrateOpportunityRows(
+  supabase: SupabaseServerClient,
+  opportunities: RawOpportunityRow[],
+) {
   const opportunityIds = opportunities.map((opportunity) => opportunity.id);
   const [subjectResult, scoreResult, explanationResult] = await Promise.all([
     supabase
@@ -553,16 +537,14 @@ export async function listOpportunityFeed(): Promise<OpportunityFeedResult> {
     );
   }
 
+  const scoreHistory = (scoreResult.data ?? []).map(mapScore);
+  const explanationHistory = (explanationResult.data ?? []).map(mapExplanation);
   const subjectsByOpportunityId = groupByOpportunityId(
     subjectRows.map((subject) => mapSubject(subject, contextByRaceEntryId)),
   );
-  const scoresByOpportunityId = firstByOpportunityId(
-    (scoreResult.data ?? []).map(mapScore),
-  );
-  const explanationsByOpportunityId = firstByOpportunityId(
-    (explanationResult.data ?? []).map(mapExplanation),
-  );
-  const feedItems = opportunities.map((opportunity) =>
+  const scoresByOpportunityId = firstByOpportunityId(scoreHistory);
+  const explanationsByOpportunityId = firstByOpportunityId(explanationHistory);
+  const items = opportunities.map((opportunity) =>
     mapOpportunity(
       opportunity,
       subjectsByOpportunityId,
@@ -570,14 +552,108 @@ export async function listOpportunityFeed(): Promise<OpportunityFeedResult> {
       explanationsByOpportunityId,
     ),
   );
-  const summary = summarizeOpportunityFeed(feedItems);
+
+  return {
+    items,
+    summary: summarizeOpportunityFeed(items),
+    scoreHistoryByOpportunityId: groupByOpportunityId(scoreHistory),
+    explanationHistoryByOpportunityId:
+      groupByOpportunityId(explanationHistory),
+  };
+}
+
+export async function listOpportunityFeed(): Promise<OpportunityFeedResult> {
+  const supabase = await createClient();
+  const { data: opportunityRows, error: opportunityError } = await supabase
+    .from("opportunities")
+    .select(opportunitySelect)
+    .not("published_at", "is", null)
+    .lte("published_at", new Date().toISOString())
+    .in("state", ["published", "closed", "resulted", "verified"])
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .order("first_detected_at", { ascending: false })
+    .limit(50)
+    .returns<RawOpportunityRow[]>();
+
+  if (opportunityError) {
+    raiseOpportunityFeedError("Opportunity list");
+  }
+
+  const opportunities = opportunityRows ?? [];
+
+  if (opportunities.length === 0) {
+    return {
+      status: "empty",
+      opportunities: [],
+      summary: {
+        opportunityCount: 0,
+        subjectCount: 0,
+        scoreCount: 0,
+        explanationCount: 0,
+      },
+      message: EMPTY_OPPORTUNITY_FEED_MESSAGE,
+    };
+  }
+
+  const { items, summary } = await hydrateOpportunityRows(
+    supabase,
+    opportunities,
+  );
 
   return {
     status: "loaded",
-    opportunities: feedItems,
+    opportunities: items,
     summary,
     message: `${summary.opportunityCount} Opportunity signal${
       summary.opportunityCount === 1 ? "" : "s"
     } loaded.`,
+  };
+}
+
+export async function getOpportunityDetail(
+  opportunityId: string,
+): Promise<OpportunityDetailResult> {
+  const supabase = await createClient();
+  const { data: opportunity, error } = await supabase
+    .from("opportunities")
+    .select(opportunitySelect)
+    .eq("id", opportunityId)
+    .not("published_at", "is", null)
+    .lte("published_at", new Date().toISOString())
+    .in("state", ["published", "closed", "resulted", "verified"])
+    .maybeSingle<RawOpportunityRow>();
+
+  if (error) {
+    raiseOpportunityFeedError("Opportunity detail");
+  }
+
+  if (!opportunity) {
+    return {
+      status: "empty",
+      opportunity: null,
+      message: "This Opportunity is not visible in the protected feed.",
+    };
+  }
+
+  const hydrated = await hydrateOpportunityRows(supabase, [opportunity]);
+  const item = hydrated.items[0];
+
+  if (!item) {
+    return {
+      status: "empty",
+      opportunity: null,
+      message: "This Opportunity is not visible in the protected feed.",
+    };
+  }
+
+  return {
+    status: "loaded",
+    opportunity: {
+      ...item,
+      scoreHistory: hydrated.scoreHistoryByOpportunityId[item.id] ?? [],
+      explanationHistory:
+        hydrated.explanationHistoryByOpportunityId[item.id] ?? [],
+    },
+    message: "Opportunity detail loaded.",
   };
 }
