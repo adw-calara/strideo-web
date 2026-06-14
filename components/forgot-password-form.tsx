@@ -17,10 +17,15 @@ import { useState } from "react";
 
 export function ForgotPasswordForm({
   className,
+  reason,
   ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+}: React.ComponentPropsWithoutRef<"div"> & { reason?: string }) {
   const [email, setEmail] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    reason === "recovery-session-required"
+      ? "Please request a fresh password reset link before choosing a new password."
+      : null,
+  );
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -31,7 +36,7 @@ export function ForgotPasswordForm({
 
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: `${window.location.origin}/auth/confirm?next=/auth/update-password`,
       });
       if (error) throw error;
@@ -54,7 +59,7 @@ export function ForgotPasswordForm({
           <CardContent>
             <p className="text-sm text-muted-foreground">
               If you registered using your email and password, you will receive
-              a password reset email.
+              a password reset email. Open the newest link to continue.
             </p>
           </CardContent>
         </Card>
@@ -76,6 +81,7 @@ export function ForgotPasswordForm({
                     id="email"
                     type="email"
                     placeholder="m@example.com"
+                    autoComplete="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
