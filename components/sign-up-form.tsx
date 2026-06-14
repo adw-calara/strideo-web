@@ -38,6 +38,12 @@ export function SignUpForm({
       return;
     }
 
+    if (password.length < 12) {
+      setError("Password must be at least 12 characters.");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const supabase = createClient();
       const { error } = await supabase.auth.signUp({
@@ -74,6 +80,7 @@ export function SignUpForm({
                   id="email"
                   type="email"
                   placeholder="you@example.com"
+                  autoComplete="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -86,6 +93,8 @@ export function SignUpForm({
                 <Input
                   id="password"
                   type="password"
+                  minLength={12}
+                  autoComplete="new-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -98,6 +107,8 @@ export function SignUpForm({
                 <Input
                   id="repeat-password"
                   type="password"
+                  minLength={12}
+                  autoComplete="new-password"
                   required
                   value={repeatPassword}
                   onChange={(e) => setRepeatPassword(e.target.value)}

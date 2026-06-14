@@ -12,8 +12,14 @@ export async function GET(request: NextRequest) {
   const next = normalizeAuthRedirect(searchParams.get("next"));
 
   if (code) {
-    const callbackParams = new URLSearchParams({ code, next });
-    redirect(`/auth/callback?${callbackParams.toString()}`);
+    const supabase = await createClient();
+
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) {
+      redirect(next);
+    }
+
+    redirect(`/auth/error?error=${encodeURIComponent(error.message)}`);
   }
 
   if (token_hash && type) {
@@ -30,5 +36,5 @@ export async function GET(request: NextRequest) {
     redirect(`/auth/error?error=${encodeURIComponent(error.message)}`);
   }
 
-  redirect(`/auth/error?error=No token hash or type`);
+  redirect(`/auth/error?error=No auth code or token hash`);
 }
