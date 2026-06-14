@@ -123,22 +123,38 @@ function OpportunityStateBadge({ state }: { state: string }) {
 }
 
 function formatSubjectSummary(opportunity: OpportunityFeedItem) {
-  if (opportunity.subjects.length === 0) {
-    return "No subjects available";
+  const subject = opportunity.subjects[0];
+
+  if (!subject) {
+    return "Subject context unavailable";
   }
 
-  const roleCounts = opportunity.subjects.reduce<Record<string, number>>(
-    (counts, subject) => {
-      const label = titleCase(subject.subjectRole);
-      counts[label] = (counts[label] ?? 0) + 1;
-      return counts;
-    },
-    {},
-  );
+  const horse = subject.horseName ?? "Horse unavailable";
 
-  return Object.entries(roleCounts)
-    .map(([role, count]) => `${count} ${role}`)
-    .join(", ");
+  if (subject.programNumber) {
+    return `${horse} (#${subject.programNumber})`;
+  }
+
+  return horse;
+}
+
+function formatRaceSummary(opportunity: OpportunityFeedItem) {
+  const subject = opportunity.subjects[0];
+  const raceLabel = subject?.raceNumber
+    ? `Race ${subject.raceNumber}`
+    : "Race not available";
+
+  if (subject?.raceName) {
+    return `${raceLabel}: ${subject.raceName}`;
+  }
+
+  return raceLabel;
+}
+
+function formatTrackSummary(opportunity: OpportunityFeedItem) {
+  const subject = opportunity.subjects[0];
+
+  return subject?.trackName ?? "Track not available";
 }
 
 export function OpportunityFeedHeader({
@@ -215,6 +231,9 @@ export function OpportunityFeedCard({
 }) {
   const explanation = opportunity.latestExplanation;
   const score = opportunity.latestScore;
+  const subjectSummary = formatSubjectSummary(opportunity);
+  const raceSummary = formatRaceSummary(opportunity);
+  const trackSummary = formatTrackSummary(opportunity);
 
   return (
     <Card>
@@ -225,6 +244,7 @@ export function OpportunityFeedCard({
               {titleCase(opportunity.opportunityType)}
             </CardTitle>
             <CardDescription className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+              <span>{subjectSummary}</span>
               <span className="inline-flex items-center gap-1">
                 <CalendarDays
                   aria-hidden="true"
@@ -232,13 +252,18 @@ export function OpportunityFeedCard({
                 />
                 {formatDate(opportunity.raceDate)}
               </span>
-              <span>{formatSubjectSummary(opportunity)}</span>
             </CardDescription>
           </div>
           <OpportunityStateBadge state={opportunity.state} />
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-5">
+        <div className="grid gap-3 rounded-md border bg-muted/20 p-4 sm:grid-cols-3">
+          <OpportunityMetric label="Subject" value={subjectSummary} />
+          <OpportunityMetric label="Race" value={raceSummary} />
+          <OpportunityMetric label="Track" value={trackSummary} />
+        </div>
+
         <div className="grid gap-3 sm:grid-cols-3">
           <OpportunityMetric
             label="Score"

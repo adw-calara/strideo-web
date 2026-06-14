@@ -19,6 +19,11 @@ export type OpportunityFeedSubject = {
   raceDate: string;
   raceEntryId: string;
   subjectRole: string;
+  programNumber: string | null;
+  horseName: string | null;
+  raceNumber: number | null;
+  raceName: string | null;
+  trackName: string | null;
   ordinal: number | null;
   weight: number | null;
   createdAt: string;
@@ -136,6 +141,40 @@ type RawOpportunityExplanationRow = {
   created_at: string;
 };
 
+type RawRaceEntryContextRow = {
+  id: string;
+  race_date: string;
+  race_id: string;
+  program_number: string | null;
+  horse_id: string | null;
+};
+
+type RawHorseContextRow = {
+  id: string;
+  name: string;
+};
+
+type RawRaceContextRow = {
+  id: string;
+  race_date: string;
+  race_number: number;
+  name: string | null;
+  track_id: string;
+};
+
+type RawTrackContextRow = {
+  id: string;
+  name: string;
+};
+
+type SubjectContext = {
+  programNumber: string | null;
+  horseName: string | null;
+  raceNumber: number | null;
+  raceName: string | null;
+  trackName: string | null;
+};
+
 const opportunitySelect = `
   id,
   race_date,
@@ -189,17 +228,64 @@ const opportunityExplanationSelect = `
   created_at
 `;
 
+const raceEntryContextSelect = `
+  id,
+  race_date,
+  race_id,
+  program_number,
+  horse_id
+`;
+
+const horseContextSelect = `
+  id,
+  name
+`;
+
+const raceContextSelect = `
+  id,
+  race_date,
+  race_number,
+  name,
+  track_id
+`;
+
+const trackContextSelect = `
+  id,
+  name
+`;
+
 function raiseOpportunityFeedError(operation: string) {
   throw new Error(`Opportunity feed data is unavailable during ${operation}.`);
 }
 
-function mapSubject(row: RawOpportunitySubjectRow): OpportunityFeedSubject {
+function uniqueStrings(values: Array<string | null | undefined>) {
+  return [...new Set(values.filter((value): value is string => Boolean(value)))];
+}
+
+function mapById<T extends { id: string }>(rows: T[]) {
+  return rows.reduce<Record<string, T>>((byId, row) => {
+    byId[row.id] = row;
+    return byId;
+  }, {});
+}
+
+function mapSubject(
+  row: RawOpportunitySubjectRow,
+  contextByRaceEntryId: Record<string, SubjectContext>,
+): OpportunityFeedSubject {
+  const context = contextByRaceEntryId[row.race_entry_id];
+
   return {
     id: row.id,
     opportunityId: row.opportunity_id,
     raceDate: row.race_date,
     raceEntryId: row.race_entry_id,
     subjectRole: row.subject_role,
+    programNumber: context?.programNumber ?? null,
+    horseName: context?.horseName ?? null,
+    raceNumber: context?.raceNumber ?? null,
+    raceName: context?.raceName ?? null,
+    trackName: context?.trackName ?? null,
     ordinal: row.ordinal,
     weight: row.weight,
     createdAt: row.created_at,
@@ -377,8 +463,98 @@ export async function listOpportunityFeed(): Promise<OpportunityFeedResult> {
     raiseOpportunityFeedError("explanation list");
   }
 
+  const subjectRows = subjectResult.data ?? [];
+  const raceEntryIds = uniqueStrings(
+    subjectRows.map((subject) => subject.race_entry_id),
+  );
+  let contextByRaceEntryId: Record<string, SubjectContext> = {};
+
+  if (raceEntryIds.length > 0) {
+    const { data: raceEntryRows, error: raceEntryError } = await supabase
+      .from("race_entries")
+      .select(raceEntryContextSelect)
+      .in("id", raceEntryIds)
+      .returns<RawRaceEntryContextRow[]>();
+
+    if (raceEntryError) {
+      raiseOpportunityFeedError("race entry context");
+    }
+
+    const raceEntries = raceEntryRows ?? [];
+    const horseIds = uniqueStrings(
+      raceEntries.map((raceEntry) => raceEntry.horse_id),
+    );
+    const raceIds = uniqueStrings(
+      raceEntries.map((raceEntry) => raceEntry.race_id),
+    );
+    const [horseResult, raceResult] = await Promise.all([
+      horseIds.length > 0
+        ? supabase
+            .from("horses")
+            .select(horseContextSelect)
+            .in("id", horseIds)
+            .returns<RawHorseContextRow[]>()
+        : Promise.resolve({ data: [], error: null }),
+      raceIds.length > 0
+        ? supabase
+            .from("races")
+            .select(raceContextSelect)
+            .in("id", raceIds)
+            .returns<RawRaceContextRow[]>()
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+    if (horseResult.error) {
+      raiseOpportunityFeedError("horse context");
+    }
+
+    if (raceResult.error) {
+      raiseOpportunityFeedError("race context");
+    }
+
+    const races = raceResult.data ?? [];
+    const trackIds = uniqueStrings(races.map((race) => race.track_id));
+    const trackResult =
+      trackIds.length > 0
+        ? await supabase
+            .from("tracks")
+            .select(trackContextSelect)
+            .in("id", trackIds)
+            .returns<RawTrackContextRow[]>()
+        : { data: [], error: null };
+
+    if (trackResult.error) {
+      raiseOpportunityFeedError("track context");
+    }
+
+    const horsesById = mapById(horseResult.data ?? []);
+    const racesById = mapById(races);
+    const tracksById = mapById(trackResult.data ?? []);
+
+    contextByRaceEntryId = raceEntries.reduce<Record<string, SubjectContext>>(
+      (context, raceEntry) => {
+        const horse = raceEntry.horse_id
+          ? horsesById[raceEntry.horse_id]
+          : null;
+        const race = racesById[raceEntry.race_id];
+        const track = race ? tracksById[race.track_id] : null;
+
+        context[raceEntry.id] = {
+          programNumber: raceEntry.program_number,
+          horseName: horse?.name ?? null,
+          raceNumber: race?.race_number ?? null,
+          raceName: race?.name ?? null,
+          trackName: track?.name ?? null,
+        };
+
+        return context;
+      },
+      {},
+    );
+  }
+
   const subjectsByOpportunityId = groupByOpportunityId(
-    (subjectResult.data ?? []).map(mapSubject),
+    subjectRows.map((subject) => mapSubject(subject, contextByRaceEntryId)),
   );
   const scoresByOpportunityId = firstByOpportunityId(
     (scoreResult.data ?? []).map(mapScore),
