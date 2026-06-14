@@ -89,8 +89,10 @@ const phases: ProgressPhase[] = [
     title: "Foundation",
     status: "complete",
     progress: 100,
-    summary: "Next.js, Supabase Auth, protected shell, and source docs are in place.",
-    nextStep: "Keep auth and environment checks passing as product surfaces expand.",
+    summary:
+      "Next.js, Supabase Auth, protected shell, source docs, and hardened auth-link handling are in place.",
+    nextStep:
+      "Keep auth, environment, and protected-route checks passing as product surfaces expand.",
   },
   {
     phase: "1",
@@ -104,17 +106,21 @@ const phases: ProgressPhase[] = [
     phase: "2",
     title: "Race Data",
     status: "partial",
-    progress: 55,
-    summary: "Protected race-card reads and Dev fixtures are available.",
-    nextStep: "Implement the first real provider import path for Dev.",
+    progress: 60,
+    summary:
+      "Protected race-card reads, Dev fixtures, and generator-ready race context are available.",
+    nextStep:
+      "Implement the first real provider import path for Dev after the Opportunity detail surface is stable.",
   },
   {
     phase: "3",
     title: "Opportunity Engine",
     status: "active",
-    progress: 35,
-    summary: "Opportunity Feed is live; demo generation is the current workstream.",
-    nextStep: "Run and verify Dev-only Opportunity generation against visible feed data.",
+    progress: 55,
+    summary:
+      "Demo generation, narrow service-role grants, candidate quality, and feed visibility are validated in Dev.",
+    nextStep:
+      "Build an Opportunity detail surface that preserves explanation, score, subject, and race context.",
   },
   {
     phase: "4",
@@ -128,9 +134,11 @@ const phases: ProgressPhase[] = [
     phase: "5",
     title: "Product UI MVP",
     status: "partial",
-    progress: 40,
-    summary: "Dashboard, races, imports, strategies, predictions, and Opportunities are scaffolded.",
-    nextStep: "Add Opportunity detail, then Bet Sheet, Alerts, Assistant, and Performance views.",
+    progress: 45,
+    summary:
+      "Dashboard, races, imports, strategies, predictions, Opportunities, and progress reporting are scaffolded.",
+    nextStep:
+      "Add Opportunity detail, then Bet Sheet, Alerts, Assistant, and Performance views.",
   },
   {
     phase: "6",
@@ -159,14 +167,14 @@ const phases: ProgressPhase[] = [
 ];
 
 const activeWork = [
-  "Review and finalize the Dev-only Opportunity generation slice.",
-  "Verify generated Opportunities appear in the protected Opportunity Feed.",
-  "Decide whether the next product surface is Opportunity detail or real provider ingestion.",
+  "Refresh the build progress report after completed Opportunity and auth hardening milestones.",
+  "Prepare the next focused Product UI MVP slice: Opportunity detail.",
+  "Keep real provider ingestion queued behind the next Opportunity-centered validation path.",
 ];
 
 const nextSteps = [
   "Confirm Strideo Dev before any Supabase execution: strideo-dev, ntxtakbggtljjbalgris.",
-  "Run lint and build after the progress dashboard and generation slice are finalized.",
+  "Run lint and build after progress dashboard or product surface changes.",
   "Keep production untouched until explicitly authorized.",
 ];
 
