@@ -342,12 +342,20 @@ export function OpportunityFeedCard({
           <p className="text-sm text-muted-foreground">
             This Opportunity stays linked to the source race context.
           </p>
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/protected/races/${opportunity.raceId}`}>
-              Open linked race
-              <ArrowRight aria-hidden="true" className="size-4" />
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild size="sm">
+              <Link href={`/protected/opportunities/${opportunity.id}`}>
+                Open detail
+                <ArrowRight aria-hidden="true" className="size-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/protected/races/${opportunity.raceId}`}>
+                Open linked race
+                <ArrowRight aria-hidden="true" className="size-4" />
+              </Link>
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
