@@ -13,7 +13,7 @@ export const STRATEGY_SLUG = "value_overlay_demo";
 export const STRATEGY_VERSION_NUMBER = 1;
 
 const MINIMUM_SCORE = 58;
-const MINIMUM_CONFIDENCE = 45;
+const MINIMUM_CONFIDENCE = 42;
 const MINIMUM_PROBABILITY_EDGE = 0.025;
 
 type StrategyRow = {

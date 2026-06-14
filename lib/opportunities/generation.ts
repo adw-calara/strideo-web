@@ -20,6 +20,7 @@ import {
 export type { GenerateOpportunityOptions } from "@/lib/opportunities/features";
 
 const MAX_SKIPPED_SAMPLE_SIZE = 50;
+const MAX_CANDIDATE_SAMPLE_SIZE = 50;
 
 type GenerateDemoOpportunityOptions = GenerateOpportunityOptions & {
   dryRun?: boolean;
@@ -34,6 +35,36 @@ type SkippedCandidate = {
   raceId: string;
   raceEntryId: string;
   reason: string;
+};
+
+type CandidateEvaluation = {
+  raceId: string;
+  raceEntryId: string;
+  horseName: string | null;
+  programNumber: string | null;
+  marketProbabilitySource: string;
+  morningLineOdds: string | null;
+  latestOddsFractional: string | null;
+  marketImpliedProbability: number;
+  placeholderProbability: number;
+  edge: number;
+  displayEdge: number;
+  fairValue: number | null;
+  score: number;
+  confidence: number;
+  qualified: boolean;
+  reason: string;
+  signals: {
+    seedSignal: number;
+    postPositionSignal: number;
+    marketMovementSignal: number;
+    confidenceBase: number;
+    morningLineConfidence: number;
+    latestOddsConfidence: number;
+    openingOddsConfidence: number;
+    oddsDepthConfidence: number;
+    fieldSizePenalty: number;
+  };
 };
 
 export type GenerateOpportunityResult = {
@@ -54,6 +85,8 @@ export type GenerateOpportunityResult = {
   skippedReasonCounts: Record<string, number>;
   skippedSample: SkippedCandidate[];
   skippedSampleTruncated: boolean;
+  candidateSample: CandidateEvaluation[];
+  candidateSampleTruncated: boolean;
 };
 
 export async function generateDemoValueOverlayOpportunities(
@@ -87,6 +120,8 @@ export async function generateDemoValueOverlayOpportunities(
     skippedReasonCounts: {},
     skippedSample: [],
     skippedSampleTruncated: false,
+    candidateSample: [],
+    candidateSampleTruncated: false,
   };
 
   async function getPersistedStrategy() {
@@ -113,6 +148,14 @@ export async function generateDemoValueOverlayOpportunities(
     }
   }
 
+  function recordCandidate(candidate: CandidateEvaluation) {
+    if (result.candidateSample.length < MAX_CANDIDATE_SAMPLE_SIZE) {
+      result.candidateSample.push(candidate);
+    } else {
+      result.candidateSampleTruncated = true;
+    }
+  }
+
   for (const race of races) {
     const entries = entriesByRaceId.get(race.id) ?? [];
 
@@ -134,6 +177,25 @@ export async function generateDemoValueOverlayOpportunities(
       });
       const score = scoreOpportunityCandidate(features);
       const decision = matchOpportunityStrategy(score);
+      recordCandidate({
+        raceId: race.id,
+        raceEntryId: entry.id,
+        horseName: features.subject.horseName,
+        programNumber: features.subject.programNumber,
+        marketProbabilitySource: features.odds.marketProbabilitySource,
+        morningLineOdds: features.odds.morningLineOdds,
+        latestOddsFractional: features.odds.latestOddsFractional,
+        marketImpliedProbability: score.marketImpliedProbability,
+        placeholderProbability: score.placeholderProbability,
+        edge: score.edge,
+        displayEdge: score.displayEdge,
+        fairValue: score.fairValue,
+        score: score.score,
+        confidence: score.confidence,
+        qualified: decision.qualified,
+        reason: decision.reason,
+        signals: score.signals,
+      });
 
       if (!decision.qualified) {
         recordSkipped({
