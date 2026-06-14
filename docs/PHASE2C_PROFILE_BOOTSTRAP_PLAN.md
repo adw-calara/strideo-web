@@ -176,7 +176,7 @@ It must not create `operator` or `admin` roles.
 Future append-only migration filename:
 
 ```text
-supabase/migrations/0015_profile_bootstrap.sql
+supabase/migrations/20260607202021_0015_profile_bootstrap.sql
 ```
 
 Revised outline:

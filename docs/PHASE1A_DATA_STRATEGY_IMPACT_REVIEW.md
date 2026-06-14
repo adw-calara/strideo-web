@@ -29,7 +29,7 @@ PR #5 has been updated in design only with
 
 The additions belong in a new migration:
 
-- `supabase/migrations/0012_data_architecture_and_training_tables.sql`
+- `supabase/migrations/20260607144134_0012_data_architecture_and_training_tables.sql`
 
 Reason:
 

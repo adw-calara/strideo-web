@@ -9,7 +9,7 @@ Date: June 7, 2026
 This preview describes the planned append-only migration:
 
 ```text
-supabase/migrations/0014_rls_initplan_optimization.sql
+supabase/migrations/20260607184154_0014_rls_initplan_optimization.sql
 ```
 
 The migration recreates the high-confidence RLS policies documented in `docs/PHASE1H_RLS_INITPLAN_ANALYSIS.md` and replaces direct `auth.uid()` calls with scalar subqueries.
@@ -18,7 +18,7 @@ Production touched: no.
 
 ## Files Prepared
 
-- `supabase/migrations/0014_rls_initplan_optimization.sql`
+- `supabase/migrations/20260607184154_0014_rls_initplan_optimization.sql`
 - `docs/PHASE1H_RLS_INITPLAN_MIGRATION_PREVIEW.md`
 
 ## Policies Changed

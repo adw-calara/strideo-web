@@ -20,7 +20,7 @@ This is planning only. No migration is created or applied in this task.
 The current repo foundation is:
 
 - Race/reference read access is already handled by
-  `supabase/migrations/0018_authenticated_race_data_read_access.sql`.
+  `supabase/migrations/20260608135732_0018_authenticated_race_data_read_access.sql`.
 - Race Card UI is complete and merged.
 - Race Card runtime verification is complete and documented in
   `docs/WAVE3_RACE_CARD_RUNTIME_VERIFICATION.md`.

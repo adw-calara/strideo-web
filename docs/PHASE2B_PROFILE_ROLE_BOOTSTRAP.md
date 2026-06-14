@@ -11,14 +11,14 @@ The app now resolves the authenticated Supabase user server-side, attempts to lo
 Canonical profile table:
 
 - `public.profiles`
-- Created in `supabase/migrations/0007_user_and_entitlement_tables.sql`
+- Created in `supabase/migrations/20260607143625_0007_user_and_entitlement_tables.sql`
 - Key columns used by the app: `user_id`, `display_name`, `email`, `status`, `default_plan`
 - Current RLS posture: owner-scoped `select` policy only
 
 Canonical role table:
 
 - `public.profile_roles`
-- Created in `supabase/migrations/0007_user_and_entitlement_tables.sql`
+- Created in `supabase/migrations/20260607143625_0007_user_and_entitlement_tables.sql`
 - Role enum: `public.profile_role` with `user`, `operator`, `admin`
 - Key columns used by the app: `user_id`, `role`
 - Current RLS posture: owner-scoped `select` policy only
@@ -58,10 +58,10 @@ Because of that, Phase 2B uses read-only profile loading and documents missing p
 
 ## Proposed Future Migration
 
-If automatic profile bootstrap is approved later, create an append-only migration such as:
+If automatic profile bootstrap is approved later, create an append-only migration with the Supabase CLI:
 
 ```text
-supabase/migrations/0015_profile_bootstrap_policy.sql
+supabase migration new profile_bootstrap_policy
 ```
 
 Recommended contents to design and review before execution:

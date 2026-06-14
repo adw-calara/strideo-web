@@ -16,14 +16,14 @@ Production remains untouched.
 
 - `docs/PHASE1F_DEV_MIGRATION_EXECUTION_REPORT.md`
 - `docs/PHASE1G_DEV_DB_HARDENING_PLAN.md`
-- `supabase/migrations/0004_transaction_tables.sql`
-- `supabase/migrations/0005_opportunity_tables.sql`
-- `supabase/migrations/0006_wager_tables.sql`
-- `supabase/migrations/0007_user_and_entitlement_tables.sql`
-- `supabase/migrations/0008_learning_and_performance_tables.sql`
-- `supabase/migrations/0009_audit_tables.sql`
-- `supabase/migrations/0011_indexes_and_partitions.sql`
-- `supabase/migrations/0012_data_architecture_and_training_tables.sql`
+- `supabase/migrations/20260607143356_0004_transaction_tables.sql`
+- `supabase/migrations/20260607143452_0005_opportunity_tables.sql`
+- `supabase/migrations/20260607143531_0006_wager_tables.sql`
+- `supabase/migrations/20260607143625_0007_user_and_entitlement_tables.sql`
+- `supabase/migrations/20260607143740_0008_learning_and_performance_tables.sql`
+- `supabase/migrations/20260607143820_0009_audit_tables.sql`
+- `supabase/migrations/20260607144006_0011_indexes_and_partitions.sql`
+- `supabase/migrations/20260607144134_0012_data_architecture_and_training_tables.sql`
 
 The repo currently documents Supabase performance advisor output at a summary level:
 
@@ -43,7 +43,7 @@ First re-run or export the Supabase performance advisor details for Dev, then ma
 Append-only migration filename:
 
 ```text
-supabase/migrations/0013_fk_index_hardening.sql
+supabase/migrations/20260607162142_0013_fk_index_hardening.sql
 ```
 
 The future migration should contain only additive `create index` statements. Existing migrations must not be edited, reordered, squashed, or rewritten.

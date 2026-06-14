@@ -19,7 +19,7 @@ Production was not listed or touched.
 
 ## Migration Applied
 
-- Migration file: `supabase/migrations/0020_opportunity_read_access.sql`
+- Migration file: `supabase/migrations/20260610161128_0020_opportunity_read_access.sql`
 - Migration name: `0020_opportunity_read_access`
 - Application scope: Supabase Dev only
 

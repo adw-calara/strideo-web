@@ -24,7 +24,7 @@ Production remains untouched.
 - `docs/PHASE1G_DEV_PERFORMANCE_ADVISOR_EXPORT.md`
 - `docs/PHASE1G_FK_INDEX_REVIEW.md`
 - `docs/PHASE1G_DEV_DB_HARDENING_PLAN.md`
-- `supabase/migrations/0010_rls_policies.sql`
+- `supabase/migrations/20260607143911_0010_rls_policies.sql`
 
 No Supabase inspection was performed for this planning task. The plan relies on advisor results already documented in the repo.
 

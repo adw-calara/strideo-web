@@ -233,7 +233,7 @@ role should see it. This should decide between:
 
 Potential future migration:
 
-`supabase/migrations/0019_import_status_read_access.sql`
+`supabase/migrations/20260608192857_0019_import_status_read_access.sql`
 
 This migration should not expose raw archive URLs, feature-store tables,
 prediction tables, or model artifacts.

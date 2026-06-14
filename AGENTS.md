@@ -54,6 +54,12 @@ Core product rule: `Opportunity` is the central object. Recommendations, alerts,
 - Migration files are append-only.
 - Do not rewrite migration history.
 - Do not rename, reorder, squash, or delete existing migration files.
+- New migration files must use Supabase CLI timestamp naming: `YYYYMMDDHHMMSS_snake_case_name.sql`.
+- Create new migration files with `supabase migration new <snake_case_name>`; do not hand-write numeric prefixes such as `0021_...`.
+- Before applying migrations, run `npm run db:migrations:check` and `npm run db:migrations:dry-run`.
+- After applying migrations to Dev, run `npm run db:migrations:dry-run`; it must report that the remote database is up to date.
+- Linked Supabase database scripts load local, gitignored env files such as `.env.local`; set `SUPABASE_DB_PASSWORD` locally before running `npm run db:migrations:dry-run`, `npm run db:migrations:list`, or `npm run db:lint`.
+- Prefer `supabase db push --linked` for applying prepared local migration files so local and remote migration versions stay aligned. If a connector apply path is used, immediately reconcile the local filename to the remote migration version and re-run the drift checks.
 - Before database changes, document intended tables, RLS model, indexes, and migration order.
 - Enable RLS on tables exposed through Supabase APIs.
 - Inspect SQL before execution.
@@ -88,6 +94,9 @@ npm run dev
 npm run build
 npm run start
 npm run lint
+npm run verify
+npm run db:migrations:check
+npm run db:migrations:dry-run
 ```
 
 Standard verification before handoff when application code changes:

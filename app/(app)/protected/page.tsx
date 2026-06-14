@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   Activity,
   ArrowRight,
+  ListChecks,
   ShieldCheck,
   Target,
   Trophy,
@@ -25,6 +26,8 @@ const statusCards = [
     value: "Ready for data",
     description: "Central surface for races, strategy matches, and wagers.",
     icon: Target,
+    href: "/protected/opportunities",
+    actionLabel: "Open opportunities",
   },
   {
     title: "Auth Shell",
@@ -37,12 +40,22 @@ const statusCards = [
     value: "Available in Dev",
     description: "View seeded cards, entries, odds, and results.",
     icon: Trophy,
+    href: "/protected/races",
+    actionLabel: "Open races",
   },
   {
     title: "Performance",
     value: "No workload yet",
     description: "ROI and hit-rate tracking will activate with wager results.",
     icon: Activity,
+  },
+  {
+    title: "Progress",
+    value: "Live dashboard",
+    description: "Track roadmap phases and readable Dev data counts.",
+    icon: ListChecks,
+    href: "/protected/progress",
+    actionLabel: "Open progress",
   },
 ] as const;
 
@@ -68,7 +81,8 @@ export default async function ProtectedPage() {
           </h1>
           <p className="mt-2 text-muted-foreground">
             The protected shell now identifies the authenticated user and
-            surfaces the first database-backed race-card workflow.
+            starts from the Opportunity Feed, with linked race-card context and
+            build progress close at hand.
           </p>
         </div>
       </section>
@@ -162,7 +176,7 @@ export default async function ProtectedPage() {
         </Card>
       )}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         {statusCards.map((card) => {
           const Icon = card.icon;
 
@@ -177,10 +191,10 @@ export default async function ProtectedPage() {
                 <CardDescription className="mt-2">
                   {card.description}
                 </CardDescription>
-                {card.title === "Race Cards" ? (
+                {"href" in card ? (
                   <Button asChild variant="outline" className="mt-4 w-full">
-                    <Link href="/protected/races">
-                      Open races
+                    <Link href={card.href}>
+                      {card.actionLabel}
                       <ArrowRight aria-hidden="true" className="size-4" />
                     </Link>
                   </Button>
@@ -202,12 +216,17 @@ export default async function ProtectedPage() {
           </CardHeader>
           <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
             <p>
+              Opportunities: central feed for published signals, explanations,
+              and linked race context.
+            </p>
+            <p>
               Races: protected cards, entries, odds, and results are available
               now.
             </p>
             <p>Predictions: rankings, probability, confidence, and edge.</p>
             <p>Strategies: strategy definitions, matches, and opportunities.</p>
             <p>Data Imports: provider ingestion and validation status.</p>
+            <p>Progress: roadmap status and readable Dev data checks.</p>
           </CardContent>
         </Card>
         <Card>

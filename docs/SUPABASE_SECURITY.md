@@ -99,6 +99,37 @@ Rules for Strideo:
 - Rotate credentials immediately if a service-role key is suspected to have been
   exposed.
 
+## Auth Password Security
+
+Supabase Auth password settings are project configuration, not database
+migrations. Record Dev changes here so dashboard/API configuration does not
+drift away from the repository security posture.
+
+Current Strideo Dev target:
+
+- Project: `strideo-dev`
+- Ref: `ntxtakbggtljjbalgris`
+- Minimum password length: `12`
+- Leaked password protection: enabled
+
+On June 14, 2026, the Management API rejected
+`password_hibp_enabled=true` with HTTP `402` and the message that
+HaveIBeenPwned leaked-password protection is available on Pro plans and up. After
+the Dev project was upgraded to Pro, the setting was enabled through the
+Management API:
+
+```json
+{
+  "password_hibp_enabled": true
+}
+```
+
+Then verify with:
+
+```bash
+supabase db advisors --linked --type security --level warn --fail-on none
+```
+
 ## Verification Queries
 
 Security hardening PRs should include before and after evidence for:
