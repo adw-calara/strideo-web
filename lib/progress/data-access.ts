@@ -235,6 +235,14 @@ const tasks: ProgressTask[] = [
       "Validated the repo against planning docs, dependency audit, migration dry-run, secret scan, duplicate/temp scan, auth callback drift, and Opportunity append-only boundaries.",
   },
   {
+    id: "progress-task-list-final-review",
+    title: "Progress task list final review",
+    status: "complete",
+    phase: "Release Coordination",
+    summary:
+      "Manual visual review and final validation passed for PR #57. Production was untouched, no Supabase writes were run, and the next recommended step remains an Opportunity-centered slice.",
+  },
+  {
     id: "next-opportunity-slice",
     title: "Select next Opportunity-centered slice",
     status: "active",
