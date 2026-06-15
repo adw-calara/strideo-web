@@ -227,6 +227,14 @@ const tasks: ProgressTask[] = [
       "Progress now uses a maintained task list that reflects completed work, active work, and queued decisions.",
   },
   {
+    id: "status-security-drift-audit",
+    title: "Status, security, and drift audit",
+    status: "complete",
+    phase: "Release Coordination",
+    summary:
+      "Validated the repo against planning docs, dependency audit, migration dry-run, secret scan, duplicate/temp scan, auth callback drift, and Opportunity append-only boundaries.",
+  },
+  {
     id: "next-opportunity-slice",
     title: "Select next Opportunity-centered slice",
     status: "active",
