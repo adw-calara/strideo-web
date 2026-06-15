@@ -4,6 +4,41 @@
 
 Strideo should remain PRD-centered and Opportunity-centered while ingesting full racing-form data for model training, value calculation, and post-race improvement. The existing schema already protects the core Opportunity workflow; this audit identifies the smallest additive database slice needed to preserve richer racing-form facts without turning the app into a generic racing-form viewer.
 
+## PR #60 Hardening Review
+
+Status: ready to merge after the required validation commands pass, with known follow-up blockers for ingestion and model trust.
+
+What PR #60 improves:
+
+- Adds provider-aware `owners` records and entry-level owner/claim links without creating duplicate race-entry or horse tables.
+- Adds normalized past-performance, workout, and trainer-stat source facts that can feed `horse_features`, `trainer_features`, and `feature_snapshots`.
+- Adds structured race-condition fields directly on `races`, preserving the existing race identity model.
+- Adds append-only `value_calculations` that link to existing `model_versions`, `feature_snapshots`, `prediction_outputs`, `odds_snapshots`, `result_versions`, and `opportunities`.
+- Adds `opportunity_scores.value_calculation_id` so Opportunity score history can reference the value fact that supported it.
+
+What remains blocked after PR #60:
+
+- No ingestion jobs, import quality checks, or source coverage dashboards are added.
+- No feature materialization, model training, model evaluation, or model promotion is added.
+- No final/closing odds semantics, pool taxonomy, takeout model, or exotic payout foundation is added.
+- No browser-facing racing-form UI or broad read policies are added.
+- No model should be treated as trustworthy until historical coverage, feature snapshots, holdout evaluation, and ROI attribution are proven.
+
+Why PR #60 does not duplicate existing schema:
+
+- It extends `races`, `race_entries`, and `opportunity_scores` in place.
+- It references existing `tracks`, `surfaces`, `horses`, `jockeys`, `trainers`, `odds_snapshots`, `result_versions`, `feature_snapshots`, `prediction_outputs`, and `opportunities`.
+- It keeps past performances, workouts, trainer stats, and value calculations as source/lineage facts rather than replacing existing feature, prediction, result, or Opportunity tables.
+
+Why PR #60 preserves Opportunity as the center of gravity:
+
+- Racing-form facts remain upstream source evidence.
+- Value calculations can link to the Opportunity they support.
+- Opportunity scores remain the product-facing score history.
+- Recommendations, wagers, results, and performance attribution continue to roll up through existing Opportunity-linked tables.
+
+This PR is schema foundation only. It does not create trained ML readiness by itself.
+
 ## Current Schema Support
 
 - Opportunity-centered architecture is established through `opportunities`, `opportunity_subjects`, `opportunity_scores`, `opportunity_explanations`, `opportunity_events`, wager recommendation tables, and recommendation/performance result tables.
@@ -87,6 +122,8 @@ The proposed schema keeps `Opportunity` as the product center:
 - Trainer stats lookup: `(trainer_id, stat_date desc, stat_context)` plus track, jockey, and owner dimension indexes.
 - Value lineage lookup: `feature_snapshot_id`, `odds_snapshot_id`, `prediction_output_id`, `(opportunity_id, race_date)`, `(race_entry_id, race_date)`, and model/date indexes.
 - Race/entry enrichment lookup: race condition and owner/layoff indexes.
+- Provider/context trainer-stat lookup: `(provider, stat_context, stat_date desc)`.
+- Replay idempotency: `value_calculations` uses `unique nulls not distinct` across feature, odds, prediction, method, and method version inputs so optional null lineage fields do not allow duplicate calculations for the same input set.
 
 ## Migration Order
 

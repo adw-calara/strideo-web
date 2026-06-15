@@ -275,7 +275,7 @@ create table public.value_calculations (
   calculated_at timestamptz not null default now(),
   source_job_run_id uuid references public.job_runs (id),
   created_at timestamptz not null default now(),
-  unique (
+  constraint value_calculations_calculation_identity_uniq unique nulls not distinct (
     feature_snapshot_id,
     odds_snapshot_id,
     prediction_output_id,
@@ -360,6 +360,8 @@ create index trainer_performance_stats_jockey_idx
   on public.trainer_performance_stats (trainer_id, jockey_id, stat_date desc);
 create index trainer_performance_stats_owner_idx
   on public.trainer_performance_stats (trainer_id, owner_id, stat_date desc);
+create index trainer_performance_stats_provider_context_idx
+  on public.trainer_performance_stats (provider, stat_context, stat_date desc);
 
 create index value_calculations_feature_snapshot_idx
   on public.value_calculations (feature_snapshot_id, calculated_at desc);
