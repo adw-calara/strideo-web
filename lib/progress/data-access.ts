@@ -135,7 +135,7 @@ const phases: ProgressPhase[] = [
     summary:
       "Demo generation, narrow service-role grants, candidate quality, feed visibility, and detail display are validated.",
     nextStep:
-      "Use the detail surface as the validation path for the next Opportunity-centered slice.",
+      "Finalize the reviewed Opportunity tracking workflow before expanding to tracked-list or alert behavior.",
   },
   {
     phase: "4",
@@ -183,13 +183,14 @@ const phases: ProgressPhase[] = [
 
 const activeWork = [
   "Maintain this plan-backed task list as the visible progress handoff.",
-  "Choose the next focused Opportunity-centered product slice from clean main.",
+  "Finalize the reviewed PR #58 Opportunity tracking workflow after merge readiness is confirmed.",
   "Keep real provider ingestion queued behind the next validated Opportunity path.",
 ];
 
 const nextSteps = [
   "Confirm Strideo Dev before any Supabase execution: strideo-dev, ntxtakbggtljjbalgris.",
   "Run lint and build after progress dashboard or product surface changes.",
+  "Resolve the known Dev/main migration skew by merging PR #58 or otherwise reconciling migration 20260615141628 before future Dev dry-runs from main.",
   "Keep production untouched until explicitly authorized.",
 ];
 
@@ -245,10 +246,26 @@ const tasks: ProgressTask[] = [
   {
     id: "next-opportunity-slice",
     title: "Select next Opportunity-centered slice",
-    status: "active",
+    status: "complete",
     phase: "Opportunity Engine",
     summary:
-      "Choose the next small product increment from clean main, likely Opportunity workflow refinement or provider-ingestion validation.",
+      "Selected PR #58 Opportunity tracking as the next small PRD-aligned workflow refinement.",
+  },
+  {
+    id: "retrospective-pr-audit",
+    title: "Retrospective PR security and drift audit",
+    status: "complete",
+    phase: "Release Coordination",
+    summary:
+      "Audited submitted PRs #29-#58 with priority on migrations, Auth, grants, service-role usage, server actions, user-owned writes, Opportunity read models, and progress surfaces. No high-severity blocker was found; PR #58 already contains the duplicate-submit hardening fix. npm run verify passed, secret and duplicate/temp scans were clean, Production was untouched, and db:migrations:dry-run from clean main is blocked only by the known Dev-applied open PR #58 migration 20260615141628.",
+  },
+  {
+    id: "opportunity-track-merge-review",
+    title: "Opportunity tracking merge review",
+    status: "next",
+    phase: "Opportunity Engine",
+    summary:
+      "Mark PR #58 ready and merge if final review remains clean, then update local main so Dev migration history and main are aligned again.",
   },
   {
     id: "real-provider-import",
