@@ -131,11 +131,11 @@ const phases: ProgressPhase[] = [
     phase: "3",
     title: "Opportunity Engine",
     status: "active",
-    progress: 65,
+    progress: 75,
     summary:
-      "Demo generation, narrow service-role grants, candidate quality, feed visibility, and detail display are validated.",
+      "Demo generation, narrow service-role grants, candidate quality, feed visibility, detail display, and the first user tracking workflow are validated in Dev.",
     nextStep:
-      "Use the detail surface as the validation path for the next Opportunity-centered slice.",
+      "Finalize the Opportunity tracking workflow PR, then consider a focused tracked Opportunities list or filter.",
   },
   {
     phase: "4",
@@ -183,13 +183,15 @@ const phases: ProgressPhase[] = [
 
 const activeWork = [
   "Maintain this plan-backed task list as the visible progress handoff.",
-  "Choose the next focused Opportunity-centered product slice from clean main.",
+  "Finalize PR #58 after Dev runtime verification of the watchlist_items-backed Opportunity tracking workflow.",
   "Keep real provider ingestion queued behind the next validated Opportunity path.",
 ];
 
 const nextSteps = [
   "Confirm Strideo Dev before any Supabase execution: strideo-dev, ntxtakbggtljjbalgris.",
   "Run lint and build after progress dashboard or product surface changes.",
+  "Complete final visual/security review for PR #58 and merge if clean.",
+  "After tracking is merged, consider a focused tracked Opportunities list or filter.",
   "Keep production untouched until explicitly authorized.",
 ];
 
@@ -245,10 +247,34 @@ const tasks: ProgressTask[] = [
   {
     id: "next-opportunity-slice",
     title: "Select next Opportunity-centered slice",
-    status: "active",
+    status: "complete",
     phase: "Opportunity Engine",
     summary:
-      "Choose the next small product increment from clean main, likely Opportunity workflow refinement or provider-ingestion validation.",
+      "Selected the Opportunity tracking workflow as the next small PRD-aligned product increment from clean main.",
+  },
+  {
+    id: "opportunity-track-workflow-plan",
+    title: "Opportunity tracking workflow",
+    status: "complete",
+    phase: "Opportunity Engine",
+    summary:
+      "PR #58 added migration 20260615141628_opportunity_tracking_watchlist_grants.sql and a minimal detail-page Track Opportunity action backed by watchlist_items. The migration was applied to Dev only, dry-run is up to date, the authenticated runtime path saved an Opportunity as watching, the refreshed detail view shows Saved, anon access remains denied, Production was untouched, and untrack UI, tracked-list view, alerts, and wager workflows remain deferred.",
+  },
+  {
+    id: "opportunity-track-final-review",
+    title: "Opportunity tracking final review",
+    status: "complete",
+    phase: "Opportunity Engine",
+    summary:
+      "Completed the PR #58 vulnerability and efficiency review. Grants remain authenticated-only and column-scoped, owner RLS remains keyed to auth.uid(), anon access remains denied, no restricted product areas were added, and the Track action now treats unique-conflict duplicate submissions as idempotent success/reactivation under existing RLS.",
+  },
+  {
+    id: "opportunity-track-merge-review",
+    title: "Opportunity tracking merge review",
+    status: "next",
+    phase: "Opportunity Engine",
+    summary:
+      "Mark PR #58 ready and merge after the final reviewer pass confirms the scoped tracking workflow remains clean.",
   },
   {
     id: "real-provider-import",
