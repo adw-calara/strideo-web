@@ -14,6 +14,13 @@ const watchlistItemSelect = `
   deleted_at
 `;
 
+type OpportunityTrackingMutation = {
+  workflow_state: "watching";
+  deleted_at: null;
+  updated_at: string;
+  client_mutation_id: string;
+};
+
 function readRequiredFormValue(formData: FormData, key: string) {
   const value = formData.get(key);
 
@@ -27,6 +34,26 @@ function readRequiredFormValue(formData: FormData, key: string) {
 function assertRaceDate(value: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     throw new Error("Opportunity tracking request has invalid race context.");
+  }
+}
+
+function isUniqueViolation(error: { code?: string } | null) {
+  return error?.code === "23505";
+}
+
+async function reactivateTrackedOpportunity(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  opportunity: { id: string; race_date: string },
+  mutation: OpportunityTrackingMutation,
+) {
+  const { error } = await supabase
+    .from("watchlist_items")
+    .update(mutation)
+    .eq("opportunity_id", opportunity.id)
+    .eq("opportunity_race_date", opportunity.race_date);
+
+  if (error) {
+    throw new Error("Unable to track this Opportunity right now.");
   }
 }
 
@@ -72,17 +99,18 @@ export async function trackOpportunityAction(formData: FormData) {
   }
 
   const clientMutationId = crypto.randomUUID();
+  const trackingMutation = {
+    workflow_state: "watching",
+    deleted_at: null,
+    updated_at: new Date().toISOString(),
+    client_mutation_id: clientMutationId,
+  } satisfies OpportunityTrackingMutation;
 
   if (existingItem) {
     if (existingItem.deleted_at) {
       const { error: updateError } = await supabase
         .from("watchlist_items")
-        .update({
-          workflow_state: "watching",
-          deleted_at: null,
-          updated_at: new Date().toISOString(),
-          client_mutation_id: clientMutationId,
-        })
+        .update(trackingMutation)
         .eq("id", existingItem.id);
 
       if (updateError) {
@@ -101,7 +129,11 @@ export async function trackOpportunityAction(formData: FormData) {
       });
 
     if (insertError) {
-      throw new Error("Unable to track this Opportunity right now.");
+      if (isUniqueViolation(insertError)) {
+        await reactivateTrackedOpportunity(supabase, opportunity, trackingMutation);
+      } else {
+        throw new Error("Unable to track this Opportunity right now.");
+      }
     }
   }
 

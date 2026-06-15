@@ -263,10 +263,18 @@ const tasks: ProgressTask[] = [
   {
     id: "opportunity-track-final-review",
     title: "Opportunity tracking final review",
+    status: "complete",
+    phase: "Opportunity Engine",
+    summary:
+      "Completed the PR #58 vulnerability and efficiency review. Grants remain authenticated-only and column-scoped, owner RLS remains keyed to auth.uid(), anon access remains denied, no restricted product areas were added, and the Track action now treats unique-conflict duplicate submissions as idempotent success/reactivation under existing RLS.",
+  },
+  {
+    id: "opportunity-track-merge-review",
+    title: "Opportunity tracking merge review",
     status: "next",
     phase: "Opportunity Engine",
     summary:
-      "Run final PR #58 review, confirm the branch remains scoped to watchlist grants plus the Opportunity detail tracking action, then mark ready and merge if clean.",
+      "Mark PR #58 ready and merge after the final reviewer pass confirms the scoped tracking workflow remains clean.",
   },
   {
     id: "real-provider-import",
