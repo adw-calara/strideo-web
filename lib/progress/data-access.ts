@@ -135,7 +135,7 @@ const phases: ProgressPhase[] = [
     summary:
       "Demo generation, narrow service-role grants, candidate quality, feed visibility, detail display, and the first user tracking workflow are validated in Dev.",
     nextStep:
-      "Finalize the Opportunity tracking workflow PR, then consider a focused tracked Opportunities list or filter.",
+      "Consider a focused tracked Opportunities list or filter before expanding to alerts or wager workflows.",
   },
   {
     phase: "4",
@@ -183,15 +183,14 @@ const phases: ProgressPhase[] = [
 
 const activeWork = [
   "Maintain this plan-backed task list as the visible progress handoff.",
-  "Finalize PR #58 after Dev runtime verification of the watchlist_items-backed Opportunity tracking workflow.",
+  "Use the merged watchlist_items-backed tracking workflow as the next Opportunity-centered validation path.",
   "Keep real provider ingestion queued behind the next validated Opportunity path.",
 ];
 
 const nextSteps = [
   "Confirm Strideo Dev before any Supabase execution: strideo-dev, ntxtakbggtljjbalgris.",
   "Run lint and build after progress dashboard or product surface changes.",
-  "Complete final visual/security review for PR #58 and merge if clean.",
-  "After tracking is merged, consider a focused tracked Opportunities list or filter.",
+  "Consider a focused tracked Opportunities list or filter now that PR #58 is merged.",
   "Keep production untouched until explicitly authorized.",
 ];
 
@@ -271,10 +270,66 @@ const tasks: ProgressTask[] = [
   {
     id: "opportunity-track-merge-review",
     title: "Opportunity tracking merge review",
-    status: "next",
+    status: "complete",
     phase: "Opportunity Engine",
     summary:
-      "Mark PR #58 ready and merge after the final reviewer pass confirms the scoped tracking workflow remains clean.",
+      "PR #58 was marked ready and merged. Local main now includes migration 20260615141628_opportunity_tracking_watchlist_grants.sql, and Dev/main migration dry-run alignment is restored.",
+  },
+  {
+    id: "retrospective-pr-audit",
+    title: "Retrospective PR security and drift audit",
+    status: "complete",
+    phase: "Release Coordination",
+    summary:
+      "Audited submitted PRs #29-#58 with priority on migrations, Auth, grants, service-role usage, server actions, user-owned writes, Opportunity read models, and progress surfaces. No high-severity blocker was found; PR #58 includes the duplicate-submit hardening fix, Dev/main migration alignment is restored after merge, Production was untouched, and validation passed except for the pre-merge main dry-run skew that PR #58 resolved.",
+  },
+  {
+    id: "watch-pr-58-opportunity-tracking",
+    title: "Watch PR #58 Opportunity tracking",
+    status: "queued",
+    phase: "Risk Watchlist",
+    summary:
+      "Watch watchlist_items grants, authenticated user-owned writes, server action idempotency, and owner-scoped RLS. Current status: merged, Dev runtime verified, no blocker found after duplicate-submit hardening.",
+  },
+  {
+    id: "watch-pr-51-generator-grants",
+    title: "Watch PR #51 generator grants",
+    status: "queued",
+    phase: "Risk Watchlist",
+    summary:
+      "Watch service-role write scope, Opportunity generator permissions, and child-link update restrictions. Current status: merged, no blocker found.",
+  },
+  {
+    id: "watch-pr-54-auth-reset",
+    title: "Watch PR #54 auth reset",
+    status: "queued",
+    phase: "Risk Watchlist",
+    summary:
+      "Watch Auth token-hash flow, callback consolidation, and reset route/session handling. Current status: merged, no blocker found.",
+  },
+  {
+    id: "watch-pr-48-auth-allowlist",
+    title: "Watch PR #48 auth allowlist removal",
+    status: "queued",
+    phase: "Risk Watchlist",
+    summary:
+      "Watch DB-backed profile/role authorization and protected shell/profile context. Current status: merged, no blocker found.",
+  },
+  {
+    id: "watch-pr-52-candidate-quality",
+    title: "Watch PR #52 candidate quality",
+    status: "queued",
+    phase: "Risk Watchlist",
+    summary:
+      "Watch generator scoring and persistence behavior, append-only posture, and no wager or ML drift. Current status: merged, no blocker found.",
+  },
+  {
+    id: "watch-read-access-grants",
+    title: "Watch read-access grant PRs",
+    status: "queued",
+    phase: "Risk Watchlist",
+    summary:
+      "Watch PR #29, #30, #38, and #44 for migration sequencing, scoped grants, RLS visibility, and no anon broadening. Current status: merged, no blocker found.",
   },
   {
     id: "real-provider-import",
