@@ -53,6 +53,14 @@ export type OpportunityFeedExplanation = {
   createdAt: string;
 };
 
+export type OpportunityTrackingState = {
+  isAvailable: boolean;
+  isTracked: boolean;
+  workflowState: string | null;
+  trackedAt: string | null;
+  updatedAt: string | null;
+};
+
 export type OpportunityFeedItem = {
   id: string;
   raceDate: string;
@@ -77,6 +85,7 @@ export type OpportunityFeedItem = {
 export type OpportunityDetailItem = OpportunityFeedItem & {
   scoreHistory: OpportunityFeedScore[];
   explanationHistory: OpportunityFeedExplanation[];
+  trackingState: OpportunityTrackingState;
 };
 
 export type OpportunityFeedSummary = {
@@ -178,6 +187,15 @@ type RawTrackContextRow = {
   name: string;
 };
 
+type RawOpportunityTrackingRow = {
+  id: string;
+  opportunity_id: string;
+  opportunity_race_date: string;
+  workflow_state: string;
+  created_at: string;
+  updated_at: string;
+};
+
 type SubjectContext = {
   programNumber: string | null;
   horseName: string | null;
@@ -265,6 +283,15 @@ const trackContextSelect = `
   name
 `;
 
+const opportunityTrackingSelect = `
+  id,
+  opportunity_id,
+  opportunity_race_date,
+  workflow_state,
+  created_at,
+  updated_at
+`;
+
 function raiseOpportunityFeedError(operation: string) {
   throw new Error(`Opportunity feed data is unavailable during ${operation}.`);
 }
@@ -330,6 +357,18 @@ function mapExplanation(
     summary: row.summary,
     generatedAt: row.generated_at,
     createdAt: row.created_at,
+  };
+}
+
+function mapTrackingState(
+  row: RawOpportunityTrackingRow | null,
+): OpportunityTrackingState {
+  return {
+    isAvailable: true,
+    isTracked: Boolean(row),
+    workflowState: row?.workflow_state ?? null,
+    trackedAt: row?.created_at ?? null,
+    updatedAt: row?.updated_at ?? null,
   };
 }
 
@@ -562,6 +601,32 @@ async function hydrateOpportunityRows(
   };
 }
 
+async function readOpportunityTrackingState(
+  supabase: SupabaseServerClient,
+  opportunityId: string,
+  raceDate: string,
+) {
+  const { data, error } = await supabase
+    .from("watchlist_items")
+    .select(opportunityTrackingSelect)
+    .eq("opportunity_id", opportunityId)
+    .eq("opportunity_race_date", raceDate)
+    .is("deleted_at", null)
+    .maybeSingle<RawOpportunityTrackingRow>();
+
+  if (error) {
+    return {
+      isAvailable: false,
+      isTracked: false,
+      workflowState: null,
+      trackedAt: null,
+      updatedAt: null,
+    };
+  }
+
+  return mapTrackingState(data);
+}
+
 export async function listOpportunityFeed(): Promise<OpportunityFeedResult> {
   const supabase = await createClient();
   const { data: opportunityRows, error: opportunityError } = await supabase
@@ -653,6 +718,11 @@ export async function getOpportunityDetail(
       scoreHistory: hydrated.scoreHistoryByOpportunityId[item.id] ?? [],
       explanationHistory:
         hydrated.explanationHistoryByOpportunityId[item.id] ?? [],
+      trackingState: await readOpportunityTrackingState(
+        supabase,
+        item.id,
+        item.raceDate,
+      ),
     },
     message: "Opportunity detail loaded.",
   };

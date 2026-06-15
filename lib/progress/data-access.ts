@@ -131,11 +131,11 @@ const phases: ProgressPhase[] = [
     phase: "3",
     title: "Opportunity Engine",
     status: "active",
-    progress: 65,
+    progress: 70,
     summary:
-      "Demo generation, narrow service-role grants, candidate quality, feed visibility, and detail display are validated.",
+      "Demo generation, narrow service-role grants, candidate quality, feed visibility, detail display, and the first user tracking workflow are in progress.",
     nextStep:
-      "Use the detail surface as the validation path for the next Opportunity-centered slice.",
+      "Review and validate the Opportunity tracking workflow before expanding to tracked-list or alert behavior.",
   },
   {
     phase: "4",
@@ -183,13 +183,15 @@ const phases: ProgressPhase[] = [
 
 const activeWork = [
   "Maintain this plan-backed task list as the visible progress handoff.",
-  "Choose the next focused Opportunity-centered product slice from clean main.",
+  "Review the Opportunity tracking workflow branch around the existing watchlist_items owner-state table.",
   "Keep real provider ingestion queued behind the next validated Opportunity path.",
 ];
 
 const nextSteps = [
   "Confirm Strideo Dev before any Supabase execution: strideo-dev, ntxtakbggtljjbalgris.",
   "Run lint and build after progress dashboard or product surface changes.",
+  "Apply the approved watchlist_items grants migration to Dev only after explicit migration-application authorization.",
+  "After tracking is merged and applied, consider a focused tracked Opportunities list or filter.",
   "Keep production untouched until explicitly authorized.",
 ];
 
@@ -245,10 +247,18 @@ const tasks: ProgressTask[] = [
   {
     id: "next-opportunity-slice",
     title: "Select next Opportunity-centered slice",
+    status: "complete",
+    phase: "Opportunity Engine",
+    summary:
+      "Selected the Opportunity tracking workflow as the next small PRD-aligned product increment from clean main.",
+  },
+  {
+    id: "opportunity-track-workflow-plan",
+    title: "Opportunity tracking workflow",
     status: "active",
     phase: "Opportunity Engine",
     summary:
-      "Choose the next small product increment from clean main, likely Opportunity workflow refinement or provider-ingestion validation.",
+      "Added migration 20260615141628_opportunity_tracking_watchlist_grants.sql and a minimal detail-page Track Opportunity action backed by watchlist_items. Verification passed, dry-run shows the migration pending, and remote migration application, untrack UI, tracked-list view, alerts, and wager workflows remain deferred.",
   },
   {
     id: "real-provider-import",

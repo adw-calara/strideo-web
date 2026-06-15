@@ -2,6 +2,8 @@ import Link from "next/link";
 import {
   ArrowLeft,
   ArrowRight,
+  BookmarkCheck,
+  BookmarkPlus,
   CalendarDays,
   FileText,
   Gauge,
@@ -26,6 +28,7 @@ import type {
   OpportunityFeedScore,
   OpportunityFeedSubject,
 } from "@/lib/opportunities/data-access";
+import { trackOpportunityAction } from "@/lib/opportunities/actions";
 
 type BadgeTone = "default" | "secondary" | "outline";
 
@@ -148,6 +151,60 @@ function OpportunityStateBadge({ state }: { state: string }) {
     <Badge variant={display.badge} title={display.helper}>
       {display.label}
     </Badge>
+  );
+}
+
+function OpportunityTrackingControl({
+  opportunity,
+}: {
+  opportunity: OpportunityDetailItem;
+}) {
+  if (!opportunity.trackingState.isAvailable) {
+    return (
+      <div className="flex flex-col items-start gap-2 sm:items-end">
+        <Button disabled variant="outline">
+          <BookmarkPlus aria-hidden="true" className="size-4" />
+          Tracking unavailable
+        </Button>
+        <p className="max-w-xs text-left text-xs text-muted-foreground sm:text-right">
+          Opportunity details remain visible while tracking access is being
+          prepared.
+        </p>
+      </div>
+    );
+  }
+
+  if (opportunity.trackingState.isTracked) {
+    return (
+      <div className="flex flex-col items-start gap-2 sm:items-end">
+        <Button disabled variant="secondary">
+          <BookmarkCheck aria-hidden="true" className="size-4" />
+          Saved
+        </Button>
+        <p className="max-w-xs text-left text-xs text-muted-foreground sm:text-right">
+          Saved to your Opportunity tracking list. No wager has been placed or
+          recorded.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <form
+      action={trackOpportunityAction}
+      className="flex flex-col items-start gap-2 sm:items-end"
+    >
+      <input name="opportunityId" type="hidden" value={opportunity.id} />
+      <input name="raceDate" type="hidden" value={opportunity.raceDate} />
+      <Button type="submit">
+        <BookmarkPlus aria-hidden="true" className="size-4" />
+        Track Opportunity
+      </Button>
+      <p className="max-w-xs text-left text-xs text-muted-foreground sm:text-right">
+        Save this Opportunity for follow-up. This does not place, record, or
+        recommend a wager.
+      </p>
+    </form>
   );
 }
 
@@ -359,6 +416,7 @@ export function OpportunityDetailDisplay({
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <OpportunityTrackingControl opportunity={opportunity} />
             <Button asChild variant="outline">
               <Link href={`/protected/races/${opportunity.raceId}`}>
                 Open linked race
