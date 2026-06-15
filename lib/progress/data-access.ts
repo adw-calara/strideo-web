@@ -131,11 +131,11 @@ const phases: ProgressPhase[] = [
     phase: "3",
     title: "Opportunity Engine",
     status: "active",
-    progress: 70,
+    progress: 75,
     summary:
-      "Demo generation, narrow service-role grants, candidate quality, feed visibility, detail display, and the first user tracking workflow are in progress.",
+      "Demo generation, narrow service-role grants, candidate quality, feed visibility, detail display, and the first user tracking workflow are validated in Dev.",
     nextStep:
-      "Review and validate the Opportunity tracking workflow before expanding to tracked-list or alert behavior.",
+      "Finalize the Opportunity tracking workflow PR, then consider a focused tracked Opportunities list or filter.",
   },
   {
     phase: "4",
@@ -183,15 +183,15 @@ const phases: ProgressPhase[] = [
 
 const activeWork = [
   "Maintain this plan-backed task list as the visible progress handoff.",
-  "Review the Opportunity tracking workflow branch around the existing watchlist_items owner-state table.",
+  "Finalize PR #58 after Dev runtime verification of the watchlist_items-backed Opportunity tracking workflow.",
   "Keep real provider ingestion queued behind the next validated Opportunity path.",
 ];
 
 const nextSteps = [
   "Confirm Strideo Dev before any Supabase execution: strideo-dev, ntxtakbggtljjbalgris.",
   "Run lint and build after progress dashboard or product surface changes.",
-  "Apply the approved watchlist_items grants migration to Dev only after explicit migration-application authorization.",
-  "After tracking is merged and applied, consider a focused tracked Opportunities list or filter.",
+  "Complete final visual/security review for PR #58 and merge if clean.",
+  "After tracking is merged, consider a focused tracked Opportunities list or filter.",
   "Keep production untouched until explicitly authorized.",
 ];
 
@@ -255,10 +255,18 @@ const tasks: ProgressTask[] = [
   {
     id: "opportunity-track-workflow-plan",
     title: "Opportunity tracking workflow",
-    status: "active",
+    status: "complete",
     phase: "Opportunity Engine",
     summary:
-      "Added migration 20260615141628_opportunity_tracking_watchlist_grants.sql and a minimal detail-page Track Opportunity action backed by watchlist_items. Verification passed, dry-run shows the migration pending, and remote migration application, untrack UI, tracked-list view, alerts, and wager workflows remain deferred.",
+      "PR #58 added migration 20260615141628_opportunity_tracking_watchlist_grants.sql and a minimal detail-page Track Opportunity action backed by watchlist_items. The migration was applied to Dev only, dry-run is up to date, the authenticated runtime path saved an Opportunity as watching, the refreshed detail view shows Saved, anon access remains denied, Production was untouched, and untrack UI, tracked-list view, alerts, and wager workflows remain deferred.",
+  },
+  {
+    id: "opportunity-track-final-review",
+    title: "Opportunity tracking final review",
+    status: "next",
+    phase: "Opportunity Engine",
+    summary:
+      "Run final PR #58 review, confirm the branch remains scoped to watchlist grants plus the Opportunity detail tracking action, then mark ready and merge if clean.",
   },
   {
     id: "real-provider-import",
