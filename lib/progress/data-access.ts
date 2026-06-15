@@ -284,6 +284,54 @@ const tasks: ProgressTask[] = [
       "Audited submitted PRs #29-#58 with priority on migrations, Auth, grants, service-role usage, server actions, user-owned writes, Opportunity read models, and progress surfaces. No high-severity blocker was found; PR #58 includes the duplicate-submit hardening fix, Dev/main migration alignment is restored after merge, Production was untouched, and validation passed except for the pre-merge main dry-run skew that PR #58 resolved.",
   },
   {
+    id: "watch-pr-58-opportunity-tracking",
+    title: "Watch PR #58 Opportunity tracking",
+    status: "queued",
+    phase: "Risk Watchlist",
+    summary:
+      "Watch watchlist_items grants, authenticated user-owned writes, server action idempotency, and owner-scoped RLS. Current status: merged, Dev runtime verified, no blocker found after duplicate-submit hardening.",
+  },
+  {
+    id: "watch-pr-51-generator-grants",
+    title: "Watch PR #51 generator grants",
+    status: "queued",
+    phase: "Risk Watchlist",
+    summary:
+      "Watch service-role write scope, Opportunity generator permissions, and child-link update restrictions. Current status: merged, no blocker found.",
+  },
+  {
+    id: "watch-pr-54-auth-reset",
+    title: "Watch PR #54 auth reset",
+    status: "queued",
+    phase: "Risk Watchlist",
+    summary:
+      "Watch Auth token-hash flow, callback consolidation, and reset route/session handling. Current status: merged, no blocker found.",
+  },
+  {
+    id: "watch-pr-48-auth-allowlist",
+    title: "Watch PR #48 auth allowlist removal",
+    status: "queued",
+    phase: "Risk Watchlist",
+    summary:
+      "Watch DB-backed profile/role authorization and protected shell/profile context. Current status: merged, no blocker found.",
+  },
+  {
+    id: "watch-pr-52-candidate-quality",
+    title: "Watch PR #52 candidate quality",
+    status: "queued",
+    phase: "Risk Watchlist",
+    summary:
+      "Watch generator scoring and persistence behavior, append-only posture, and no wager or ML drift. Current status: merged, no blocker found.",
+  },
+  {
+    id: "watch-read-access-grants",
+    title: "Watch read-access grant PRs",
+    status: "queued",
+    phase: "Risk Watchlist",
+    summary:
+      "Watch PR #29, #30, #38, and #44 for migration sequencing, scoped grants, RLS visibility, and no anon broadening. Current status: merged, no blocker found.",
+  },
+  {
     id: "real-provider-import",
     title: "First real provider import path for Dev",
     status: "queued",
