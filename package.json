@@ -6,12 +6,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "test": "tsx --test lib/ml/data-contract/readiness-check.test.ts",
     "db:migrations:check": "node scripts/check-supabase-migrations.mjs",
     "db:migrations:list": "node scripts/supabase-cli-with-env.mjs migration list --linked",
     "db:migrations:dry-run": "node scripts/supabase-cli-with-env.mjs db push --linked --dry-run",
     "db:lint": "node scripts/supabase-cli-with-env.mjs db lint --linked",
     "opportunities:generate:demo": "NODE_OPTIONS=--conditions=react-server tsx scripts/generate-demo-opportunities.ts",
-    "verify": "npm run db:migrations:check && npm run lint && npm run build && npm audit --audit-level=moderate"
+    "verify": "npm run db:migrations:check && npm run lint && npm run test && npm run build && npm audit --audit-level=moderate"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.1",
