@@ -23,6 +23,8 @@ import type {
   ProgressMetric,
   ProgressPhase,
   ProgressPhaseStatus,
+  ProgressTask,
+  ProgressTaskStatus,
 } from "@/lib/progress/data-access";
 import { cn } from "@/lib/utils";
 
@@ -58,6 +60,36 @@ const statusDisplay: Record<
     badge: "outline",
     icon: Circle,
     bar: "bg-muted-foreground",
+  },
+};
+
+const taskStatusDisplay: Record<
+  ProgressTaskStatus,
+  {
+    label: string;
+    badge: "default" | "secondary" | "outline";
+    icon: typeof CheckCircle2;
+  }
+> = {
+  complete: {
+    label: "Complete",
+    badge: "secondary",
+    icon: CheckCircle2,
+  },
+  active: {
+    label: "Active",
+    badge: "default",
+    icon: Radio,
+  },
+  next: {
+    label: "Next",
+    badge: "default",
+    icon: ListChecks,
+  },
+  queued: {
+    label: "Queued",
+    badge: "outline",
+    icon: Circle,
   },
 };
 
@@ -131,6 +163,27 @@ function PhaseRow({ phase }: { phase: ProgressPhase }) {
       </div>
       <p className="text-sm text-muted-foreground">{phase.summary}</p>
       <p className="text-sm">{phase.nextStep}</p>
+    </div>
+  );
+}
+
+function TaskRow({ task }: { task: ProgressTask }) {
+  const display = taskStatusDisplay[task.status];
+  const Icon = display.icon;
+
+  return (
+    <div className="flex gap-3 rounded-md border p-4">
+      <div className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-muted/30">
+        <Icon aria-hidden="true" className="size-4 text-muted-foreground" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="font-medium">{task.title}</p>
+          <Badge variant={display.badge}>{display.label}</Badge>
+          <Badge variant="outline">{task.phase}</Badge>
+        </div>
+        <p className="mt-2 text-sm text-muted-foreground">{task.summary}</p>
+      </div>
     </div>
   );
 }
@@ -281,6 +334,29 @@ export function ProgressDashboard({
             </CardContent>
           </Card>
         </div>
+      </section>
+
+      <section>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <ListChecks
+                aria-hidden="true"
+                className="size-5 text-muted-foreground"
+              />
+              <CardTitle>Plan Task List</CardTitle>
+            </div>
+            <CardDescription>
+              Maintained task status based on the PRD, architecture, roadmap,
+              and completed PR milestones.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 lg:grid-cols-2">
+            {data.tasks.map((task) => (
+              <TaskRow key={task.id} task={task} />
+            ))}
+          </CardContent>
+        </Card>
       </section>
     </div>
   );

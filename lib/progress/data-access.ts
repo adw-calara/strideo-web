@@ -26,10 +26,25 @@ export type ProgressPhase = {
   nextStep: string;
 };
 
+export type ProgressTaskStatus =
+  | "complete"
+  | "active"
+  | "next"
+  | "queued";
+
+export type ProgressTask = {
+  id: string;
+  title: string;
+  status: ProgressTaskStatus;
+  phase: string;
+  summary: string;
+};
+
 export type ProgressDashboardData = {
   generatedAt: string;
   metrics: ProgressMetric[];
   phases: ProgressPhase[];
+  tasks: ProgressTask[];
   activeWork: string[];
   nextSteps: string[];
 };
@@ -116,11 +131,11 @@ const phases: ProgressPhase[] = [
     phase: "3",
     title: "Opportunity Engine",
     status: "active",
-    progress: 55,
+    progress: 65,
     summary:
-      "Demo generation, narrow service-role grants, candidate quality, and feed visibility are validated in Dev.",
+      "Demo generation, narrow service-role grants, candidate quality, feed visibility, and detail display are validated.",
     nextStep:
-      "Build an Opportunity detail surface that preserves explanation, score, subject, and race context.",
+      "Use the detail surface as the validation path for the next Opportunity-centered slice.",
   },
   {
     phase: "4",
@@ -134,11 +149,11 @@ const phases: ProgressPhase[] = [
     phase: "5",
     title: "Product UI MVP",
     status: "partial",
-    progress: 45,
+    progress: 50,
     summary:
-      "Dashboard, races, imports, strategies, predictions, Opportunities, and progress reporting are scaffolded.",
+      "Dashboard, races, imports, strategies, predictions, Opportunities, detail views, and progress reporting are scaffolded.",
     nextStep:
-      "Add Opportunity detail, then Bet Sheet, Alerts, Assistant, and Performance views.",
+      "Add the next Opportunity-centered workflow, then Bet Sheet, Alerts, Assistant, and Performance views.",
   },
   {
     phase: "6",
@@ -167,15 +182,66 @@ const phases: ProgressPhase[] = [
 ];
 
 const activeWork = [
-  "Refresh the build progress report after completed Opportunity and auth hardening milestones.",
-  "Prepare the next focused Product UI MVP slice: Opportunity detail.",
-  "Keep real provider ingestion queued behind the next Opportunity-centered validation path.",
+  "Maintain this plan-backed task list as the visible progress handoff.",
+  "Choose the next focused Opportunity-centered product slice from clean main.",
+  "Keep real provider ingestion queued behind the next validated Opportunity path.",
 ];
 
 const nextSteps = [
   "Confirm Strideo Dev before any Supabase execution: strideo-dev, ntxtakbggtljjbalgris.",
   "Run lint and build after progress dashboard or product surface changes.",
   "Keep production untouched until explicitly authorized.",
+];
+
+const tasks: ProgressTask[] = [
+  {
+    id: "auth-hardening",
+    title: "Auth password reset hardening",
+    status: "complete",
+    phase: "Foundation",
+    summary:
+      "PR #54 merged. Token-hash auth links, recovery copy, and guarded update-password behavior are validated.",
+  },
+  {
+    id: "progress-refresh",
+    title: "Progress dashboard milestone refresh",
+    status: "complete",
+    phase: "Product UI MVP",
+    summary:
+      "PR #55 merged. Roadmap summaries were refreshed after the auth and Opportunity milestones.",
+  },
+  {
+    id: "opportunity-detail",
+    title: "Opportunity detail view",
+    status: "complete",
+    phase: "Opportunity Engine",
+    summary:
+      "PR #56 merged. Feed cards open a protected detail view with subject, race, score, explanation, and lifecycle context.",
+  },
+  {
+    id: "progress-task-list",
+    title: "Plan-backed progress task list",
+    status: "complete",
+    phase: "Product UI MVP",
+    summary:
+      "Progress now uses a maintained task list that reflects completed work, active work, and queued decisions.",
+  },
+  {
+    id: "next-opportunity-slice",
+    title: "Select next Opportunity-centered slice",
+    status: "active",
+    phase: "Opportunity Engine",
+    summary:
+      "Choose the next small product increment from clean main, likely Opportunity workflow refinement or provider-ingestion validation.",
+  },
+  {
+    id: "real-provider-import",
+    title: "First real provider import path for Dev",
+    status: "queued",
+    phase: "Race Data",
+    summary:
+      "Keep queued until the next Opportunity-centered validation path is chosen and scoped.",
+  },
 ];
 
 async function readCount(table: string) {
@@ -214,6 +280,7 @@ export async function loadProgressDashboard(): Promise<ProgressDashboardData> {
     generatedAt: new Date().toISOString(),
     metrics,
     phases,
+    tasks,
     activeWork,
     nextSteps,
   };
