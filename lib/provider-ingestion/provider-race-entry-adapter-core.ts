@@ -80,6 +80,9 @@ export type ProviderRaceEntryWritePlan = {
     "wager_recommendations",
     "feature_snapshots",
     "model_training_runs",
+    "strategy_marketplace",
+    "bankroll",
+    "bet_sheets",
   ];
 };
 
@@ -202,6 +205,9 @@ export function buildRaceEntryWritePlan(
       "wager_recommendations",
       "feature_snapshots",
       "model_training_runs",
+      "strategy_marketplace",
+      "bankroll",
+      "bet_sheets",
     ],
   };
 }

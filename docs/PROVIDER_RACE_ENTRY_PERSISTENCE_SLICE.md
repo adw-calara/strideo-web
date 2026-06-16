@@ -12,6 +12,10 @@ executes only the approved canonical race-entry source fact represented by the
 adapter plan, and it requires the plan to have passed normalization before any
 write attempt.
 
+The runtime entrypoint is `lib/provider-ingestion/provider-race-entry-persistence.ts`
+and imports `server-only`. The pure core is dependency-injected so tests can
+exercise write decisions without connecting to Supabase.
+
 The executor maps the adapter's logical `race_entry_source_fact` target to the
 existing `race_entries` table. No migration is added because `race_entries`
 already stores provider identity, canonical entry status, medication, and
@@ -61,7 +65,8 @@ Rejected:
 - Missing lineage.
 - Missing required canonical values.
 - Forbidden write identifiers for Opportunities, predictions, value
-  calculations, wager recommendations, model training, or feature snapshots.
+  calculations, wager recommendations, model training, feature snapshots,
+  strategy marketplace, bankroll, or bet sheets.
 
 ## Intentionally Out Of Scope
 
@@ -76,7 +81,11 @@ Rejected:
 - No prediction output creation.
 - No value-calculation writes.
 - No wager recommendation writes.
+- No feature-snapshot writes.
 - No model-training writes.
+- No strategy marketplace writes.
+- No bankroll writes.
+- No bet sheet writes.
 - No UI changes.
 
 ## Validation Results

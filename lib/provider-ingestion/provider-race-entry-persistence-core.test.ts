@@ -240,6 +240,9 @@ describe("provider race-entry persistence executor", () => {
       "wager_recommendations",
       "feature_snapshots",
       "model_training_runs",
+      "strategy_marketplace",
+      "bankroll",
+      "bet_sheets",
     ]);
     assert.equal(store.calls.length, 1);
     assert.equal(
@@ -253,6 +256,9 @@ describe("provider race-entry persistence executor", () => {
     assert.equal("value_calculation_id" in store.calls[0].row, false);
     assert.equal("wager_recommendation_id" in store.calls[0].row, false);
     assert.equal("model_training_run_id" in store.calls[0].row, false);
+    assert.equal("strategy_marketplace_listing_id" in store.calls[0].row, false);
+    assert.equal("bankroll_id" in store.calls[0].row, false);
+    assert.equal("bet_sheet_id" in store.calls[0].row, false);
   });
 
   it("is safe to repeat because it uses deterministic upsert identity", async () => {
@@ -317,6 +323,28 @@ describe("provider race-entry persistence executor", () => {
     assert.equal(result.wrote, false);
     assert.equal(store.calls.length, 0);
     assert.match(result.reason, /forbidden write lineage/);
+  });
+
+  it("rejects strategy marketplace, bankroll, and bet sheet identifiers", async () => {
+    const store = makeStore();
+    const plan = {
+      ...(await readyWritePlan()),
+      strategy_marketplace_listing_id: "listing-1",
+      bankroll_id: "bankroll-1",
+      bet_sheet_id: "bet-sheet-1",
+    } as unknown as ProviderRaceEntryWritePlan;
+
+    const result = await executeRaceEntryWritePlan(plan, {
+      bindings: { raceId: RACE_ID },
+      store,
+    });
+
+    assert.equal(result.status, "rejected");
+    assert.equal(result.wrote, false);
+    assert.equal(store.calls.length, 0);
+    assert.match(result.reason, /strategy_marketplace_listing_id/);
+    assert.match(result.reason, /bankroll_id/);
+    assert.match(result.reason, /bet_sheet_id/);
   });
 
   it("preserves raw and canonical lineage in race-entry metadata", async () => {

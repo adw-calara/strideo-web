@@ -124,7 +124,8 @@ The executor persists canonical entry status and medication plus metadata
 containing raw values, source paths, canonical labels, normalization results,
 provider identifiers, and the raw provider payload. It does not create
 Opportunities, predictions, value calculations, wagers, feature snapshots, model
-training rows, or full ingestion batches.
+training rows, strategy marketplace rows, bankroll rows, bet sheet rows, or full
+ingestion batches.
 
 ## Out of Scope
 

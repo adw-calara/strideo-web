@@ -75,6 +75,18 @@ const FORBIDDEN_PLAN_KEYS = [
   "modelTrainingRunId",
   "feature_snapshot_id",
   "featureSnapshotId",
+  "strategy_id",
+  "strategyId",
+  "strategy_version_id",
+  "strategyVersionId",
+  "strategy_marketplace_listing_id",
+  "strategyMarketplaceListingId",
+  "bankroll_id",
+  "bankrollId",
+  "bet_sheet_id",
+  "betSheetId",
+  "bet_sheet_entry_id",
+  "betSheetEntryId",
 ] as const;
 
 function hasValidUuidShape(value: string) {
