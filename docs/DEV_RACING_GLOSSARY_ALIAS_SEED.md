@@ -99,7 +99,7 @@ Unresolved-code reports remained clean:
 - `npm run racing-codes:unresolved:report`: `Total unresolved rows: 0`
 - `npm run racing-codes:unresolved:report -- --json`: `totalUnresolvedRows: 0`
 
-PR #71 harness rerun:
+PR #71 harness rerun before PR #73:
 
 ```bash
 npm run provider-ingestion:verify:race-entry-dev
@@ -120,13 +120,15 @@ PR #71 was updated separately at commit
 fix the harness readback expectation for `RUN` from `started` to `entered`,
 matching existing adapter/parser tests and this alias seed.
 
-Remaining blocker:
+Follow-up after PR #73:
 
-- Current migrations grant `service_role` select on `public.race_entries`, but
-  not the insert/update access required by the Supabase REST upsert store
-  adapter. A reviewed grant migration or alternate server-only write path is
-  required before PR #71 can prove live persistence, readback, idempotency, and
-  cleanup.
+- PR #73 added reviewed `service_role` write access for `public.race_entries`
+  and has been merged into `main`.
+- PR #71's Dev harness later passed end to end with this alias coverage and the
+  PR #73 permission boundary in place.
+- The harness wrote only `race_entries`, proved idempotent upsert/readback,
+  deleted exactly one deterministic fixture row, and confirmed the final row
+  count was `0`.
 
 ## Safety Confirmations
 
