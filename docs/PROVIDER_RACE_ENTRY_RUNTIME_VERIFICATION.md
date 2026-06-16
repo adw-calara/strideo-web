@@ -84,8 +84,8 @@ stops before writing.
 
 ## Result
 
-Blocked before persistence, then progressed to the next write-path blocker after
-Dev alias coverage was applied.
+Passed after Dev alias coverage and the reviewed service-role write grant were
+applied.
 
 Command run:
 
@@ -120,29 +120,32 @@ Follow-up alias coverage was applied from branch
 
 - `supabase/fixtures/dev/race_entry_verification_aliases.sql`
 
-The second runtime verification attempt confirmed normalization could progress
-past alias resolution, then failed closed on the write path:
+Follow-up service-role write access was applied from branch
+`codex/race-entry-service-role-write-access` using:
 
-```text
-race_entries upsert failed: permission denied for table race_entries
-```
+- `supabase/migrations/20260616181520_race_entry_service_role_write_access.sql`
 
-This is a grant/schema blocker. Current migrations grant `service_role` select
-on `race_entries`, but do not grant the insert/update access needed by the
-Supabase REST upsert store adapter. A reviewed migration or alternate server-only
-write path is required before this harness can prove live persistence.
+The latest runtime verification confirmed normalization, persistence, readback,
+idempotency, and cleanup.
 
 Readback result:
 
-- deterministic `race_entries` identity count after the blocked run: `0`
+- target table: `race_entries`
+- deterministic row id: `c1ed4386-7485-4518-97eb-b262d9dfb84c`
+- status: `entered`
+- medication: `lasix`
+- duplicate rows after the second execution: `0`
 
 Idempotency result:
 
-- not runtime-confirmed because the harness stopped before the first write
+- first execution row count: `1`
+- second execution row count: `1`
+- first and second execution read back the same row id
 
 Cleanup result:
 
-- no cleanup needed because no fixture row was written
+- deleted count: `1`
+- final deterministic `race_entries` identity count: `0`
 
 Tables read:
 
@@ -159,18 +162,15 @@ Tables written:
   - `racing_code_values`
   - `racing_code_aliases`
 - PR #71 harness pass:
-  - none, because `race_entries` upsert failed with permission denied before a
-    row was persisted
+  - `race_entries` only, using the deterministic runtime-verification identity
 
 Follow-up required:
 
-1. Add a reviewed service-role write path for the exact canonical
-   `race_entries` persistence operation, either through a narrow grant migration
-   or an alternate server-only write mechanism.
-2. Re-run `npm run provider-ingestion:verify:race-entry-dev`.
-3. Expect the script to write exactly one deterministic `race_entries` row,
-   execute the same upsert a second time, read back the same row id, and delete
-   the deterministic fixture row.
+1. Keep the harness PR stacked or retargeted deliberately; it currently depends
+   on PR #70's executor branch.
+2. After dependency branches land, re-run
+   `npm run provider-ingestion:verify:race-entry-dev` from the final merge
+   candidate before enabling provider ingestion workflows.
 
 ## Validation
 
@@ -184,14 +184,14 @@ Passed before the blocked runtime attempt:
 - `npm run racing-codes:unresolved:report`: `Total unresolved rows: 0`
 - `npm run racing-codes:unresolved:report -- --json`: `totalUnresolvedRows: 0`
 
-The blocked runtime attempt did not create unresolved-code rows. A follow-up
+The blocked runtime attempts did not create unresolved-code rows. A follow-up
 `npm run racing-codes:unresolved:report -- --json` still reported
 `totalUnresolvedRows: 0`.
 
-After applying Dev alias coverage, the harness reached the write path and failed
-closed with `permission denied for table race_entries`. A post-failure count
-check confirmed the deterministic verification identity still had `0`
-`race_entries` rows.
+After applying Dev alias coverage and service-role write access, the harness
+passed end to end. It wrote one deterministic `race_entries` row, repeated the
+same upsert without creating a duplicate, read back the same row id, deleted the
+deterministic fixture row, and confirmed the final row count was `0`.
 
 ## Safety Confirmations
 
