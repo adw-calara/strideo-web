@@ -6,7 +6,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "tsx --test lib/ml/data-contract/readiness-check.test.ts lib/racing-codes/normalization-core.test.ts",
+    "test": "tsx --test lib/ml/data-contract/readiness-check.test.ts lib/racing-codes/normalization-core.test.ts lib/provider-ingestion/racing-form-parser-core.test.ts",
     "db:migrations:check": "node scripts/check-supabase-migrations.mjs",
     "db:migrations:list": "node scripts/supabase-cli-with-env.mjs migration list --linked",
     "db:migrations:dry-run": "node scripts/supabase-cli-with-env.mjs db push --linked --dry-run",
