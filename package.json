@@ -12,6 +12,7 @@
     "db:migrations:dry-run": "node scripts/supabase-cli-with-env.mjs db push --linked --dry-run",
     "db:lint": "node scripts/supabase-cli-with-env.mjs db lint --linked",
     "opportunities:generate:demo": "NODE_OPTIONS=--conditions=react-server tsx scripts/generate-demo-opportunities.ts",
+    "provider-ingestion:verify:race-entry-dev": "NODE_OPTIONS=--conditions=react-server tsx scripts/verify-provider-race-entry-persistence-dev.ts",
     "racing-codes:unresolved:report": "NODE_OPTIONS=--conditions=react-server tsx scripts/report-unresolved-racing-codes.ts",
     "verify": "npm run db:migrations:check && npm run lint && npm run test && npm run build && npm audit --audit-level=moderate"
   },
