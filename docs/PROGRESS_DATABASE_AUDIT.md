@@ -1,705 +1,305 @@
 # Progress Database Audit
 
+Audit date: 2026-06-16
+
 ## Executive Summary
 
-Audit date: 2026-06-15
+Result: Strideo's repo, database schema direction, migration chain, RLS posture, ML/value lineage, racing-form data foundation, glossary/normalization layer, unresolved-code workflow, and Opportunity-centered architecture are healthy enough to proceed with review of PR #63. No schema blocker was found in PR #60 or PR #63.
 
-Result: Strideo's current repo, migration chain, RLS posture, Opportunity-centered data model, and ML/value lineage are healthy enough to proceed with review of PR #60, `Add racing-form data foundation`.
+Important workflow finding: the task described PR #60 as open/pending, but current GitHub/local evidence shows PR #60 is already merged into `main` via merge commit `7d3b9373`. This audit did not merge PR #60, did not merge PR #63, did not mark PR #63 ready, and did not apply migrations.
 
-PR #60 should remain draft until the owner chooses to mark it ready, but this audit found no blocking schema, migration, RLS, or product-architecture issue that requires changing PR #60 before review. The PR is additive, does not duplicate the existing race/horse/odds/result/prediction/Opportunity model, and preserves the current browser read surface.
+The strongest technical finding is positive: the current design preserves the core Strideo loop:
 
-The most important watchlist items are operational, not merge blockers:
+historical source data -> source shorthand normalization -> feature snapshot -> model version -> prediction output -> value calculation -> Opportunity -> wager/recommendation -> final result -> post-race evaluation -> model improvement.
 
-- future ingestion must enforce semantic consistency between `value_calculations`, `feature_snapshots`, `prediction_outputs`, `odds_snapshots`, race entries, and Opportunities;
-- high-volume past-performance/workout/value tables will eventually need partitioning or archival strategy once ingestion volume is real;
-- no broad read grants should be added for the new source-fact tables before policy tests and product use cases exist;
-- stale remote branches with legacy numeric-only migration names should not be revived without renaming/rebasing to the current timestamp convention.
+The main watchlist items are operational follow-ups, not blockers:
+
+- PR #63 should remain draft until the owner is ready to review and merge the glossary foundation.
+- Future seed data for glossary/track aliases must be source-reviewed and kept separate from schema work.
+- Future ingestion must preserve raw source values, use glossary aliases before feature materialization, and upsert unresolved codes idempotently.
+- Broad browser read grants must not be added for source-fact, glossary, unresolved-code, model, or operational tables without a specific reviewed product surface.
+- High-volume history tables will eventually need partitioning/archival strategy beyond default partitions.
 
 ## Current Repo And PR Status
 
 - Audit branch: `codex/progress-database-audit`
-- Latest local `main`: `8be35c364998abdef0b4af53a8530eadad1f8dec`
-- Latest `origin/main`: `8be35c364998abdef0b4af53a8530eadad1f8dec`
-- Audit branch base: latest `main`
-- Working tree at audit start: clean except audit branch creation
-- Open PRs: only PR #60, `Add racing-form data foundation`
-- PR #60 URL: https://github.com/adw-calara/strideo-web/pull/60
-- PR #60 branch: `codex/racing-form-data-foundation`
-- PR #60 head commit: `800d3974a0949dab326df2f84c4cf81e42595eea`
-- PR #60 merge state: `CLEAN`
-- PR #60 files:
-  - `docs/RACING_FORM_DATA_FOUNDATION_AUDIT.md`
-  - `supabase/migrations/20260615183948_racing_form_data_foundation.sql`
+- Current branch when writing report: `codex/progress-database-audit`
+- Latest local `main`: `6ccfb7ef5e18b114c7859573a5b2070b49d1d5a9`
+- Latest `origin/main`: `6ccfb7ef5e18b114c7859573a5b2070b49d1d5a9`
+- Local `main` is up to date with `origin/main`.
+- Working tree before report rewrite: clean except this audit report on the audit branch.
+- Open relevant PRs:
+  - PR #63, `Add racing-form glossary reference foundation`, draft, branch `codex/racing-form-glossary-audit`, merge state `CLEAN`.
+  - PR #61, `Add ML data readiness audit`, draft; related to ML audit posture but not part of this requested database foundation sequence.
+- PR #60, `Add racing-form data foundation`, branch `codex/racing-form-data-foundation`, is already `MERGED` according to `gh pr view 60`.
+- PR #60 branch is an ancestor of current `main`; `main` is ahead of the PR #60 branch by three commits.
+- PR #63 is based cleanly on latest `main`; `git rev-list --left-right --count main...origin/codex/racing-form-glossary-audit` reports `0 2`.
+- PR #63 no longer needs to wait for PR #60 to merge because PR #60 is already in `main`. It can remain draft until final schema-review/owner approval.
+- No uncommitted unrelated progress files were present. Two old local stashes exist, but they are not in the working tree and cannot contaminate the database PRs unless manually applied.
 
-Remote branch hygiene note: several old/stale remote branches still contain legacy numeric-only migration filenames such as `0013_fk_index_hardening.sql`, `0014_rls_initplan_optimization.sql`, `0015_profile_bootstrap.sql`, `0016_service_role_bootstrap_grants.sql`, and `0017_authenticated_profile_read_grants.sql`. They are not open PRs and do not block PR #60, but they should not be revived without rebasing/renaming to current timestamp migration rules.
-
-## Migration History Audit
+## Migration History And Sequencing Audit
 
 Current final migration on `main`:
 
-- `20260615141628_opportunity_tracking_watchlist_grants.sql`
+- `20260615183948_racing_form_data_foundation.sql`
 
 PR #60 migration:
 
 - `20260615183948_racing_form_data_foundation.sql`
 
+PR #63 migrations:
+
+- `20260616104649_racing_form_glossary_reference_tables.sql`
+- `20260616110309_racing_form_unresolved_source_codes.sql`
+
 Findings:
 
-- `main` has 24 SQL migration files.
-- `npm run db:migrations:check` passes on `main`.
-- Linked Dev migration list shows local and remote aligned through `20260615141628`.
-- PR #60 appends a later timestamp migration and does not modify, rename, reorder, or delete prior migrations.
-- The repo's documented migration convention is Supabase CLI timestamp naming: `YYYYMMDDHHMMSS_snake_case_name.sql`.
-- `docs/SUPABASE_MIGRATION_WORKFLOW.md`, `README.md`, `AGENTS.md`, and `scripts/check-supabase-migrations.mjs` consistently enforce timestamp naming.
-- Existing filenames with embedded labels such as `_0005_...` are still timestamp-prefixed and valid. They do not create ordering ambiguity because the leading 14-digit timestamp is the migration version.
-- PR #60 was created with the Supabase timestamp pattern and fits cleanly after the current final migration.
-
-Decision: PR #60's migration should be merged as-is from a naming/order perspective. Do not rename it.
+- All current local migration filenames use the documented `YYYYMMDDHHMMSS_snake_case_name.sql` pattern.
+- The migration convention is documented in `AGENTS.md` and enforced by `scripts/check-supabase-migrations.mjs`.
+- PR #60 is already merged into `main` and fits after `20260615141628_opportunity_tracking_watchlist_grants.sql`.
+- PR #63 appends two later timestamp migrations after PR #60 and does not modify migration history.
+- No duplicate timestamp versions or conflicting migration filenames were found in the current local chain.
+- Expected order is:
+  1. `20260615183948_racing_form_data_foundation.sql`
+  2. `20260616104649_racing_form_glossary_reference_tables.sql`
+  3. `20260616110309_racing_form_unresolved_source_codes.sql`
+- PR #63 does not need renaming. It should stay draft until review, but not because of PR #60 sequencing.
 
 ## Database Domain Map
 
-### Auth, Profiles, Roles
-
-Tables:
-
-- `profiles`
-- `subscriptions`
-- `entitlements`
-- `profile_roles`
-- `user_devices`
-
-Type: user profile/read model, entitlement source, operational device state.
-
-Key relationships:
-
-- `profiles.user_id`, `subscriptions.user_id`, `entitlements.user_id`, `profile_roles.user_id`, and `user_devices.user_id` reference `auth.users`.
-- RLS policies use `auth.uid()` and were later optimized with init-plan subselects.
-
-Strengths:
-
-- Trusted authorization data lives in database tables, not user-editable metadata.
-- Browser reads are intentionally scoped to own profile/role data.
-- Service-role profile bootstrap grants are narrow.
-
-Incomplete:
-
-- Subscription/payment automation is still future work.
-- Role administration workflow is not yet modeled beyond trusted table state.
-
-Duplicate concepts: none found.
-
-### Tracks, Surfaces, Horses, Trainers, Jockeys
-
-Tables:
-
-- `tracks`
-- `surfaces`
-- `horses`
-- `trainers`
-- `jockeys`
-
-Type: provider-aware canonical reference records.
-
-Key relationships:
-
-- `races.track_id` and `races.surface_id` link to track/surface.
-- `race_entries.horse_id`, `race_entries.trainer_id`, and `race_entries.jockey_id` link entry facts to reference identities.
-- Feature and PR #60 source-fact tables link back to these identities.
-
-Strengths:
-
-- Provider IDs are unique per provider.
-- Reference tables are separated from race-entry facts, avoiding historical overwrites.
-
-Incomplete:
-
-- Cross-provider identity reconciliation is deferred.
-- Horse pedigree detail is still mostly JSON/metadata until dedicated pedigree modeling exists.
-
-Duplicate concepts: none found.
-
-### Owners
-
-Current `main`: owner reference records are not modeled.
-
-PR #60:
-
-- Adds `owners`.
-- Adds owner and claim-owner links on `race_entries`.
-- Adds owner context to `trainer_performance_stats`.
-
-Type: provider-aware reference data and entry-level relationship context.
-
-Strengths:
-
-- Avoids overbuilding full ownership-history tables before ingestion proves provider shape.
-
-Incomplete:
-
-- Full stable/owner history and ownership shares are safe follow-ups.
-
-Duplicate concepts: none found.
-
-### Races And Race Entries
-
-Tables:
-
-- `races`
-- `race_entries`
-- `entry_events`
-- default partitions for `races` and `race_entries`
-
-Type: partitioned transaction/source facts, with `entry_events` append-only lifecycle history.
-
-Key relationships:
-
-- `race_entries` references `races`, `horses`, `trainers`, and `jockeys`.
-- Opportunities and wager recommendations reference races and race entries by `(id, race_date)`.
-
-Strengths:
-
-- Race and entry facts are partitioned by `race_date`.
-- Race-entry changes use events instead of overwriting lifecycle history.
-- Current app race-card reads are bounded by date windows and limits.
-
-Incomplete:
-
-- On `main`, race condition fields are partially structured and partially free text.
-- PR #60 improves this with structured race-condition columns.
-- Monthly partitions are still operationally deferred; default partitions are only a safety net.
-
-Duplicate concepts: none found.
-
-### Odds Snapshots
-
-Tables:
-
-- `odds_snapshots`
-- `odds_snapshots_default`
-- `odds_features`
-
-Type: append-only market/source facts plus derived feature-store facts.
-
-Key relationships:
-
-- `odds_snapshots` references races and optional race entries.
-- `odds_features` and PR #60 `value_calculations` preserve odds-snapshot lineage.
-
-Strengths:
-
-- Append-only odds history is modeled correctly.
-- Race-date partitioning supports high-volume feed ingestion.
-
-Incomplete:
-
-- Monthly partition creation automation remains a near-term hardening item.
-
-Duplicate concepts: none found.
-
-### Race Results And Result Entries
-
-Tables:
-
-- `result_versions`
-- `result_entries`
-
-Type: append-only result corrections and entry-level result facts.
-
-Key relationships:
-
-- `result_versions` references races.
-- `result_entries` references result versions and race entries.
-- Recommendation results and PR #60 value calculations can reference result versions.
-
-Strengths:
-
-- Official corrections create new versions instead of mutating previous result facts.
-
-Incomplete:
-
-- Deeper result payload parsing can evolve as providers are integrated.
-
-Duplicate concepts: none found.
-
-### Import And Data-Ingestion Status
-
-Tables:
-
-- `raw_archive_objects`
-- `data_ingestion_batches`
-- `source_data_files`
-- `job_runs`
-- `agent_logs`
-- `event_log`
-
-Type: operational lineage, raw archive metadata, ingestion status, and audit history.
-
-Key relationships:
-
-- Feature tables and PR #60 source-fact tables reference source files, ingestion batches, and job runs.
-
-Strengths:
-
-- Raw bytes are kept out of Postgres by design.
-- Source checksums, coverage windows, job lineage, and operational state are modeled.
-
-Incomplete:
-
-- Archive lifecycle workers, import workers, and data quality dashboards are not yet built.
-
-Duplicate concepts: none found.
-
-### Opportunities
-
-Tables:
-
-- `opportunities`
-- `opportunity_subjects`
-- `opportunity_strategy_matches`
-- `opportunity_scores`
-- `opportunity_explanations`
-- `opportunity_events`
-- `opportunity_visibility_events`
-- `opportunities_default`
-
-Type: central product aggregate, normalized subjects, append-only score/explanation/event history, and visibility facts.
-
-Key relationships:
-
-- Opportunities reference races.
-- Opportunity subjects reference race entries.
-- Scores reference model and prediction outputs.
-- PR #60 adds optional `opportunity_scores.value_calculation_id`.
-- Wager recommendations and recommendation results reference Opportunities.
-
-Strengths:
-
-- Opportunity remains the durable center of recommendation, explanation, wager, and performance history.
-- User workflow state is kept separate in watchlists and bet sheets.
-
-Incomplete:
-
-- Opportunity generation is still early and mostly demo/scaffolded.
-- Future generation must require value/prediction lineage when applicable.
-
-Duplicate concepts: none found.
-
-### Wagers And Recommendations
-
-Tables:
-
-- `wager_templates`
-- `wager_recommendations`
-- `wager_recommendation_events`
-- `wager_recommendation_legs`
-- `wager_recommendation_leg_entries`
-- `daily_bet_sheets`
-- `daily_bet_sheet_entries`
-- `daily_bet_sheet_events`
-- `user_recorded_wagers`
-- `user_wager_results`
-- `recommendation_results`
-- `recommendation_result_events`
-
-Type: system recommendations, user workflow, user-recorded wagers, and performance verification facts.
-
-Key relationships:
-
-- System recommendations reference Opportunities and races.
-- Recommendation results reference recommendation, Opportunity, result version, performance run, and closing odds.
-- User-recorded wagers are separate from system recommendations.
-
-Strengths:
-
-- Clear separation between system facts and user workflow.
-- Recommendation performance can be evaluated against versioned results.
-
-Incomplete:
-
-- More exotic/multi-race wager combinations are deferred.
-
-Duplicate concepts: none found.
-
-### Model, Prediction, Feature, And Value
-
-Tables on `main`:
-
-- `model_versions`
-- `feature_snapshots`
-- `prediction_outputs`
-- `model_training_runs`
-- `model_evaluation_runs`
-- `model_promotions`
-- `horse_features`
-- `trainer_features`
-- `jockey_features`
-- `track_features`
-- `odds_features`
-- `model_training_datasets`
-- `model_evaluation_metrics`
-- `prediction_runs`
-- `prediction_results`
-- `live_prediction_cache`
-- performance rollups
-
-PR #60 adds:
-
-- `horse_past_performances`
-- `horse_workouts`
-- `trainer_performance_stats`
-- `value_calculations`
-
-Type: feature store, model registry, prediction history, live-serving cache, source facts, and append-only value calculations.
-
-Strengths:
-
-- The main chain already supports feature snapshot -> model version -> prediction output.
-- PR #60 adds the missing normalized source-fact layer for racing-form data and the missing append-only value calculation layer.
-
-Incomplete:
-
-- The ingestion and feature materialization code has not yet been built.
-- Cross-row semantic consistency for value lineage must be enforced by ingestion/application logic or future database constraints.
-
-Duplicate concepts: none found.
-
-## Racing-Form Data Audit
-
-### Race-Level Context
-
-Supported on `main`:
-
-- track
-- race date
-- race number
-- scheduled/off time
-- surface
-- distance text/yards
-- race type
-- conditions text
-- purse
-- class rating
-
-Added or improved by PR #60:
-
-- claiming price
-- class level
-- age restrictions
-- sex restrictions
-- weight conditions
-- field size
-- weather
-- track condition
-- available wager types
-- provider-specific condition payload
-
-Assessment: fully supported enough for the next foundation step. More exact provider-specific normalization can safely follow after ingestion starts.
-
-### Horse-Level Context
-
-Supported on `main`:
-
-- canonical provider-aware horse identity
-- foaling year, sex, country code, metadata
-- trainer, jockey, program number, post position
-- morning-line odds
-- live odds snapshots
-- weight, medication, equipment
-
-Added or improved by PR #60:
-
-- owner
-- claimed from/by owner
-- layoff days
-- physical notes
-- entry comments
-- trip notes
-
-Partially supported/deferred:
-
-- color, sire, dam, dam sire, breeder, and detailed pedigree remain metadata/raw-payload fields until provider shape and query needs justify dedicated columns or tables.
-
-Assessment: adequate for PR #60; pedigree/physical depth is a safe follow-up, not a merge blocker.
-
-### Historical Performance
-
-Added by PR #60:
-
-- `horse_past_performances`
-- prior race date, track, race number, race type, class, claiming price, purse, field size
-- surface, distance, track condition
-- post position, running positions, finish position
-- beaten lengths, final time, fractional times
-- speed, Beyer, and pace figure support
-- odds
-- jockey, trainer, weight, medication, equipment
-- trip/trouble notes
-- winner/top finishers
-- next-out indicators
-- source file, ingestion batch, job, and raw payload lineage
-
-Partially supported/deferred:
-
-- owner context inside historical performance is not first-class in PR #60. It can be carried in `raw_payload` or inferred through future owner/history modeling. This is not a blocker for the foundation slice.
-
-Assessment: substantially supported for first ingestion foundation. Safe to merge with owner-in-past-performance as a watchlist item.
-
-### Training Numbers
-
-Added by PR #60:
-
-- `horse_workouts`
-- workout date
-- track/location
-- distance
-- surface
-- time
-- rank and total horses at distance
-- breezing, handily, gate, bullet indicators
-- layoff workout sequence
-- workout spacing
-- explainable inferred signals
-- source file, ingestion batch, job, and raw payload lineage
-
-Assessment: supported for the next foundation step.
-
-### Trainer Numbers
-
-Added by PR #60:
-
-- `trainer_performance_stats`
-- starts, wins, places, shows
-- win/place/show percentages
-- earnings and ROI
-- track, surface, owner, jockey, distance category, race type, class level dimensions
-- flexible `stat_context` for first off layoff, second off layoff, first after claim, first-time starter, sprint-to-route, route-to-sprint, turf/dirt switches, medication/equipment changes, and recent 30/60/90 day form
-- metrics JSON for provider-specific stats
-
-Assessment: supported for the foundation slice. The flexible `stat_context` is appropriate now; later PRs can promote high-value contexts to enums or generated dimensions once ingestion proves provider consistency.
+| Domain | Existing tables | Type | Key relationships | Audit finding |
+| --- | --- | --- | --- | --- |
+| auth/profile/roles | `profiles`, `subscriptions`, `entitlements`, `profile_roles`, `user_devices` | user workflow/reference | user ids reference `auth.users`; own-row RLS | Strong foundation; subscription automation still future. |
+| tracks | `tracks`, PR #63 `track_code_aliases` | canonical reference + alias reference | races and aliases link to `tracks.id` | Strong canonical track model; all-U.S. alias seed data remains separate. |
+| races | `races`, `races_default` | transaction/source fact | race-date composite FKs from entries, odds, results, opportunities | Strong; PR #60 adds race conditions/class/wager context. |
+| race entries | `race_entries`, `entry_events`, `race_entries_default` | transaction/source fact + event history | entries link race, horse, trainer, jockey, PR #60 owner fields | Strong; owner/claim context now covered. |
+| horses | `horses`, `horse_features`, PR #60 `horse_past_performances`, `horse_workouts` | canonical reference + source facts + derived features | source facts derive feature inputs by horse/date | Stronger after PR #60; pedigree remains deferred. |
+| owners | PR #60 `owners` | canonical provider-aware reference | race entries and trainer stats link owners | Adequate first owner foundation; full ownership history is follow-up. |
+| trainers | `trainers`, `trainer_features`, PR #60 `trainer_performance_stats` | canonical reference + source/derived facts | trainer stats link trainer/track/jockey/owner/context | Strong racing-form support; source-specific stat semantics need glossary/seed discipline. |
+| jockeys | `jockeys`, `jockey_features` | canonical reference + derived features | entries and trainer stats link jockeys | Adequate; deeper jockey form stats can be added later. |
+| odds snapshots | `odds_snapshots`, `odds_snapshots_default`, `odds_features` | append-only market facts + derived features | value calculations and prediction/value lineage can reference odds snapshots | Strong append-only posture; partition automation remains follow-up. |
+| race results | `result_versions`, `result_entries`, `recommendation_results` | append-only result facts/evaluation | results link races/entries; value calculations can link result versions | Strong correction/versioning model. |
+| import/data-ingestion | `raw_archive_objects`, `data_ingestion_batches`, `source_data_files`, `job_runs`, `agent_logs`, `event_log` | operational lineage/audit | PR #60 source facts and PR #63 unresolved queue can link source files, batches, jobs | Strong enough for auditable ingestion. |
+| Opportunities | `opportunities`, `opportunity_subjects`, `opportunity_strategy_matches`, `opportunity_scores`, `opportunity_explanations`, `opportunity_events`, `opportunity_visibility_events` | central product aggregate + history | scores/explanations/subjects link back to Opportunity; PR #60 adds `value_calculation_id` | Strong and still central. |
+| wager/recommendation | `wager_templates`, `wager_recommendations`, `wager_recommendation_events`, `wager_recommendation_legs`, `wager_recommendation_leg_entries`, bet sheet tables, user-recorded wager tables | recommendation/user workflow | recommendations and bet-sheet entries link Opportunities | Strong enough for MVP; wager logic still future. |
+| model versions | `model_versions`, `model_training_runs`, `model_evaluation_runs`, `model_promotions`, `model_training_datasets`, `model_evaluation_metrics` | ML lineage/ops | prediction and value rows link model versions | Strong model versioning foundation. |
+| prediction outputs | `prediction_outputs`, `prediction_runs`, `prediction_results`, `live_prediction_cache` | ML output history/cache | feature snapshots/model versions feed predictions; value calculations can link prediction output | Some duplicate-era naming exists, but not a blocker if contracts clarify usage. |
+| feature snapshots | `feature_snapshots`, `strategy_feature_snapshots`, entity feature tables | derived feature history | model/prediction/value lineage references snapshots | Strong enough; future ingestion must preserve normalized and raw source inputs. |
+| value calculations | PR #60 `value_calculations` | derived append-only value lineage | links race, entry, horse, Opportunity, model version, feature snapshot, odds snapshot, prediction output, result version | Strong and directly improves PRD alignment. |
+| racing shorthand/code sets | PR #63 `racing_code_sets`, `racing_code_values`, `racing_code_aliases` | reference/normalization | aliases map source codes to canonical values by code set/source/effective dates | Strong foundation; seed data intentionally deferred. |
+| track code aliases | PR #63 `track_code_aliases` | reference/normalization | source track codes map to canonical tracks | Strong foundation; U.S. coverage is a seed/review task. |
+| unresolved source code queue | PR #63 `racing_unresolved_source_codes` | unresolved queue/operational | links code set, source context, job run, race, optional Opportunity, resolution aliases | Strong workflow foundation. |
+| audit/lineage/history | `event_log`, `agent_logs`, job/model/performance/event tables | append-only audit/lineage | jobs and generated outputs can be reconstructed | Strong; future jobs must consistently populate links. |
+
+Duplicate concept watchlist: older `prediction_outputs` and newer `prediction_results`/`live_prediction_cache` overlap conceptually. This is not a blocker, but future ML data contracts should specify which table feeds value calculations and which exists for compatibility/cache.
+
+## Racing-Form Data Foundation Audit
+
+| Area | Status | Finding |
+| --- | --- | --- |
+| race-level context | Fully supported | PR #60 adds claiming price, class, age/sex/weight restrictions, field size, weather, track condition, wager types, and condition payload. |
+| horse-level context | Fully supported | Past performances, workouts, entry comments, physical notes, trip notes, and layoff days are represented. |
+| owner/trainer/jockey relationships | Fully supported | Owners are added; entries link owner/claimed owners; trainer stats can scope to jockey/owner/track/surface/context. |
+| claims/transfers | Partially supported | Entry-level claimed-from/claimed-by is present; full ownership/share history is deferred. Safe follow-up. |
+| layoff indicators | Fully supported | `race_entries.layoff_days` and workout layoff sequence fields support this. |
+| horse past performances | Fully supported | `horse_past_performances` preserves normalized fields, raw payload, source file/batch/job, and current-entry observation context. |
+| horse workouts/training numbers | Fully supported | `horse_workouts` captures workout facts, ranks, flags, raw payload, and ingestion lineage. |
+| trainer performance stats | Fully supported | `trainer_performance_stats` captures context windows and metrics with source lineage. |
+| odds snapshots | Fully supported | Existing append-only odds snapshots plus PR #60 value links cover market context. |
+| result linkage | Fully supported | `value_calculations.result_version_id` links post-race evaluation to official result versions. |
+| value calculations | Fully supported | PR #60 adds append-only value lineage and links it to `opportunity_scores`. |
+| ML feature snapshot linkage | Fully supported | `value_calculations.feature_snapshot_id` is required. |
+
+No missing racing-form area should block PR #63. PR #60 is already merged, and no post-merge blocker was found.
+
+## Glossary And Normalization Audit
+
+PR #63 supports the needed foundation for:
+
+- racing-form shorthand normalization through `racing_code_sets` and `racing_code_values`
+- source-specific aliases through `racing_code_aliases`
+- track-code alias strategy through `track_code_aliases`
+- race/class, surface/condition, workout, medication, equipment, horse color/sex, finish/running-line, odds/wager/result, and vendor-specific code categories through generic code sets
+- effective-date handling through `effective_from`, `effective_to`, and active/current uniqueness
+- source attribution through source system/code/label/description/url/notes
+- ML canonical mapping through `normalized_value`
+- raw source preservation by design: fact tables keep raw payload/source fields while aliases resolve canonical meaning
+
+Seed data should remain a separate reviewed task. The schema is intentionally seedless, which is the right merge boundary because source-specific code meanings need citation and review.
+
+## Unresolved-Code Workflow Audit
+
+`racing_unresolved_source_codes` supports:
+
+- preserving raw source/vendor values with `source_system`, `source_field`, `source_code`, label/description, context, and sample payload
+- context for where the unresolved value appeared through source field, sample table/id, race/date, source context, and source URL
+- optional `job_runs` linkage through `source_job_run_id`
+- optional Opportunity linkage through `opportunity_id` plus race-date FK
+- effective-date resolution through `effective_on`
+- service-role-only management with RLS enabled and no anon/authenticated grants
+- status workflow: `open`, `reviewing`, `mapped`, `ignored`, `deferred`
+- reviewer notes and source URLs
+- idempotent queue behavior through the active queue unique index on source system, code set, source field, source code, and effective date
+
+Gaps and classification:
+
+- Safe follow-up: ingestion needs an upsert helper that increments `occurrence_count`, updates `last_seen_at`, and preserves first sample payload.
+- Safe follow-up: admin/review UI or scheduled weekly review job is not built.
+- Safe follow-up: mapped rows should be reconciled to newly created aliases and then excluded from future unresolved training inputs.
+- Watchlist: `sample_source_table`/`sample_source_id` are flexible rather than enforced by polymorphic FK. This is acceptable for an operational queue but should be validated by ingestion code.
+
+No unresolved-code gap blocks PR #63.
 
 ## ML And Value Lineage Audit
 
-Target loop:
+The database can support the full Strideo core loop:
 
-historical source data -> feature snapshot -> model version -> prediction output -> value calculation -> Opportunity -> wager/recommendation -> final result -> post-race evaluation -> model improvement
+1. Historical source data: races, entries, odds, results, raw archive objects, source files, PR #60 source facts.
+2. Source shorthand normalization: PR #63 code sets, aliases, track aliases, unresolved-code queue.
+3. Feature snapshot: `feature_snapshots` and entity feature tables.
+4. Model version: `model_versions`, training/evaluation/promotions.
+5. Prediction output: `prediction_outputs`, `prediction_runs`, `prediction_results`.
+6. Value calculation: PR #60 `value_calculations`.
+7. Opportunity: central Opportunity tables with score/explanation linkage.
+8. Wager/recommendation: recommendation and bet-sheet tables link to Opportunities.
+9. Final result: result versions/entries and recommendation results.
+10. Post-race evaluation/model improvement: performance runs and rollups.
 
-Current support:
+Critical now: none found.
 
-- Historical source metadata exists through raw archive and source file tables.
-- Warm features exist for horse, trainer, jockey, track, and odds.
-- `feature_snapshots` preserves exact model input payloads.
-- `model_versions` preserves model identity and version metadata.
-- `prediction_outputs` preserves append-only model output linked to model and feature snapshot.
-- `prediction_runs` and `prediction_results` add batch and permanent prediction history.
-- `odds_snapshots` preserves market state over time.
-- Opportunities link to races, subjects, strategy matches, scores, explanations, wagers, and performance.
-- Result versions and recommendation results allow post-race verification.
-- PR #60 adds `value_calculations` linked to race, race entry, horse, Opportunity, model version, feature snapshot, odds snapshot, prediction output, and result version.
+Safe follow-ups:
 
-Strengths:
+- Define a formal ML contract that chooses between `prediction_outputs` and `prediction_results` for production value calculation inputs.
+- Require ingestion/feature jobs to store both raw source values and canonical glossary ids/values.
+- Add policy tests before exposing any model/value/source fact rows to browsers.
 
-- Prior model decisions can be reconstructed when feature snapshots, prediction outputs, odds snapshots, and value calculations are recorded together.
-- Predicted probability can be compared with market probability, fair odds, expected value, and final outcomes.
-- Value facts are append-only by table design and have versioned method keys.
-- Opportunity score history can link to value calculations without replacing existing score history.
+Watchlist:
 
-Gaps:
-
-- Critical later: ingestion/generation code must enforce semantic consistency across linked rows. Example: a `value_calculation` should not link a feature snapshot, odds snapshot, and prediction output from different race entries.
-- Safe follow-up: add richer evaluation links from value calculations to recommendation/performance result rows if analysis needs direct joins beyond result version.
-- Watchlist: avoid writing Opportunities without model/value lineage once the value engine is active.
-
-Assessment: no PR #60 merge blocker. The lineage design is strong enough for the next database foundation step.
+- Prior model decisions are reconstructable only if future jobs consistently populate model version, feature snapshot, odds snapshot, prediction output, value calculation, Opportunity, recommendation, and result links.
+- Append-only value history is strong, but mutable columns on some workflow tables still require event discipline from application code.
 
 ## RLS And Security Audit
 
-Baseline posture:
+Findings:
 
-- Default privileges revoke broad automatic grants from `anon` and `authenticated`.
-- All current public application tables and default partitions have RLS enabled through migrations.
-- PR #60 enables RLS on all new tables.
-- The April 28, 2026 Supabase Data API change reinforces the repo's existing pattern: tables are not assumed to be exposed; grants are explicit.
+- Current public application tables and default partitions have RLS enabled in migrations.
+- PR #60 enables RLS on `owners`, `horse_past_performances`, `horse_workouts`, `trainer_performance_stats`, and `value_calculations`.
+- PR #63 enables RLS on `racing_code_sets`, `racing_code_values`, `racing_code_aliases`, `track_code_aliases`, and `racing_unresolved_source_codes`.
+- PR #60 and PR #63 intentionally add no anon grants and no authenticated/browser-facing policies.
+- PR #60 grants service role:
+  - `select, insert, update` on `owners`
+  - `select, insert` on source-fact/value tables
+- PR #63 grants service role `select, insert, update` on glossary and unresolved-code tables.
+- Broad authenticated read exists for race-card reference/fact tables via `using (true)` policies: surfaces, tracks, horses, jockeys, trainers, races, race entries, entry events, odds snapshots, result versions, result entries.
+- Published Opportunity read access exists for selected Opportunity fields and related subjects/scores/explanations.
+- User-owned workflow tables use own-row RLS policies.
+- Import status broad read was later revoked; `data_ingestion_batches` is service-role read only after hardening.
+- No risky new browser exposure was found in PR #60 or PR #63.
 
-Broad authenticated read currently exists for:
+Recommendations before any future exposure:
 
-- Race-card/reference facts: `surfaces`, `tracks`, `horses`, `jockeys`, `trainers`, `races`, `race_entries`, `entry_events`, `odds_snapshots`, `result_versions`, `result_entries`.
-- Import status: `data_ingestion_batches`.
-- Published Opportunity feed fields: column-scoped grants on `opportunities`, `opportunity_subjects`, `opportunity_scores`, and `opportunity_explanations`.
-- User profile/role summary: `profiles`, `profile_roles`.
-- User-owned workflow: `watchlist_items` with ownership policies.
-
-Policies using `true`:
-
-- Race-card/reference tables use authenticated `using (true)` policies because these are shared, non-user-owned race facts.
-- Published Opportunity read policies are gated by state and linked published Opportunities rather than blanket exposure.
-- Import status read is intentionally minimal and status-focused.
-
-User-owned policies:
-
-- Profiles, roles, subscriptions, entitlements, devices, watchlist, bet sheets, recorded wagers, alert preferences, and user wager results use `auth.uid()` ownership patterns, later optimized for init-plan behavior.
-
-Service-role grants:
-
-- Profile bootstrap: `profiles`, `profile_roles`.
-- Import status read: `data_ingestion_batches`.
-- Opportunity generator: selected strategy, match, Opportunity, score, explanation, and event tables, with later revokes for unnecessary update grants.
-- PR #60: `owners` gets select/insert/update; `horse_past_performances`, `horse_workouts`, `trainer_performance_stats`, and `value_calculations` get select/insert only.
-
-No user-facing access:
-
-- Internal model/training/feature/archive/prediction serving tables remain without broad browser grants.
-- PR #60's new source-fact/value tables have no `anon` or `authenticated` grants and no browser-facing policies.
-
-Risk findings:
-
-- No active `anon` grants were found beyond comments/revokes.
-- No missing RLS blocker was found in migration text.
-- The main risk remains future PRs adding broad authenticated reads to unfinished model/source-fact tables.
-
-Recommendation before PR #60 merge:
-
-- No security blocker. Keep PR #60 as written. Do not add browser grants in the same PR.
+- Keep source-fact, glossary, unresolved-code, model, prediction, and value tables service-role only until an explicit UI/API access plan exists.
+- Add automated policy/grant checks before future PRs broaden authenticated reads.
+- Avoid `using (true)` for model/value/ops tables unless the product intentionally makes those rows public to authenticated users.
 
 ## Scalability And Performance Audit
 
 Strengths:
 
-- Large race-date facts are partitioned: `races`, `race_entries`, `odds_snapshots`, `opportunities`, `wager_recommendations`, and `recommendation_results`.
-- Default partitions exist as safety nets.
-- Core query paths have indexes: race date/track, race entries by race/horse/status, odds by race/pool/time and entry/time, results by race/status and entry, Opportunity feed/state/score, Opportunity subjects, score/explanation history, user workflow, model/prediction, and performance rollups.
-- Feature-store tables have entity/date/version indexes.
-- PR #60 adds indexes for horse/date history, observed-entry past performances, horse/trainer/track workouts, trainer/stat/date dimensions, race-condition lookup, owner/layoff entry lookup, and value lineage lookups.
+- Race, entry, odds, Opportunity, recommendation-result, agent-log, and event-log high-volume tables have partition/default-partition posture.
+- PR #60 adds indexes for horse/date, observed-entry, workout horse/date, trainer/date/context, value by feature/odds/prediction/Opportunity/race-entry/model/result.
+- PR #63 adds lookup indexes for code alias resolution and unresolved review queues.
+- Unique indexes support provider idempotency on past performances/workouts when provider ids exist.
+- Unresolved-code unique active queue index avoids duplicate open/reviewing/deferred values.
 
 Scaling risks:
 
-- Default partitions are not enough for production-scale odds, race entries, Opportunities, prediction results, and recommendation results. Monthly partition creation remains a required operational hardening item.
-- PR #60 source-fact tables are not partitioned. That is acceptable for a small foundation PR but will need revisiting before high-volume multi-year ingestion.
-- JSON payloads are useful for provider variance but should not become the only query path for high-cardinality model features.
-- App read paths are currently bounded, but future racing-form UI must avoid unbounded horse lifetime reads and should page by horse/date.
-- Feature snapshots and prediction/value history can grow quickly; warehouse exports and retention/read-model strategy should be planned before large backfills.
-
-Does PR #60 worsen scalability?
-
-- No. It adds appropriate lookup indexes and avoids UI/read expansion.
-- It does add future high-volume tables, so partitioning/archival strategy becomes a watchlist item before real ingestion.
+- Default partitions are a safety net, not a long-term partition management strategy.
+- Horse lifetime histories, odds snapshots, workouts, and value calculations will grow quickly once all U.S. tracks and multiple years are ingested.
+- Alias lookup indexes are adequate for initial ingestion, but future effective-date resolution may need source/code/date-specific query testing.
+- Result correction/versioning is modeled, but operational jobs must avoid overwriting evaluation history.
 
 Near-term hardening recommendations:
 
-- Add monthly partition automation before production feed volume.
-- Define ingestion batch idempotency/upsert rules for PR #60 tables.
-- Add semantic consistency checks in ingestion code for race/date/entry alignment across value lineage.
-- Add warehouse/export plan before large model backfills.
+- Add partition creation/retention automation before high-volume ingestion.
+- Add ingestion query benchmarks for track/date, horse/date, entry, odds snapshot, value calculation, alias lookup, and unresolved queue paths.
+- Add schema-level or application-level contract tests for idempotent source fact and unresolved-code ingestion.
 
 ## PRD And Opportunity Alignment Audit
 
-The repo remains aligned with the PRD:
+Strideo remains aligned with the PRD:
 
-- Strideo is modeled as AI-powered wagering intelligence, not a generic race-card viewer.
-- `Opportunity` remains the central aggregate connecting race context, subjects, scores, explanations, recommendations, user workflow, and performance.
-- Race-card tables support Opportunity generation and context instead of becoming a separate product center.
-- ML lineage tables preserve model versions, features, predictions, and evaluation loops.
-- PR #60 strengthens upstream data needed to produce better Opportunities without adding UI, generic picks flows, or disconnected recommendation objects.
+- It is still AI-powered wagering intelligence, not a generic race-card viewer.
+- Opportunity remains the central object.
+- PR #60 strengthens value-focused lineage through `value_calculations` and `opportunity_scores.value_calculation_id`.
+- PR #63 strengthens explainability and ML hygiene by decoding source shorthand instead of letting raw racing-form tokens become accidental model categories.
+- Results, recommendation outcomes, and performance rollups preserve the continuous-improvement loop.
 
-No drift found toward:
-
-- generic race-card viewer;
-- generic picks app;
-- UI before data foundation;
-- disconnected model outputs;
-- duplicate workflows outside Opportunity.
+No drift was found toward standalone picks, disconnected model outputs, unnormalized racing-form text, or workflows outside Opportunity.
 
 ## PR #60 Readiness Assessment
 
-Readiness result: safe to mark ready for review and safe to merge from this audit's perspective, subject to normal reviewer approval.
+Status: already merged before this audit.
 
-Blockers: none found.
+Assessment:
 
-Non-blocking watchlist:
+- No schema, RLS, migration-order, or product-architecture blocker was found.
+- PR #60 should not be renamed or rewritten.
+- Because it is already merged, there is no action to mark it ready or merge it now.
+- If Dev has not yet applied the merged migration, apply only after explicit authorization and normal dry-run checks.
 
-- Confirm future ingestion enforces cross-row semantic consistency for `value_calculations`.
-- Do not apply PR #60 to Dev until explicitly authorized.
-- Do not add browser grants for the new source-fact tables in this PR.
-- Plan partitioning before high-volume historical ingestion.
+## PR #63 Readiness Assessment
 
-PR #60 should not be renamed. Its migration naming is correct and current.
+Status: open draft, clean against current `main`.
+
+Assessment:
+
+- Safe to keep draft while final review happens.
+- No blocker was found that requires schema changes before merge.
+- It no longer needs to wait for PR #60 merge, because PR #60 is already on `main`.
+- It should not include seed data in this PR. Seed data should be a separate reviewed PR with source citations.
+- Before marking ready, rerun validation on the PR branch and confirm dry-run shows only the two PR #63 migrations as pending if Dev has PR #60 applied, or the expected pending sequence if Dev still lacks PR #60.
 
 ## High-Risk PR Watchlist
 
-### PR #60 racing-form foundation merge/application
-
-- Risk: applying to the wrong Supabase environment or applying before review.
-- Why it matters: PR #60 creates new source-fact and value lineage surfaces.
-- Verify before merge/apply: branch is current, migration check passes, Dev dry-run shows only the intended migration, Production authorization is explicit before any production work.
-
-### Future ingestion code linking PR #60 tables
-
-- Risk: inconsistent links between horse, race entry, feature snapshot, odds snapshot, prediction output, and Opportunity.
-- Why it matters: bad lineage breaks model evaluation and value attribution.
-- Verify before merge: idempotency keys, source file/batch/job links, race-date FKs, semantic consistency tests, and no destructive upserts of append-only facts.
-
-### Future feature snapshot/prediction/value linkage
-
-- Risk: generating features or predictions without preserving the exact inputs.
-- Why it matters: prior model decisions must be reconstructable.
-- Verify before merge: feature snapshot creation is mandatory before predictions; prediction and value rows reference model version, feature snapshot, odds snapshot, and result path where available.
-
-### Future broad read grants
-
-- Risk: exposing model/source/operational data before product needs and policy tests exist.
-- Why it matters: Supabase RLS and Data API exposure require explicit least-privilege review.
-- Verify before merge: table grants are column-scoped where possible, RLS policies are tested, and sensitive internal tables remain server-only.
-
-### Future racing-form UI
-
-- Risk: drifting into a generic racing-form viewer or creating unbounded horse-history queries.
-- Why it matters: the PRD centers value intelligence and Opportunities.
-- Verify before merge: UI starts from Opportunity or value-analysis needs, paginates horse history, and does not expose raw provider payloads casually.
-
-### Future Opportunity generation changes
-
-- Risk: creating Opportunities without durable strategy/prediction/value lineage.
-- Why it matters: Opportunity history is Strideo's learning unit.
-- Verify before merge: generated Opportunities link to race entries, strategy matches, prediction outputs, value calculations where applicable, score history, and explanations.
-
-### Future wager/recommendation logic
-
-- Risk: bypassing Opportunities or overwriting recommendation history.
-- Why it matters: performance and ROI must roll up to Opportunities.
-- Verify before merge: recommendations reference Opportunities, corrections append events/results, and user wagers remain separate from system recommendations.
-
-### Future model-training jobs
-
-- Risk: training on unversioned data or losing source-file provenance.
-- Why it matters: model improvement depends on auditable datasets.
-- Verify before merge: training datasets list source files/features/windows, model versions are immutable, evaluation metrics are append-only, and promotion events are recorded.
-
-### Future production migration application
-
-- Risk: accidental production mutation.
-- Why it matters: production work requires explicit current-task authorization.
-- Verify before merge/apply: target project and ref are confirmed, dry-run passes, SQL is inspected, and production authorization is explicit.
+| Item | Risk | Why it matters | Verify before merge/apply |
+| --- | --- | --- | --- |
+| PR #60 merge/application | Already merged; Dev application may still be pending | Local `main` can outrun Dev migration history | Confirm target, dry-run expected pending set, no production action without authorization. |
+| PR #63 merge/application | Adds reference/ops tables | Bad grants or ordering would affect ingestion normalization | Confirm clean on latest `main`, RLS enabled, no anon/auth grants, dry-run order. |
+| future glossary seed data | Incorrect mapping corrupts ML features | Shorthand can vary by vendor/context/date | Require source citations, effective dates, confidence, review. |
+| unresolved-code review workflow | Unknown codes could leak into features | Prevents silent model contamination | Upsert queue, block unknown canonicalization, weekly review cadence. |
+| ingestion into PR #60 tables | Source facts must stay reconstructable | Lost raw payload breaks audit/backtesting | Preserve raw payload, source file, batch, job, provider ids. |
+| feature/prediction/value linkage | Broken lineage undermines learning | Cannot evaluate old decisions | Require feature snapshot, model version, odds snapshot, prediction/value links. |
+| broad read grants | Sensitive ops/model tables could leak | Supabase Data API exposure depends on grants and RLS | Review grants/policies field-by-field. |
+| racing-form UI | Could expose raw/internal shorthand | Users need explanations, not ops metadata | Use canonical labels and Opportunity evidence. |
+| Opportunity generation changes | Could create disconnected picks | Product rule requires Opportunity center | Require links from strategy, score, explanation, value, wager. |
+| wager/recommendation logic | Bad settlement breaks ROI learning | Performance loop depends on recommendations/results | Preserve recommendation events and result links. |
+| model-training jobs | Training on unresolved codes causes drift | Unknown categories create false signals | Reject/queue unresolved values before feature materialization. |
+| production migration application | Irreversible operational risk | Production authorization is explicit-only | Confirm project/ref, dry-run, SQL review, rollback/forward plan. |
 
 ## Recommended Next Actions
 
-1. Keep PR #60 draft until the project owner is ready to request final review.
-2. When ready, mark PR #60 ready; no schema changes are required by this audit.
-3. Before applying PR #60 to Dev, rerun `npm run db:migrations:dry-run` from the PR branch and confirm it lists only `20260615183948_racing_form_data_foundation.sql`.
-4. After Dev apply is explicitly authorized and completed, rerun dry-run and require "Remote database is up to date."
-5. Plan a follow-up ingestion-design PR for idempotency, source lineage, semantic consistency, and partition strategy before large historical imports.
+1. Treat PR #60 as already merged and update project tracking language accordingly.
+2. Keep PR #63 draft until owner review, then mark ready only when explicitly instructed.
+3. Do not add glossary seed data to PR #63.
+4. Add an ingestion contract for raw value preservation, alias lookup, unresolved-code upsert, and feature blocking when codes are unknown.
+5. Add future tests/checks for browser grants before exposing any source-fact, glossary, unresolved-code, ML, or value tables.
+6. Before any Dev apply, confirm target project `strideo-dev` / `ntxtakbggtljjbalgris` and rerun dry-run from the branch being applied.
 
 ## Validation Results
 
-Commands run during this audit:
-
-- `git status --short --branch`: clean on `codex/progress-database-audit` before writing this report.
-- `git pull --ff-only origin main`: `main` already up to date.
-- `gh pr list`: PR #60 is the only open PR.
-- `gh pr view 60`: PR #60 is draft, clean, and contains one commit.
-- `npm run db:migrations:check`: passed on current `main` migration chain.
-- `npm run db:migrations:list`: Dev `strideo-dev` / `ntxtakbggtljjbalgris` is aligned with local `main` through `20260615141628`.
-- Supabase changelog reviewed: the April 28, 2026 Data API exposure change remains relevant and supports explicit-grant posture.
 - `npm run verify`: passed.
-- `npm run db:migrations:dry-run`: passed; linked Dev reported "Remote database is up to date."
+  - Includes migration filename check, lint, tests, build, and `npm audit --audit-level=moderate`.
+  - Test result: 8 passed, 0 failed.
+  - Audit result: 0 vulnerabilities.
+- `npm run db:migrations:check`: passed for 25 local migration files.
+- `npm run db:migrations:dry-run`: passed and did not apply migrations.
+  - Dev dry-run output from the audit branch reported one pending migration: `20260615183948_racing_form_data_foundation.sql`.
+  - This means current Dev is behind local `main` by PR #60's merged migration.
+  - A second read-only dry-run from `codex/racing-form-glossary-audit` confirmed the full expected pending sequence:
+    1. `20260615183948_racing_form_data_foundation.sql`
+    2. `20260616104649_racing_form_glossary_reference_tables.sql`
+    3. `20260616110309_racing_form_unresolved_source_codes.sql`
 - `git diff --check`: passed.
 
-No migrations were applied. Production was not touched.
+No migrations were applied as part of this audit. Production was not touched.
