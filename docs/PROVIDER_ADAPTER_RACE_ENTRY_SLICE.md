@@ -11,6 +11,12 @@ matching Strideo's current provider direction of The Racing API first and
 Equibase future. The fixture is intentionally a provider-shape fixture, not live
 provider data and not a full provider contract.
 
+Race-entry shorthand was chosen first because it sits close to Strideo's
+Opportunity workflow without creating Opportunities. Race type, surface, entry
+status, medication, and horse attributes are common inputs to value explanations
+and future feature engineering, so this segment can prove raw-to-canonical
+lineage before any scoring or wager recommendation code depends on it.
+
 ```ts
 {
   provider: "the_racing_api",
@@ -39,6 +45,17 @@ provider data and not a full provider contract.
 
 The adapter maps this shape into the existing race-entry shorthand parser shape
 from `lib/provider-ingestion/racing-form-parser-core.ts`.
+
+The field mapping is intentionally direct:
+
+- `race.type_code` maps to `race_type`
+- `race.surface_code` maps to `surface`
+- `race.track_condition_code` maps to `track_condition`
+- `entry.status_code` maps to `entry_status`
+- `entry.medication_code` maps to `medication`
+- `horse.sex_code` maps to `horse_sex`
+- `horse.color_code` maps to `horse_color`
+- `recent_workout.work_type_code` maps to `workout_type`
 
 ## Normalization Gate
 
@@ -83,6 +100,12 @@ When normalization blocks, the write plan is `null`.
 This slice does not execute writes. It does not insert unresolved-code rows
 directly; unresolved handling remains inside the normalization contract when the
 server-only wrapper is used.
+
+Future persistence may write canonical source facts only after the adapter
+returns an unblocked write plan and the persistence slice re-checks idempotency,
+target table boundaries, and raw-source lineage. Blocked output must not feed
+ML-ready feature snapshots, Opportunity scoring, value calculations, prediction
+outputs, or wager recommendations.
 
 ## Out of Scope
 

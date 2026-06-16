@@ -291,6 +291,7 @@ describe("The Racing API race-entry provider adapter", () => {
     ]);
     assert.equal("opportunity_id" in plan, false);
     assert.equal("prediction_output_id" in plan, false);
+    assert.equal("value_calculation_id" in plan, false);
     assert.equal("wager_recommendation_id" in plan, false);
   });
 
