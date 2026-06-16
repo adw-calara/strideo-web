@@ -84,7 +84,8 @@ stops before writing.
 
 ## Result
 
-Blocked before persistence.
+Blocked before persistence, then progressed to the next write-path blocker after
+Dev alias coverage was applied.
 
 Command run:
 
@@ -97,9 +98,9 @@ Dev project confirmed:
 - project: `strideo-dev`
 - ref: `ntxtakbggtljjbalgris`
 
-Runtime verification did not write because read-only normalization did not
-produce a writable plan. The harness stopped before persistence when Dev did not
-have active aliases for the fixture shorthand:
+Initial runtime verification did not write because read-only normalization did
+not produce a writable plan. The harness stopped before persistence when Dev did
+not have active aliases for the fixture shorthand:
 
 - race type: `MSW`
 - surface: `D`
@@ -113,6 +114,23 @@ have active aliases for the fixture shorthand:
 The harness intentionally uses read-only alias resolution. It did not call
 `normalizeOrFlagRacingCode`, did not insert unresolved-code rows, and did not
 persist a race-entry row when aliases were missing.
+
+Follow-up alias coverage was applied from branch
+`codex/dev-racing-glossary-alias-seed` using:
+
+- `supabase/fixtures/dev/race_entry_verification_aliases.sql`
+
+The second runtime verification attempt confirmed normalization could progress
+past alias resolution, then failed closed on the write path:
+
+```text
+race_entries upsert failed: permission denied for table race_entries
+```
+
+This is a grant/schema blocker. Current migrations grant `service_role` select
+on `race_entries`, but do not grant the insert/update access needed by the
+Supabase REST upsert store adapter. A reviewed migration or alternate server-only
+write path is required before this harness can prove live persistence.
 
 Readback result:
 
@@ -136,12 +154,19 @@ Tables read:
 
 Tables written:
 
-- none
+- racing-code alias seed pass:
+  - `racing_code_sets`
+  - `racing_code_values`
+  - `racing_code_aliases`
+- PR #71 harness pass:
+  - none, because `race_entries` upsert failed with permission denied before a
+    row was persisted
 
 Follow-up required:
 
-1. Apply or otherwise provide the reviewed starter racing glossary aliases in
-   Dev.
+1. Add a reviewed service-role write path for the exact canonical
+   `race_entries` persistence operation, either through a narrow grant migration
+   or an alternate server-only write mechanism.
 2. Re-run `npm run provider-ingestion:verify:race-entry-dev`.
 3. Expect the script to write exactly one deterministic `race_entries` row,
    execute the same upsert a second time, read back the same row id, and delete
@@ -162,6 +187,11 @@ Passed before the blocked runtime attempt:
 The blocked runtime attempt did not create unresolved-code rows. A follow-up
 `npm run racing-codes:unresolved:report -- --json` still reported
 `totalUnresolvedRows: 0`.
+
+After applying Dev alias coverage, the harness reached the write path and failed
+closed with `permission denied for table race_entries`. A post-failure count
+check confirmed the deterministic verification identity still had `0`
+`race_entries` rows.
 
 ## Safety Confirmations
 

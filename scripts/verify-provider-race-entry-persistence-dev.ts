@@ -258,7 +258,7 @@ function assertReadbackMatchesExpected(row: RaceEntryReadbackRow, raceBinding: R
     throw new Error(`Unexpected race_date in readback: ${row.race_date}.`);
   }
 
-  if (row.status !== "started") {
+  if (row.status !== "entered") {
     throw new Error(`Unexpected status in readback: ${row.status}.`);
   }
 
