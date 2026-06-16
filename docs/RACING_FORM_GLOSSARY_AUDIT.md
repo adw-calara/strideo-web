@@ -4,7 +4,9 @@
 
 Strideo needs a controlled racing-form glossary before more ingestion, racing-form, or ML work lands. The current schema has strong provider-aware race, entry, track, surface, source-fact, value-calculation, and Opportunity lineage tables, but it does not yet have a reusable way to normalize shorthand such as `Mcl`, `AOC`, `FM`, `sly`, `B`, `L`, `hd`, `AE`, or vendor-specific track codes.
 
-This audit adds a small reference-table migration only. It does not add UI, ingestion jobs, ML training, seed data, or production migration execution. The migration creates a server-managed alias layer so ingestion can preserve raw provider values while resolving them to canonical categories for feature engineering, backtesting, value calculations, and Opportunity explanations.
+This audit adds small reference-table migrations only. It does not add UI, ingestion jobs, ML training, seed data, or production migration execution. The first migration creates a server-managed alias layer so ingestion can preserve raw provider values while resolving them to canonical categories for feature engineering, backtesting, value calculations, and Opportunity explanations.
+
+Follow-up migration `supabase/migrations/20260616110309_racing_form_unresolved_source_codes.sql` adds a server-managed unresolved-code queue. Ingestion can use it to flag source/vendor shorthand that cannot be resolved yet, without dropping the original source value or training models on unknown categories.
 
 PR #60 should not be blocked by this glossary work. The glossary should block future provider ingestion normalization, ML feature materialization, and production-quality value explanations that depend on decoded racing-form shorthand.
 
@@ -219,7 +221,10 @@ These should be seeded in a later reference-data task after source-by-source rev
 
 ## Proposed Database Design
 
-Migration added: `supabase/migrations/20260616104649_racing_form_glossary_reference_tables.sql`.
+Migrations added:
+
+- `supabase/migrations/20260616104649_racing_form_glossary_reference_tables.sql`
+- `supabase/migrations/20260616110309_racing_form_unresolved_source_codes.sql`
 
 Tables:
 
@@ -227,6 +232,7 @@ Tables:
 - `racing_code_values`: stores canonical values within each category.
 - `racing_code_aliases`: maps source-specific codes to canonical values with source attribution, confidence, effective dates, and notes.
 - `track_code_aliases`: maps source-specific track codes to canonical `tracks.id`.
+- `racing_unresolved_source_codes`: logs source/vendor values that ingestion could not resolve so they can be reviewed weekly and mapped without losing raw source evidence.
 
 Design decisions:
 
@@ -238,6 +244,7 @@ Design decisions:
 - Alias uniqueness is scoped to current active source/category/code mappings while allowing historical effective-dated rows.
 - `racing_code_aliases` includes `code_set_id` in addition to `code_value_id` so lookup can be unambiguous and enforced by a composite foreign key.
 - `track_code_aliases` is separate because canonical track identity already lives in `tracks`.
+- `racing_unresolved_source_codes` is server-managed, RLS-enabled, and service-role writable so ingestion can flag unknown source values without exposing operational metadata to browser clients.
 
 Supabase note: the June 2026 changelog scan showed the April 2026 change that tables are not automatically exposed to Data and GraphQL APIs. The migration still enables RLS and avoids `anon`/`authenticated` grants as defense in depth.
 
@@ -253,6 +260,34 @@ This lets Strideo explain that an Opportunity used "firm turf" or "maiden claimi
 
 Historical backtests should resolve aliases by `effective_from` and `effective_to`, especially for track codes, medication rules, track names, and vendor changes.
 
+## Ingestion Resolution Contract
+
+Every racing-form ingestion path should treat glossary resolution as a controlled lookup, not a destructive transform.
+
+Required behavior:
+
+- Preserve the original source code exactly as received on the source fact or raw payload.
+- Map the source code to a canonical Strideo meaning through `racing_code_aliases` or `track_code_aliases` before using it as a model feature.
+- Store the source/vendor in every alias lookup and unresolved-code record.
+- Use effective dates where source meaning can change by season, rule change, venue status, provider schema, or jurisdiction.
+- Flag unresolved codes immediately in `racing_unresolved_source_codes` with source field/context, source job lineage, sample payload, and optional Opportunity linkage.
+- Keep unresolved values out of canonical ML categories until they are reviewed, mapped, ignored, or explicitly deferred.
+
+The unresolved-code queue should be reviewed as an operational input to glossary maintenance. Repeated unresolved values should increment the existing active queue item rather than create noisy duplicates when the source system, code set, field, source code, and effective date are the same.
+
+## Glossary Maintenance Cadence
+
+Recommended review schedule:
+
+- Track codes: review monthly during active build, then before each major racing season.
+- Training/workout location codes: review quarterly.
+- Race type/class/surface/condition shorthand: review twice per year.
+- Medication/equipment shorthand: review quarterly and after rule changes.
+- Vendor/API-specific codes: validate every time the provider schema or documentation changes.
+- Unrecognized source codes: log immediately during ingestion and review weekly.
+
+Maintenance reviews should record source URLs, effective dates, confidence, and notes on alias rows. When a review resolves an unresolved-code queue item, update its status to `mapped` and link it to the created `racing_code_aliases` or `track_code_aliases` row.
+
 ## PR #60 Impact
 
 This task does not merge or modify PR #60.
@@ -263,8 +298,8 @@ This should not block PR #60 because PR #60 adds source-fact and value-lineage s
 
 - Seed canonical code sets and a small reviewed alias subset.
 - Build a source-by-source track-code import/verification script.
-- Add provider-contract tests that assert every incoming shorthand value is preserved raw and either resolved or quarantined.
-- Add quality reports for unresolved aliases by provider, date, track, and field.
+- Add provider-contract tests that assert every incoming shorthand value is preserved raw and either resolved or logged in `racing_unresolved_source_codes`.
+- Add quality reports from `racing_unresolved_source_codes` by provider, date, track, Opportunity, and field.
 
 ## High-Risk Watchlist
 
@@ -272,7 +307,7 @@ This should not block PR #60 because PR #60 adds source-fact and value-lineage s
 - Decoding shorthand from the token alone without source field context.
 - Seeding track codes from a single vendor and assuming active/historical completeness.
 - Exposing glossary tables to browser clients before policy and field-scope review.
-- Training models on raw shorthand categories before alias coverage and unresolved-code reporting exist.
+- Training models on raw shorthand categories before alias coverage is reviewed and unresolved-code status is closed or intentionally deferred.
 - Flattening full race-condition text into a single class code and losing non-winners, state-bred, age, sex, claiming, starter, or optional-claiming semantics.
 - Guessing medication meaning across jurisdictions or eras without effective dates.
 
@@ -281,8 +316,8 @@ This should not block PR #60 because PR #60 adds source-fact and value-lineage s
 Completed on June 16, 2026:
 
 - `npm run verify`: passed. This included `db:migrations:check`, lint, ML data-contract tests, Next.js build, and `npm audit --audit-level=moderate`.
-- `npm run db:migrations:check`: passed inside `npm run verify` for 26 migration files.
-- `npm run db:migrations:dry-run`: passed. No migrations were pushed. The linked dry run reported it would push `20260615183948_racing_form_data_foundation.sql` and `20260616104649_racing_form_glossary_reference_tables.sql`.
+- `npm run db:migrations:check`: passed inside `npm run verify` for 27 migration files.
+- `npm run db:migrations:dry-run`: passed. No migrations were pushed. The linked dry run reported it would push `20260615183948_racing_form_data_foundation.sql`, `20260616104649_racing_form_glossary_reference_tables.sql`, and `20260616110309_racing_form_unresolved_source_codes.sql`.
 - `git diff --check`: passed.
 
 Supabase target documented by the repo: Dev project `strideo-dev`, ref `ntxtakbggtljjbalgris`. No Supabase production work was performed. No migrations were applied.
