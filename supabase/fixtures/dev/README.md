@@ -6,12 +6,16 @@ This directory contains Dev-only fixture data for Strideo race-card UI work.
 
 - `demo_race_card.sql`
 - `demo_import_status.sql`
+- `starter_racing_glossary.sql`
 
 The fixtures are deterministic and reviewable. The race-card fixture uses
 `provider = 'demo'` and fixture-specific provider IDs so it can be re-run
 against Dev without creating duplicate reference, race, entry, or result
 records. The import-status fixture uses deterministic `batch_key` values so it
-can be re-run against Dev without creating duplicate import-status rows.
+can be re-run against Dev without creating duplicate import-status rows. The
+starter racing glossary fixture uses source-attributed code-set, canonical
+value, and alias upserts so it can be re-run against Dev without creating
+duplicate glossary rows.
 
 ## What `demo_race_card.sql` Adds
 
@@ -35,6 +39,18 @@ can be re-run against Dev without creating duplicate import-status rows.
 - Sanitized metadata with affected track, race, entry, odds, and result counts
 - Source-details-hidden markers for UI display
 
+## What `starter_racing_glossary.sql` Adds
+
+- Starter reviewed racing-form code sets
+- Canonical values for common race types, race grades, surfaces, track
+  conditions, workout shorthand, horse sex, horse color, Lasix, finish margins,
+  running-line status, entry status, and result status
+- Source-attributed aliases from sources already documented in
+  `docs/RACING_FORM_GLOSSARY_AUDIT.md`
+- No track-code aliases
+- No unresolved-code rows
+- No seed rows for ambiguous medication/equipment meanings
+
 ## What These Fixtures Do Not Add
 
 - No production data
@@ -47,6 +63,8 @@ can be re-run against Dev without creating duplicate import-status rows.
 - No file or storage URIs
 - No `job_runs`, `source_data_files`, or `raw_archive_objects` rows
 - No schema changes or migrations
+- No ML feature snapshots or model-training data
+- No all-track-code seed set
 
 ## Apply In Dev Only
 
@@ -70,6 +88,14 @@ psql "$STRIDEO_DEV_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
 
 The fixtures do not run automatically.
 
+Apply the starter racing glossary fixture only after PR review and explicit
+Dev-only authorization:
+
+```bash
+psql "$STRIDEO_DEV_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
+  -f supabase/fixtures/dev/starter_racing_glossary.sql
+```
+
 ## Cleanup
 
 `demo_race_card.sql` includes a commented cleanup block at the bottom. Review
@@ -85,3 +111,8 @@ be removed.
 The import-status cleanup block deletes only deterministic rows identified by
 fixture-specific `batch_key` values, `source_system = 'demo'`, and the fixture
 marker `wave3_demo_import_status`.
+
+`starter_racing_glossary.sql` intentionally does not include a cleanup block.
+Once applied, canonical glossary ids may become referenced by ingestion, feature
+snapshots, value calculations, or review notes. Remove or revise seeded glossary
+rows only through a reviewed forward cleanup plan.
