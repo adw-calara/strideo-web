@@ -131,7 +131,7 @@ idempotency, and cleanup.
 Readback result:
 
 - target table: `race_entries`
-- deterministic row id: `c1ed4386-7485-4518-97eb-b262d9dfb84c`
+- deterministic identity read back one generated row id
 - status: `entered`
 - medication: `lasix`
 - duplicate rows after the second execution: `0`
@@ -140,7 +140,7 @@ Idempotency result:
 
 - first execution row count: `1`
 - second execution row count: `1`
-- first and second execution read back the same row id
+- first and second execution read back the same generated row id
 
 Cleanup result:
 
