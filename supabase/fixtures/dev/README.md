@@ -7,6 +7,7 @@ This directory contains Dev-only fixture data for Strideo race-card UI work.
 - `demo_race_card.sql`
 - `demo_import_status.sql`
 - `starter_racing_glossary.sql`
+- `race_entry_verification_aliases.sql`
 
 The fixtures are deterministic and reviewable. The race-card fixture uses
 `provider = 'demo'` and fixture-specific provider IDs so it can be re-run
@@ -15,7 +16,9 @@ records. The import-status fixture uses deterministic `batch_key` values so it
 can be re-run against Dev without creating duplicate import-status rows. The
 starter racing glossary fixture uses source-attributed code-set, canonical
 value, and alias upserts so it can be re-run against Dev without creating
-duplicate glossary rows.
+duplicate glossary rows. The race-entry verification alias fixture is an even
+narrower provider-specific overlay for the exact The Racing API fixture
+shorthand used by the controlled PR #71 runtime verification harness.
 
 ## What `demo_race_card.sql` Adds
 
@@ -50,6 +53,24 @@ duplicate glossary rows.
 - No track-code aliases
 - No unresolved-code rows
 - No seed rows for ambiguous medication/equipment meanings
+
+## What `race_entry_verification_aliases.sql` Adds
+
+- Dev-only `the_racing_api` aliases for the exact PR #71 runtime verification
+  fixture shorthand:
+  - `race.type_code`: `MSW` -> `race_type.maiden_special_weight`
+  - `race.surface_code`: `D` -> `surface.dirt`
+  - `race.track_condition_code`: `FT` -> `track_condition.fast`
+  - `horse.sex_code`: `g` -> `horse_sex.gelding`
+  - `horse.color_code`: `B` -> `horse_color.bay`
+  - `entry.medication_code`: `L` -> `medication.lasix`
+  - `entry.status_code`: `RUN` -> `entry_status.entered`
+  - `recent_workout.work_type_code`: `B` -> `workout_type.breezing`
+- The minimum canonical code sets and values required by those aliases if the
+  broader starter glossary fixture has not been applied yet
+- No unresolved-code rows
+- No track-code aliases
+- No broad U.S. track-code seed
 
 ## What These Fixtures Do Not Add
 
@@ -96,6 +117,14 @@ psql "$STRIDEO_DEV_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
   -f supabase/fixtures/dev/starter_racing_glossary.sql
 ```
 
+Apply the race-entry verification alias fixture only after PR review and
+explicit Dev-only authorization:
+
+```bash
+psql "$STRIDEO_DEV_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
+  -f supabase/fixtures/dev/race_entry_verification_aliases.sql
+```
+
 ## Cleanup
 
 `demo_race_card.sql` includes a commented cleanup block at the bottom. Review
@@ -116,3 +145,8 @@ marker `wave3_demo_import_status`.
 Once applied, canonical glossary ids may become referenced by ingestion, feature
 snapshots, value calculations, or review notes. Remove or revise seeded glossary
 rows only through a reviewed forward cleanup plan.
+
+`race_entry_verification_aliases.sql` also intentionally does not include a
+cleanup block. It only upserts reviewed Dev verification aliases and canonical
+values. Remove or revise seeded glossary rows only through a reviewed forward
+cleanup plan.
