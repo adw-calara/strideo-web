@@ -112,12 +112,12 @@ Dev project confirmed from local Supabase link:
 - project: `strideo-dev`
 - ref: `ntxtakbggtljjbalgris`
 
-Runtime writes were deferred. No Dev row was inserted, updated, deleted, or
-cleaned up in this review pass.
+Runtime writes were deferred in the original PR #70 review pass. No Dev row was
+inserted, updated, deleted, or cleaned up from this PR branch at that time.
 
 Fixture used: none.
 
-Runtime command or script used: none.
+Runtime command or script used in the original PR #70 review pass: none.
 
 Tables touched: none.
 
@@ -125,12 +125,14 @@ Rows touched: none. Rows were not touched because the repo does not yet provide
 a narrow Dev-only runtime command, deterministic fixture identity, readback
 assertion, idempotency assertion, and cleanup path for this executor.
 
-Readback result: not performed.
+Readback result in the original PR #70 review pass: not performed.
 
-Runtime idempotency result: not performed. Idempotency remains covered by the
-injected-store tests in this PR and needs a separate Dev runtime verification.
+Runtime idempotency result in the original PR #70 review pass: not performed.
+Idempotency was covered by the injected-store tests in this PR and moved to a
+separate Dev runtime verification harness.
 
-Cleanup result: not applicable because no live rows were written.
+Cleanup result in the original PR #70 review pass: not applicable because no
+live rows were written.
 
 Reason:
 
@@ -147,36 +149,48 @@ Reason:
   cleanup path inside a review task, which is not the controlled verification
   boundary requested for this high-risk write executor.
 
-Expected table for a future runtime verification:
+Later stacked runtime verification:
+
+- PR #71 added the Dev-only harness:
+  `npm run provider-ingestion:verify:race-entry-dev`.
+- PR #72 supplied exact Dev `the_racing_api` alias coverage for the harness
+  fixture.
+- PR #73 supplied reviewed `service_role` write access for `race_entries`.
+- After those Dev dependencies were present, the PR #71 harness passed end to
+  end against `strideo-dev` (`ntxtakbggtljjbalgris`).
+
+Verified table:
 
 - `public.race_entries` only.
 
-Expected row identity for a future runtime verification:
+Verified row identity:
 
 - provider: `the_racing_api`
-- provider entry id: controlled fixture-specific id
-- race date: controlled fixture-specific date
+- provider entry id: `tra-runtime-verification-entry-20260608-demo-01`
+- race date: `2026-06-08`
+
+Verified result:
+
+- first execution wrote one deterministic `race_entries` row
+- second execution read back the same row id without creating a duplicate
+- cleanup deleted exactly one deterministic fixture row
+- final deterministic row count was `0`
+- no Opportunity, prediction, value-calculation, wager, feature-snapshot,
+  model-training, strategy marketplace, bankroll, bet-sheet, or user workflow
+  tables were written
 
 Follow-up required:
 
-1. Add a tiny Dev-only verification script or task that refuses non-Dev targets.
-2. Use a fixture-specific provider entry id that cannot collide with seeded data.
-3. Bind the write to a known Dev race row or create a separately reviewed
-   temporary race fixture.
-4. Execute the persistence executor twice and assert only one `race_entries` row
-   exists for the provider entry/date identity.
-5. Read back provider lineage metadata and canonical status/medication.
-6. Clean up only the deterministic fixture row, or document why a persistent Dev
-   fixture row is preferred.
-7. Confirm no Opportunity, prediction, value-calculation, wager, feature
-   snapshot, model-training, strategy marketplace, bankroll, bet sheet, or user
-   workflow tables were touched.
+1. Land the dependency PRs in the reviewed order.
+2. Rebase or update PR #70 after the dependency branches land.
+3. Re-run the PR #71 harness from the final merge candidate before enabling any
+   provider ingestion workflow.
 
 ## Safety Confirmations
 
 - Production was not touched.
 - No migrations were added or applied.
-- No live Supabase writes were performed.
+- No live Supabase writes were performed from this PR branch.
 - No Opportunity, prediction, wager, value-calculation, feature-snapshot, or
   model-training writes were introduced.
 - The executor uses dependency injection in tests, so persistence behavior is
@@ -197,7 +211,7 @@ Reviewers should focus on:
 - Whether the `race_entries` mapping is narrow enough for this first slice.
 - Whether metadata lineage is sufficient for audit and reprocessing.
 - Whether blocked and malformed plans fail closed.
-- Whether live Dev verification needs a narrow service-role grant or alternate
-  server-only execution path before the Supabase store adapter can write.
-- Whether future live Dev verification should first use a controlled fixture
-  before any provider job depends on this executor.
+- Whether the `race_entries` service-role write grant remains narrow enough as
+  provider ingestion expands.
+- Whether the PR #71 controlled fixture should stay as a separate verification
+  harness or be folded into the final executor merge path.
