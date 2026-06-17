@@ -70,10 +70,19 @@ export type ProviderRaceEntryWritePlan = {
   canonical_labels: Record<RaceEntryShorthandFieldKey, string | null>;
   raw_provider_payload: TheRacingApiRaceEntryPayload;
   ml_feature_materialization_status: "ready";
+  normalization_results: ParsedProviderRaceEntrySegment["normalization_results"];
+  warnings: string[];
+  blocking_reasons: string[];
   prohibited_side_effects: readonly [
+    "value_calculations",
     "opportunities",
     "prediction_outputs",
     "wager_recommendations",
+    "feature_snapshots",
+    "model_training_runs",
+    "strategy_marketplace",
+    "bankroll",
+    "bet_sheets",
   ];
 };
 
@@ -186,10 +195,19 @@ export function buildRaceEntryWritePlan(
     canonical_labels: toCanonicalValues(parserResult, "canonical_label"),
     raw_provider_payload: payload,
     ml_feature_materialization_status: "ready",
+    normalization_results: parserResult.normalization_results,
+    warnings: parserResult.warnings,
+    blocking_reasons: parserResult.blocking_reasons,
     prohibited_side_effects: [
+      "value_calculations",
       "opportunities",
       "prediction_outputs",
       "wager_recommendations",
+      "feature_snapshots",
+      "model_training_runs",
+      "strategy_marketplace",
+      "bankroll",
+      "bet_sheets",
     ],
   };
 }

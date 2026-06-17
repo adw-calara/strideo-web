@@ -285,10 +285,17 @@ describe("The Racing API race-entry provider adapter", () => {
     assert.ok(plan);
     assert.equal(plan.target, "race_entry_source_fact");
     assert.deepEqual(plan.prohibited_side_effects, [
+      "value_calculations",
       "opportunities",
       "prediction_outputs",
       "wager_recommendations",
+      "feature_snapshots",
+      "model_training_runs",
+      "strategy_marketplace",
+      "bankroll",
+      "bet_sheets",
     ]);
+    assert.equal(plan.normalization_results.entry_status?.status, "resolved");
     assert.equal("opportunity_id" in plan, false);
     assert.equal("prediction_output_id" in plan, false);
     assert.equal("value_calculation_id" in plan, false);

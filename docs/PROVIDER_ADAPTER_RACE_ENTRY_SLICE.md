@@ -107,6 +107,26 @@ target table boundaries, and raw-source lineage. Blocked output must not feed
 ML-ready feature snapshots, Opportunity scoring, value calculations, prediction
 outputs, or wager recommendations.
 
+## Persistence Boundary
+
+The follow-up persistence slice keeps the adapter core isolated from database
+writes. It consumes only the adapter write plan and fails closed unless the plan
+is ready, allowlisted, and fully lineaged.
+
+The approved first persistence target is:
+
+- logical target: `race_entry_source_fact`
+- physical table: `race_entries`
+- operation: deterministic upsert
+- conflict identity: `provider,provider_entry_id,race_date`
+
+The executor persists canonical entry status and medication plus metadata
+containing raw values, source paths, canonical labels, normalization results,
+provider identifiers, and the raw provider payload. It does not create
+Opportunities, predictions, value calculations, wagers, feature snapshots, model
+training rows, strategy marketplace rows, bankroll rows, bet sheet rows, or full
+ingestion batches.
+
 ## Out of Scope
 
 This slice does not add:
