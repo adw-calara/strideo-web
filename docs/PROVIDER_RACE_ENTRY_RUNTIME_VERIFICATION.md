@@ -84,8 +84,8 @@ stops before writing.
 
 ## Result
 
-Passed after Dev alias coverage and the reviewed service-role write grant were
-applied.
+Passed after PR #72 Dev alias coverage and PR #73 reviewed service-role write
+access were merged into `main`.
 
 Command run:
 
@@ -115,13 +115,12 @@ The harness intentionally uses read-only alias resolution. It did not call
 `normalizeOrFlagRacingCode`, did not insert unresolved-code rows, and did not
 persist a race-entry row when aliases were missing.
 
-Follow-up alias coverage was applied from branch
-`codex/dev-racing-glossary-alias-seed` using:
+Follow-up alias coverage was applied from PR #72, now merged into `main`, using:
 
 - `supabase/fixtures/dev/race_entry_verification_aliases.sql`
 
-Follow-up service-role write access was applied from branch
-`codex/race-entry-service-role-write-access` using:
+Follow-up service-role write access was applied from PR #73, now merged into
+`main`, using:
 
 - `supabase/migrations/20260616181520_race_entry_service_role_write_access.sql`
 
@@ -168,9 +167,9 @@ Follow-up required:
 
 1. Keep the harness PR stacked or retargeted deliberately; it currently depends
    on PR #70's executor branch.
-2. After dependency branches land, re-run
-   `npm run provider-ingestion:verify:race-entry-dev` from the final merge
-   candidate before enabling provider ingestion workflows.
+2. After PR #70 lands, re-run
+   `npm run provider-ingestion:verify:race-entry-dev` from `main` before
+   enabling provider ingestion workflows.
 
 ## Validation
 
@@ -188,10 +187,11 @@ The blocked runtime attempts did not create unresolved-code rows. A follow-up
 `npm run racing-codes:unresolved:report -- --json` still reported
 `totalUnresolvedRows: 0`.
 
-After applying Dev alias coverage and service-role write access, the harness
-passed end to end. It wrote one deterministic `race_entries` row, repeated the
-same upsert without creating a duplicate, read back the same row id, deleted the
-deterministic fixture row, and confirmed the final row count was `0`.
+After PR #72 Dev alias coverage and PR #73 service-role write access were merged
+into `main`, the harness passed end to end. It wrote one deterministic
+`race_entries` row, repeated the same upsert without creating a duplicate, read
+back the same row id, deleted the deterministic fixture row, and confirmed the
+final row count was `0`.
 
 ## Safety Confirmations
 
