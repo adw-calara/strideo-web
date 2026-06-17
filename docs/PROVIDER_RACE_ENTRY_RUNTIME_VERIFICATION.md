@@ -36,6 +36,49 @@ Provider ingestion remains disabled by default. A human-reviewed operator must
 explicitly choose the separate write harness below after reviewing the status
 output.
 
+Dev-only job audit wrapper:
+
+```bash
+npm run provider-ingestion:audit:race-entry-dev
+```
+
+Audit script:
+
+- `scripts/report-provider-race-entry-readiness-audit-dev.ts`
+
+This command is the first small provider-ingestion job audit wrapper. It keeps
+the same read-only readiness boundary as
+`npm run provider-ingestion:status:race-entry-dev`, then records the wrapper
+execution in server-only audit tables:
+
+- `public.job_runs`
+- `public.agent_logs`
+
+The wrapper creates a `provider-race-entry-readiness-audit` job, appends start
+and completion/failure agent log rows, and stores safe metadata such as the Dev
+target, provider, readiness status, read tables, planned write target metadata,
+and the disabled-by-default provider-ingestion state. It does not create a
+scheduler, cron, route handler, server action, UI control, background worker, or
+automated ingestion trigger.
+
+The only writes performed by the audit command are audit writes to `job_runs`
+and `agent_logs`. Provider data writes remain `[]` by default. The explicit
+write harness remains separate:
+`npm run provider-ingestion:verify:race-entry-dev`.
+
+The `agent_logs` append uses the service-role-only
+`public.append_agent_log_for_service_role(...)` RPC instead of a direct
+PostgREST table insert. Direct inserts into the partitioned `agent_logs` table
+proved unreliable during Dev validation, while the RPC keeps the write scoped to
+the audit table path and returns only the inserted audit log id.
+
+Runtime prerequisite: Strideo Dev must grant the server-only service role enough
+access to insert/update `public.job_runs` and execute the
+`public.append_agent_log_for_service_role(...)` RPC. If those permissions are
+absent, the wrapper fails closed before provider readiness reads and before any
+provider data writes. Do not create or apply a grant migration from this wrapper
+task without separate migration approval.
+
 Protected app visibility surface:
 
 - route: `/protected/data-imports`
