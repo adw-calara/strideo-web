@@ -37,7 +37,7 @@ export function AppShell({
               <LogoutButton />
             </div>
           </div>
-          <AppSectionNav />
+          <AppSectionNav showDataImports={profile.isInternal} />
         </div>
       </header>
       <div className="mx-auto flex w-full max-w-7xl flex-col px-5 py-6">

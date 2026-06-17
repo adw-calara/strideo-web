@@ -52,12 +52,19 @@ const navItems = [
   },
 ] as const;
 
-export function AppSectionNav() {
+export function AppSectionNav({
+  showDataImports = false,
+}: {
+  showDataImports?: boolean;
+}) {
   const pathname = usePathname();
+  const visibleNavItems = navItems.filter(
+    (item) => showDataImports || item.href !== "/protected/data-imports",
+  );
 
   return (
     <nav aria-label="Strideo sections" className="flex gap-2 overflow-x-auto">
-      {navItems.map((item) => {
+      {visibleNavItems.map((item) => {
         const Icon = item.icon;
         const isActive =
           pathname === item.href ||
