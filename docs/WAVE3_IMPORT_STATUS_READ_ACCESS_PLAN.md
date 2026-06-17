@@ -363,6 +363,12 @@ Future alternative:
 
 ## Data Imports UI Requirements
 
+Current access rule: `/protected/data-imports` is an internal operational
+surface. The route and navigation item must be limited to trusted `operator` or
+`admin` profile roles before any service-role-backed import status or provider
+readiness reads run. Standard authenticated users must receive a safe denied
+state without triggering those reads.
+
 The first protected `/protected/data-imports` UI should read only approved
 batch-status data and show:
 
