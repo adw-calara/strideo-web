@@ -12,6 +12,32 @@ This harness was merged into the PR #70 branch
 
 ## Harness
 
+Read-only readiness/status command:
+
+```bash
+npm run provider-ingestion:status:race-entry-dev
+```
+
+Read-only script:
+
+- `scripts/report-provider-race-entry-readiness-dev.ts`
+
+This command is the default reviewed workflow boundary for the merged PR #70
+persistence path. It confirms the Strideo Dev project, reads the existing Dev
+race binding, performs read-only racing-code alias resolution, builds the same
+provider race-entry write plan, inspects the `race_entries` upsert row mapping,
+and checks whether the deterministic verification row already exists.
+
+It does not call the Supabase race-entry write store, does not execute provider
+ingestion, does not create unresolved racing-code rows, and reports
+`writesPerformed: []`.
+
+Provider ingestion remains disabled by default. A human-reviewed operator must
+explicitly choose the separate write harness below after reviewing the status
+output.
+
+Write verification command:
+
 Command:
 
 ```bash
@@ -22,8 +48,8 @@ Script:
 
 - `scripts/verify-provider-race-entry-persistence-dev.ts`
 
-The harness refuses to run unless the Supabase URL and local linked project are
-confirmed as Strideo Dev:
+Both commands refuse to run unless the Supabase URL and local linked project
+are confirmed as Strideo Dev:
 
 - project: `strideo-dev`
 - ref: `ntxtakbggtljjbalgris`
@@ -33,7 +59,7 @@ does not print their values.
 
 ## Runtime Safety Gates
 
-Before any write, the harness verifies:
+Before status reporting or any write, the commands verify:
 
 - `NODE_ENV` is not `production`.
 - `NEXT_PUBLIC_SUPABASE_URL` points at `ntxtakbggtljjbalgris`.
@@ -52,6 +78,10 @@ Before any write, the harness verifies:
   absent from the write plan, except for the explicit prohibited-side-effects
   guardrail list.
 - No row already exists for the deterministic runtime-verification identity.
+
+The read-only readiness command stops at inspection. It reports whether the
+separate write harness is ready to run, but it never performs the upsert or
+cleanup itself.
 
 ## Expected Runtime Scope
 
@@ -170,6 +200,15 @@ Follow-up required:
    enabling provider ingestion workflows.
 
 ## Validation
+
+Current integration boundary:
+
+- `npm run provider-ingestion:status:race-entry-dev` is the safe default
+  provider-ingestion workflow/reporting surface.
+- `npm run provider-ingestion:verify:race-entry-dev` remains the only reviewed
+  Dev write harness and should not be duplicated for new agents.
+- Unattended, scheduled, production, or full-card provider ingestion remains
+  disabled until explicitly authorized in a future task.
 
 Passed before the blocked runtime attempt:
 

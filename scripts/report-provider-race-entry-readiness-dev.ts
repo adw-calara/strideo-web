@@ -30,35 +30,22 @@ type RaceBindingRow = {
   provider_race_id: string;
 };
 
-type RaceEntryReadbackRow = {
+type RaceEntryIdentityRow = {
   id: string;
-  race_date: string;
-  race_id: string;
-  provider: string;
-  provider_entry_id: string;
-  status: string;
-  medication: string | null;
-  metadata: Record<string, unknown>;
-};
-
-type CountSnapshot = {
-  count: number;
-  rows: RaceEntryReadbackRow[];
 };
 
 function printHelp() {
-  console.log(`Verify the PR #70 provider race-entry persistence executor against Strideo Dev.
+  console.log(`Report PR #70 provider race-entry persistence readiness against Strideo Dev.
 
 Usage:
-  npm run provider-ingestion:verify:race-entry-dev
+  npm run provider-ingestion:status:race-entry-dev
 
 Safety:
   - Refuses NODE_ENV=production.
   - Refuses Supabase targets other than ${STRIDEO_DEV_PROJECT_NAME} (${STRIDEO_DEV_PROJECT_REF}).
-  - Requires server-only Supabase service-role env vars, but never prints them.
-  - Uses read-only normalization alias lookup; unresolved-code rows are not created.
-  - Writes only a deterministic ${RACE_ENTRY_TARGET_TABLE} fixture row, executes twice for
-    idempotency, reads it back, and deletes only that deterministic row.
+  - Performs Supabase reads only.
+  - Does not execute provider ingestion or call the race_entries write store.
+  - Emits JSON for review before the separate write harness is run.
 `);
 }
 
@@ -82,7 +69,7 @@ function readLinkedProject() {
 
 function assertDevSupabaseTarget() {
   if (process.env.NODE_ENV === "production") {
-    throw new Error("Refusing to verify provider race-entry persistence in production.");
+    throw new Error("Refusing to report provider race-entry readiness in production.");
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -164,21 +151,13 @@ async function getRaceBinding(client: SupabaseClient) {
     throw new Error(`Failed to read Dev race binding: ${error.message}`);
   }
 
-  if (!data) {
-    throw new Error(
-      `Missing Dev race fixture ${RACE_ENTRY_VERIFICATION_BOUND_RACE_PROVIDER}:${RACE_ENTRY_VERIFICATION_BOUND_RACE_PROVIDER_ID}:${RACE_ENTRY_VERIFICATION_DATE}. Apply or review the Dev race-card fixture before runtime verification.`,
-    );
-  }
-
-  return data as RaceBindingRow;
+  return data as RaceBindingRow | null;
 }
 
-async function readRaceEntryRows(client: SupabaseClient): Promise<CountSnapshot> {
+async function readDeterministicRaceEntryRows(client: SupabaseClient) {
   const { data, error, count } = await client
     .from(RACE_ENTRY_TARGET_TABLE)
-    .select("id,race_date,race_id,provider,provider_entry_id,status,medication,metadata", {
-      count: "exact",
-    })
+    .select("id", { count: "exact" })
     .eq("provider", "the_racing_api")
     .eq("provider_entry_id", RACE_ENTRY_VERIFICATION_PROVIDER_ENTRY_ID)
     .eq("race_date", RACE_ENTRY_VERIFICATION_DATE);
@@ -189,74 +168,8 @@ async function readRaceEntryRows(client: SupabaseClient): Promise<CountSnapshot>
 
   return {
     count: count ?? data?.length ?? 0,
-    rows: (data ?? []) as RaceEntryReadbackRow[],
+    rowIds: ((data ?? []) as RaceEntryIdentityRow[]).map((row) => row.id),
   };
-}
-
-async function cleanupRaceEntryRows(client: SupabaseClient) {
-  const { data, error, count } = await client
-    .from(RACE_ENTRY_TARGET_TABLE)
-    .delete({ count: "exact" })
-    .eq("provider", "the_racing_api")
-    .eq("provider_entry_id", RACE_ENTRY_VERIFICATION_PROVIDER_ENTRY_ID)
-    .eq("race_date", RACE_ENTRY_VERIFICATION_DATE)
-    .select("id");
-
-  if (error) {
-    throw new Error(`Failed to clean up ${RACE_ENTRY_TARGET_TABLE} fixture row: ${error.message}`);
-  }
-
-  return {
-    deletedCount: count ?? data?.length ?? 0,
-    deletedIds: (data ?? []).map((row) => (row as { id: string }).id),
-  };
-}
-
-function assertSingleReadback(label: string, snapshot: CountSnapshot) {
-  if (snapshot.count !== 1 || snapshot.rows.length !== 1) {
-    throw new Error(
-      `${label} expected exactly one ${RACE_ENTRY_TARGET_TABLE} row; found count=${snapshot.count}, rows=${snapshot.rows.length}.`,
-    );
-  }
-
-  return snapshot.rows[0];
-}
-
-function assertReadbackMatchesExpected(row: RaceEntryReadbackRow, raceBinding: RaceBindingRow) {
-  if (row.provider !== "the_racing_api") {
-    throw new Error(`Unexpected provider in readback: ${row.provider}.`);
-  }
-
-  if (row.provider_entry_id !== RACE_ENTRY_VERIFICATION_PROVIDER_ENTRY_ID) {
-    throw new Error(`Unexpected provider entry id in readback: ${row.provider_entry_id}.`);
-  }
-
-  if (row.race_id !== raceBinding.id) {
-    throw new Error(`Unexpected race_id in readback: ${row.race_id}.`);
-  }
-
-  if (row.race_date !== RACE_ENTRY_VERIFICATION_DATE) {
-    throw new Error(`Unexpected race_date in readback: ${row.race_date}.`);
-  }
-
-  if (row.status !== "entered") {
-    throw new Error(`Unexpected status in readback: ${row.status}.`);
-  }
-
-  if (row.medication !== "lasix") {
-    throw new Error(`Unexpected medication in readback: ${row.medication ?? "null"}.`);
-  }
-
-  const boundary = row.metadata.persistence_boundary as
-    | { logical_target?: unknown; physical_target_table?: unknown }
-    | undefined;
-
-  if (
-    boundary?.logical_target !== APPROVED_RACE_ENTRY_LOGICAL_TARGET ||
-    boundary?.physical_target_table !== RACE_ENTRY_TARGET_TABLE
-  ) {
-    throw new Error("Readback metadata does not preserve the expected persistence boundary.");
-  }
 }
 
 async function main() {
@@ -268,20 +181,24 @@ async function main() {
     { createServiceRoleClient },
     { makeTheRacingApiRaceEntryFixture },
     { planTheRacingApiRaceEntryAdaptation },
-    { executeProviderRaceEntryPersistence, makeSupabaseRaceEntryFactStore },
+    { inspectRaceEntryWritePlanReadiness },
     { resolveRacingCodeAlias },
     { classifyRacingCodeAliases },
   ] = await Promise.all([
     import("@/lib/supabase/admin"),
     import("@/lib/provider-ingestion/fixtures/the-racing-api-race-entry.fixture"),
     import("@/lib/provider-ingestion/provider-race-entry-adapter-core"),
-    import("@/lib/provider-ingestion/provider-race-entry-persistence"),
+    import("@/lib/provider-ingestion/provider-race-entry-persistence-core"),
     import("@/lib/racing-codes/normalization"),
     import("@/lib/racing-codes/normalization-core"),
   ]);
 
   const client = createServiceRoleClient();
-  const raceBinding = await getRaceBinding(client);
+  const [raceBinding, deterministicRows] = await Promise.all([
+    getRaceBinding(client),
+    readDeterministicRaceEntryRows(client),
+  ]);
+
   const fixture = makeTheRacingApiRaceEntryFixture({
     race: {
       id: RACE_ENTRY_VERIFICATION_PROVIDER_RACE_ID,
@@ -306,14 +223,8 @@ async function main() {
 
   const adaptation = await planTheRacingApiRaceEntryAdaptation(fixture, {
     normalizer: readOnlyNormalizer,
-    notes: "Dev-only provider race-entry persistence runtime verification",
+    notes: "Dev-only provider race-entry persistence readiness report",
   });
-
-  if (adaptation.blocked_for_ml || !adaptation.write_plan) {
-    throw new Error(
-      `Normalization did not produce a writable plan: ${adaptation.blocking_reasons.join("; ")}`,
-    );
-  }
 
   if (adaptation.provider_payload_shape !== EXPECTED_RACE_ENTRY_PAYLOAD_SHAPE) {
     throw new Error(
@@ -321,71 +232,48 @@ async function main() {
     );
   }
 
-  if (adaptation.write_plan.target !== APPROVED_RACE_ENTRY_LOGICAL_TARGET) {
+  if (
+    adaptation.write_plan &&
+    adaptation.write_plan.target !== APPROVED_RACE_ENTRY_LOGICAL_TARGET
+  ) {
     throw new Error(`Unexpected write target: ${adaptation.write_plan.target}.`);
   }
 
   assertNoForbiddenWriteIdentifiers(adaptation.write_plan);
 
-  const before = await readRaceEntryRows(client);
-  if (before.count !== 0) {
-    throw new Error(
-      `Refusing to overwrite existing runtime verification row for the deterministic identity. Found ${before.count}.`,
-    );
-  }
-
-  const store = makeSupabaseRaceEntryFactStore(
-    client as unknown as Parameters<typeof makeSupabaseRaceEntryFactStore>[0],
-  );
-  const context = {
-    bindings: {
-      raceId: raceBinding.id,
-      raceDate: raceBinding.race_date,
-    },
-    store,
-  };
-  const firstExecution = await executeProviderRaceEntryPersistence(
-    adaptation.write_plan,
-    context,
-  );
-  const firstReadback = assertSingleReadback(
-    "first readback",
-    await readRaceEntryRows(client),
-  );
-  assertReadbackMatchesExpected(firstReadback, raceBinding);
-
-  const secondExecution = await executeProviderRaceEntryPersistence(
-    adaptation.write_plan,
-    context,
-  );
-  const secondReadback = assertSingleReadback(
-    "second readback",
-    await readRaceEntryRows(client),
-  );
-  assertReadbackMatchesExpected(secondReadback, raceBinding);
-
-  if (firstReadback.id !== secondReadback.id) {
-    throw new Error(
-      `Idempotency failed: first row ${firstReadback.id} differed from second row ${secondReadback.id}.`,
-    );
-  }
-
-  const cleanup = await cleanupRaceEntryRows(client);
-  const afterCleanup = await readRaceEntryRows(client);
-  if (afterCleanup.count !== 0) {
-    throw new Error(
-      `Cleanup failed: expected zero ${RACE_ENTRY_TARGET_TABLE} rows, found ${afterCleanup.count}.`,
-    );
-  }
+  const readiness = raceBinding
+    ? inspectRaceEntryWritePlanReadiness(adaptation.write_plan, {
+        raceId: raceBinding.id,
+        raceDate: raceBinding.race_date,
+      })
+    : null;
+  const blockingReasons = [
+    ...adaptation.blocking_reasons,
+    raceBinding
+      ? null
+      : `Missing Dev race fixture ${RACE_ENTRY_VERIFICATION_BOUND_RACE_PROVIDER}:${RACE_ENTRY_VERIFICATION_BOUND_RACE_PROVIDER_ID}:${RACE_ENTRY_VERIFICATION_DATE}.`,
+    readiness && readiness.status !== "ready" ? readiness.reason : null,
+    deterministicRows.count > 0
+      ? `Deterministic runtime-verification ${RACE_ENTRY_TARGET_TABLE} row already exists.`
+      : null,
+  ].filter((reason): reason is string => typeof reason === "string");
+  const readyToRunWriteHarness =
+    readiness?.status === "ready" && deterministicRows.count === 0;
 
   console.log(
     JSON.stringify(
       {
-        status: "passed",
+        status: readyToRunWriteHarness ? "ready" : "blocked",
         targetProject: STRIDEO_DEV_PROJECT_NAME,
         targetRef: STRIDEO_DEV_PROJECT_REF,
+        workflow: {
+          mode: "read_only_status",
+          providerIngestionEnabledByDefault: false,
+          writesPerformed: [],
+          writeHarnessCommand: "npm run provider-ingestion:verify:race-entry-dev",
+          writeHarnessRequiresReview: true,
+        },
         fixture: RACE_ENTRY_VERIFICATION_FIXTURE_NAME,
-        sourceFixture: "lib/provider-ingestion/fixtures/the-racing-api-race-entry.fixture.ts",
         targetTable: RACE_ENTRY_TARGET_TABLE,
         expectedRowIdentity: {
           provider: "the_racing_api",
@@ -393,47 +281,59 @@ async function main() {
           raceDate: RACE_ENTRY_VERIFICATION_DATE,
           conflictTarget: "provider,provider_entry_id,race_date",
         },
-        boundRace: {
-          provider: raceBinding.provider,
-          providerRaceId: raceBinding.provider_race_id,
-          raceId: raceBinding.id,
-          raceDate: raceBinding.race_date,
+        boundRace: raceBinding
+          ? {
+              provider: raceBinding.provider,
+              providerRaceId: raceBinding.provider_race_id,
+              raceId: raceBinding.id,
+              raceDate: raceBinding.race_date,
+            }
+          : null,
+        normalization: {
+          blockedForMl: adaptation.blocked_for_ml,
+          warningCount: adaptation.warnings.length,
+          blockingReasons: adaptation.blocking_reasons,
+          writePlanPresent: Boolean(adaptation.write_plan),
         },
-        firstExecution,
-        secondExecution,
-        readback: {
-          rowId: firstReadback.id,
-          status: firstReadback.status,
-          medication: firstReadback.medication,
-          duplicateRowsAfterSecondExecution: 0,
+        persistenceReadiness: readiness
+          ? {
+              status: readiness.status,
+              targetTable:
+                readiness.status === "ready" ? readiness.target_table : null,
+              idempotencyKey: readiness.idempotency_key,
+              reason: readiness.status === "ready" ? null : readiness.reason,
+              upsert:
+                readiness.status === "ready"
+                  ? {
+                      operation: readiness.upsert.operation,
+                      conflictTarget: readiness.upsert.on_conflict,
+                    }
+                  : null,
+            }
+          : {
+              status: "blocked",
+              targetTable: null,
+              idempotencyKey: adaptation.write_plan?.idempotency_key ?? null,
+              reason: "Dev race binding is missing.",
+              upsert: null,
+            },
+        deterministicRowPrecheck: {
+          count: deterministicRows.count,
+          rowIds: deterministicRows.rowIds,
         },
-        idempotency: {
-          passed: true,
-          sameRowId: firstReadback.id,
-          rowCountAfterFirstExecution: 1,
-          rowCountAfterSecondExecution: 1,
-        },
-        cleanup: {
-          passed: true,
-          deletedCount: cleanup.deletedCount,
-          deletedIds: cleanup.deletedIds,
-          rowCountAfterCleanup: afterCleanup.count,
+        readyToRunWriteHarness,
+        blockingReasons,
+        supabaseOperations: {
+          reads: [
+            "races",
+            "racing_code_sets",
+            "racing_code_aliases",
+            "racing_code_values",
+            RACE_ENTRY_TARGET_TABLE,
+          ],
+          writes: [],
         },
         forbiddenTableFamiliesUntouched: true,
-        writesPerformed: [
-          {
-            table: RACE_ENTRY_TARGET_TABLE,
-            operation: "upsert",
-            count: 2,
-            deterministicIdentity: `${RACE_ENTRY_VERIFICATION_PROVIDER_ENTRY_ID}:${RACE_ENTRY_VERIFICATION_DATE}`,
-          },
-          {
-            table: RACE_ENTRY_TARGET_TABLE,
-            operation: "delete",
-            count: cleanup.deletedCount,
-            deterministicIdentity: `${RACE_ENTRY_VERIFICATION_PROVIDER_ENTRY_ID}:${RACE_ENTRY_VERIFICATION_DATE}`,
-          },
-        ],
       },
       null,
       2,
@@ -443,6 +343,6 @@ async function main() {
 
 main().catch((error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);
-  console.error(`Provider race-entry Dev runtime verification failed: ${message}`);
+  console.error(`Provider race-entry Dev readiness report failed: ${message}`);
   process.exitCode = 1;
 });
