@@ -21,6 +21,27 @@ existing `race_entries` table. No migration is added because `race_entries`
 already stores provider identity, canonical entry status, medication, and
 metadata for provider/source lineage.
 
+The merged persistence path is now connected to a Dev-only read-only reporting
+surface:
+
+```bash
+npm run provider-ingestion:status:race-entry-dev
+```
+
+This command is the preferred first step for future provider-ingestion work. It
+reuses the PR #70 fixture identity, read-only racing-code alias lookup, write
+plan validation, row mapping, and idempotency conflict target, but it does not
+call the Supabase write store. It reports whether the separate reviewed Dev
+write harness is ready to run.
+
+Do not duplicate the PR #70/PR #71 write harness for new provider workflows.
+Provider ingestion remains disabled by default, and the only current write
+verification path is:
+
+```bash
+npm run provider-ingestion:verify:race-entry-dev
+```
+
 ## Files Changed
 
 - `docs/PROVIDER_ADAPTER_RACE_ENTRY_SLICE.md`
@@ -90,6 +111,8 @@ Rejected:
 - No bankroll writes.
 - No bet sheet writes.
 - No UI changes.
+- No unattended provider ingestion workflow.
+- No second write harness for the deterministic PR #70 race-entry fixture.
 
 ## Validation Results
 

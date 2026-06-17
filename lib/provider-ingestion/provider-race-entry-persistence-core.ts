@@ -52,6 +52,20 @@ export type RaceEntryPersistenceResult =
       idempotency_key: string | null;
     };
 
+export type RaceEntryPersistenceReadinessResult =
+  | {
+      status: "ready";
+      wrote: false;
+      target_table: "race_entries";
+      idempotency_key: string;
+      row: RaceEntryFactRow;
+      upsert: {
+        operation: "upsert";
+        on_conflict: "provider,provider_entry_id,race_date";
+      };
+    }
+  | Extract<RaceEntryPersistenceResult, { wrote: false }>;
+
 const LOGICAL_TARGET = "race_entry_source_fact";
 const PHYSICAL_TARGET_TABLE = "race_entries";
 const UPSERT_CONFLICT_TARGET = "provider,provider_entry_id,race_date";
@@ -188,6 +202,10 @@ function validatePlan(plan: ProviderRaceEntryWritePlan | null) {
   return null;
 }
 
+export function validateRaceEntryWritePlan(plan: ProviderRaceEntryWritePlan | null) {
+  return validatePlan(plan);
+}
+
 function validateBindings(bindings: RaceEntryPersistenceBindings) {
   if (!hasValidUuidShape(bindings.raceId)) {
     return "raceId binding must be a UUID";
@@ -301,5 +319,40 @@ export async function executeRaceEntryWritePlan(
     idempotency_key: plan.idempotency_key,
     row,
     persisted,
+  };
+}
+
+export function inspectRaceEntryWritePlanReadiness(
+  plan: ProviderRaceEntryWritePlan | null,
+  bindings: RaceEntryPersistenceBindings,
+): RaceEntryPersistenceReadinessResult {
+  if (!plan) {
+    return skipped("blocked or missing write plan");
+  }
+
+  const planError = validatePlan(plan);
+  if (planError) {
+    return reject(planError, plan);
+  }
+
+  const row = buildRaceEntryFactRow(plan, bindings);
+  if ("wrote" in row) {
+    if (row.wrote) {
+      return reject("readiness inspection cannot return executed writes", plan);
+    }
+
+    return row;
+  }
+
+  return {
+    status: "ready",
+    wrote: false,
+    target_table: PHYSICAL_TARGET_TABLE,
+    idempotency_key: plan.idempotency_key,
+    row,
+    upsert: {
+      operation: "upsert",
+      on_conflict: UPSERT_CONFLICT_TARGET,
+    },
   };
 }
