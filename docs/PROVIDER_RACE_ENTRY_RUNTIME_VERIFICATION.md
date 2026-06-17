@@ -36,6 +36,26 @@ Provider ingestion remains disabled by default. A human-reviewed operator must
 explicitly choose the separate write harness below after reviewing the status
 output.
 
+Protected app visibility surface:
+
+- route: `/protected/data-imports`
+- server data access:
+  `lib/imports/provider-race-entry-readiness.ts`
+- display model:
+  `lib/imports/provider-race-entry-readiness-core.ts`
+- UI component:
+  `components/imports/import-status-display.tsx`
+
+The protected Data Imports page renders the same readiness boundary as a
+read-only operational card after the current user is confirmed as an internal
+`operator` or `admin`. Standard authenticated users receive the denied state
+before import-batch or readiness reads run. It is not an ingestion control
+plane: there are no buttons, forms, server actions, route handlers, schedules,
+or background jobs that can start provider ingestion or call the `race_entries`
+persistence store. The surface refuses non-Dev Supabase targets before creating
+a service-role client and reports an unavailable state with zero reads and zero
+writes.
+
 Write verification command:
 
 Command:
@@ -205,6 +225,8 @@ Current integration boundary:
 
 - `npm run provider-ingestion:status:race-entry-dev` is the safe default
   provider-ingestion workflow/reporting surface.
+- `/protected/data-imports` shows the same readiness status as protected,
+  read-only operational visibility.
 - `npm run provider-ingestion:verify:race-entry-dev` remains the only reviewed
   Dev write harness and should not be duplicated for new agents.
 - Unattended, scheduled, production, or full-card provider ingestion remains

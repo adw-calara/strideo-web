@@ -2,6 +2,7 @@ import {
   ImportBatchCard,
   ImportStatusEmptyState,
   ImportStatusHeader,
+  ProviderRaceEntryReadinessCard,
 } from "@/components/imports/import-status-display";
 import {
   Card,
@@ -13,6 +14,7 @@ import {
 import { canAccessDataImports } from "@/lib/auth/access-control";
 import { loadCurrentProfileContext } from "@/lib/auth/profile-context";
 import { listImportBatches } from "@/lib/imports/data-access";
+import { getProviderRaceEntryReadinessDisplayModel } from "@/lib/imports/provider-race-entry-readiness";
 
 function DataImportsAccessDenied() {
   return (
@@ -41,12 +43,16 @@ export default async function DataImportsPage() {
     return <DataImportsAccessDenied />;
   }
 
-  const result = await listImportBatches();
+  const [result, providerRaceEntryReadiness] = await Promise.all([
+    listImportBatches(),
+    getProviderRaceEntryReadinessDisplayModel(),
+  ]);
 
   if (result.status === "empty") {
     return (
       <div className="flex flex-col gap-6">
         <ImportStatusHeader summary={result.summary} />
+        <ProviderRaceEntryReadinessCard model={providerRaceEntryReadiness} />
         <ImportStatusEmptyState message={result.message} />
       </div>
     );
@@ -55,6 +61,7 @@ export default async function DataImportsPage() {
   return (
     <div className="flex flex-col gap-6">
       <ImportStatusHeader summary={result.summary} />
+      <ProviderRaceEntryReadinessCard model={providerRaceEntryReadiness} />
       <div className="flex flex-col gap-4">
         {result.batches.map((batch) => (
           <ImportBatchCard key={batch.id} batch={batch} />
