@@ -13,6 +13,9 @@
 # testing
 /coverage
 
+# generated artifacts
+/outputs/
+
 # next.js
 /.next/
 /out/
