@@ -5,6 +5,8 @@ import {
   DatabaseZap,
   EyeOff,
   LoaderCircle,
+  LockKeyhole,
+  ShieldCheck,
   XCircle,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -22,6 +24,7 @@ import type {
   ImportBatchStatusItem,
   ImportStatusSummary,
 } from "@/lib/imports/data-access";
+import type { ProviderRaceEntryReadinessDisplayModel } from "@/lib/imports/provider-race-entry-readiness-core";
 import { cn } from "@/lib/utils";
 
 type BadgeTone = "default" | "secondary" | "destructive" | "outline";
@@ -163,6 +166,10 @@ export function ImportStatusHeader({
   );
 }
 
+function formatBoolean(value: boolean) {
+  return value ? "Yes" : "No";
+}
+
 export function ImportStatusEmptyState({ message }: { message: string }) {
   return (
     <Card>
@@ -176,6 +183,105 @@ export function ImportStatusEmptyState({ message }: { message: string }) {
           records are added.
         </CardDescription>
       </CardHeader>
+    </Card>
+  );
+}
+
+function ReadinessBadge({
+  model,
+}: {
+  model: ProviderRaceEntryReadinessDisplayModel;
+}) {
+  const Icon = model.state === "ready" ? CheckCircle2 : AlertTriangle;
+
+  return (
+    <Badge variant={model.badgeVariant} title={model.statusText}>
+      <Icon aria-hidden="true" className="mr-1 size-3" />
+      {model.badgeLabel}
+    </Badge>
+  );
+}
+
+export function ProviderRaceEntryReadinessCard({
+  model,
+}: {
+  model: ProviderRaceEntryReadinessDisplayModel;
+}) {
+  const readTables =
+    model.readTables.length > 0 ? model.readTables.join(", ") : "No Dev reads";
+  const writes =
+    model.writesPlannedOrExecuted.length > 0
+      ? model.writesPlannedOrExecuted.join(", ")
+      : "None";
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <ShieldCheck
+                aria-hidden="true"
+                className="size-5 text-muted-foreground"
+              />
+              <CardTitle className="text-lg">
+                Race-entry readiness status
+              </CardTitle>
+            </div>
+            <CardDescription className="mt-2 max-w-3xl">
+              {model.statusText}
+            </CardDescription>
+          </div>
+          <ReadinessBadge model={model} />
+        </div>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-5">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <ImportMetric label="Boundary" value={model.targetLabel} />
+          <ImportMetric label="Read tables" value={readTables} />
+          <ImportMetric label="Writes" value={writes} />
+          <ImportMetric
+            label="Provider ingestion"
+            value="Disabled by default"
+          />
+          <ImportMetric
+            label="Deterministic rows"
+            value={model.metrics.deterministicRows}
+          />
+          <ImportMetric
+            label="Normalization warnings"
+            value={model.metrics.normalizationWarnings}
+          />
+          <ImportMetric
+            label="Write plan present"
+            value={formatBoolean(model.metrics.writePlanPresent)}
+          />
+          <ImportMetric
+            label="Harness ready"
+            value={formatBoolean(model.metrics.readyToRunWriteHarness)}
+          />
+        </div>
+        <div className="grid gap-3 lg:grid-cols-2">
+          <div className="flex items-start gap-2 rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
+            <LockKeyhole aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            <p>{model.boundaryNotice}</p>
+          </div>
+          <div className="flex items-start gap-2 rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
+            <DatabaseZap aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            <p>{model.disabledNotice}</p>
+          </div>
+        </div>
+        {model.blockingReasons.length > 0 ? (
+          <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3">
+            <p className="text-sm font-medium">Readiness notes</p>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+              {model.blockingReasons.map((reason) => (
+                <li key={reason}>{reason}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </CardContent>
     </Card>
   );
 }
