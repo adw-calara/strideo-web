@@ -30,6 +30,8 @@ metadata for provider/source lineage.
 - `lib/provider-ingestion/provider-race-entry-persistence-core.ts`
 - `lib/provider-ingestion/provider-race-entry-persistence-core.test.ts`
 - `lib/provider-ingestion/provider-race-entry-persistence.ts`
+- `docs/PROVIDER_RACE_ENTRY_RUNTIME_VERIFICATION.md`
+- `scripts/verify-provider-race-entry-persistence-dev.ts`
 - `package.json`
 
 ## Persistence Boundary
@@ -76,7 +78,8 @@ Rejected:
 - No migrations.
 - No seed data.
 - No Production access.
-- No live Dev database writes in this PR.
+- No live Dev database writes outside the controlled runtime verification
+  harness.
 - No Opportunity generation.
 - No prediction output creation.
 - No value-calculation writes.
@@ -149,15 +152,16 @@ Reason:
   cleanup path inside a review task, which is not the controlled verification
   boundary requested for this high-risk write executor.
 
-Later stacked runtime verification:
+Runtime verification now included in this branch:
 
 - PR #71 added the Dev-only harness:
   `npm run provider-ingestion:verify:race-entry-dev`.
 - PR #72 supplied exact Dev `the_racing_api` alias coverage for the harness
   fixture.
 - PR #73 supplied reviewed `service_role` write access for `race_entries`.
-- After those Dev dependencies were present, the PR #71 harness passed end to
-  end against `strideo-dev` (`ntxtakbggtljjbalgris`).
+- After those dependencies landed on `main`, PR #71 was merged into this PR #70
+  branch. The combined branch's harness passed end to end against `strideo-dev`
+  (`ntxtakbggtljjbalgris`).
 
 Verified table:
 
@@ -181,16 +185,18 @@ Verified result:
 
 Follow-up required:
 
-1. Land the dependency PRs in the reviewed order.
-2. Rebase or update PR #70 after the dependency branches land.
-3. Re-run the PR #71 harness from the final merge candidate before enabling any
-   provider ingestion workflow.
+1. Re-run `npm run provider-ingestion:verify:race-entry-dev` from `main` after
+   this PR lands.
+2. Keep provider ingestion workflows disabled until this controlled persistence
+   path has passed from the final merged branch.
 
 ## Safety Confirmations
 
 - Production was not touched.
 - No migrations were added or applied.
-- No live Supabase writes were performed from this PR branch.
+- Live Supabase writes are limited to the Dev-only runtime verification harness,
+  which writes one deterministic `race_entries` row, repeats the same upsert,
+  and deletes exactly that deterministic fixture row.
 - No Opportunity, prediction, wager, value-calculation, feature-snapshot, or
   model-training writes were introduced.
 - The executor uses dependency injection in tests, so persistence behavior is

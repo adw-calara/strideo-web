@@ -5,10 +5,10 @@
 This document tracks the controlled Dev-only runtime verification harness for
 PR #70, `Add controlled race-entry persistence executor`.
 
-Branch: `codex/provider-race-entry-runtime-verification-harness`
+Original branch: `codex/provider-race-entry-runtime-verification-harness`
 
-Dependency: PR #70 branch
-`codex/provider-race-entry-persistence-slice`.
+This harness was merged into the PR #70 branch
+`codex/provider-race-entry-persistence-slice` before the final PR #70 review.
 
 ## Harness
 
@@ -165,9 +165,7 @@ Tables written:
 
 Follow-up required:
 
-1. Keep the harness PR stacked or retargeted deliberately; it currently depends
-   on PR #70's executor branch.
-2. After PR #70 lands, re-run
+1. After PR #70 lands, re-run
    `npm run provider-ingestion:verify:race-entry-dev` from `main` before
    enabling provider ingestion workflows.
 
