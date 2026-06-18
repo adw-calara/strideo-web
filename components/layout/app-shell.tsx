@@ -22,7 +22,10 @@ export function AppShell({
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-5 py-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <Link href="/protected" className="text-lg font-semibold">
+              <Link
+                href="/protected"
+                className="inline-flex h-11 items-center text-lg font-semibold md:h-9"
+              >
                 Strideo
               </Link>
               <Badge variant="secondary">Dev</Badge>
@@ -40,7 +43,7 @@ export function AppShell({
           <AppSectionNav showDataImports={profile.isInternal} />
         </div>
       </header>
-      <div className="mx-auto flex w-full max-w-7xl flex-col px-5 py-6">
+      <div className="mx-auto flex w-full max-w-7xl flex-col px-5 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-6 md:pb-6">
         {children}
       </div>
     </main>
