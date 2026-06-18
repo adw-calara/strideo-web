@@ -1,11 +1,29 @@
 # Strideo Roadmap
 
+## Status Source Of Truth
+
+`PRD.md` remains the source of product intent. This roadmap is the source of
+phase definitions and recommended sequencing. The `/protected/progress`
+dashboard, backed by `lib/progress/data-access.ts`, is the living day-to-day
+status surface for what is complete, active, queued, or watchlisted.
+
+When the roadmap and progress dashboard differ, update them in the same
+planning slice rather than creating a parallel status document. Historical
+audit docs in `docs/` are evidence snapshots, not the living status source.
+
+The core product loop remains:
+
+Race context -> prediction/value analysis -> Opportunity ->
+recommendation/wager construction -> tracking -> outcome/performance feedback
+-> model improvement.
+
 ## Phase 0 - Planning And Foundation
 
-Status: in progress
+Status: complete
 
 - Read and adopt `/PRD.md` as product source of truth.
-- Generate `AGENTS.md`, architecture, roadmap, and architecture review docs.
+- Generate `AGENTS.md`, architecture, roadmap, architecture review, and Codex
+  operating prompt docs.
 - Scaffold authenticated Next.js app.
 - Connect Supabase Auth.
 - Configure project-scoped Supabase MCP access.
@@ -18,6 +36,8 @@ Exit criteria:
 - Supabase MCP server `supabase_strideo` is available for development work.
 
 ## Phase 1 - Data Model Design
+
+Status: complete
 
 Goal: define the durable data foundation before building product screens.
 
@@ -40,6 +60,8 @@ Exit criteria:
 
 ## Phase 2 - Race Data Ingestion
 
+Status: partial
+
 Goal: make Strideo aware of real race cards and results.
 
 - Integrate The Racing API in a server-side ingestion path.
@@ -55,6 +77,8 @@ Exit criteria:
 - Import jobs are auditable and idempotent.
 
 ## Phase 3 - Opportunity Engine MVP
+
+Status: active
 
 Goal: generate first measurable Opportunities.
 
@@ -79,6 +103,8 @@ Exit criteria:
 
 ## Phase 4 - Wager Construction And Bet Sheet
 
+Status: queued
+
 Goal: turn Opportunities into usable betting cards.
 
 - Create wager templates and recommendation structures.
@@ -98,6 +124,8 @@ Exit criteria:
 - Recommendations remain auditable after results arrive.
 
 ## Phase 5 - Product UI MVP
+
+Status: partial
 
 Goal: replace the placeholder protected route with the real app.
 
@@ -122,6 +150,8 @@ Exit criteria:
 
 ## Phase 6 - Performance Verification
 
+Status: queued
+
 Goal: close the measurement loop.
 
 - Import results.
@@ -137,6 +167,8 @@ Exit criteria:
 - Verified ROI history is queryable.
 
 ## Phase 7 - Strideo Assistant
+
+Status: queued
 
 Goal: add natural-language access to Strideo intelligence.
 
@@ -157,6 +189,8 @@ Exit criteria:
 
 ## Phase 8 - Commercial And Operational Readiness
 
+Status: queued
+
 Goal: prepare for Pro subscription operation.
 
 - Add Stripe subscription flow.
@@ -175,6 +209,8 @@ Exit criteria:
 
 ## Phase 9 - Elite/Future Platform
 
+Status: deferred
+
 Goal: build long-term moat.
 
 - AI Betting Coach.
@@ -186,10 +222,37 @@ Goal: build long-term moat.
 - Advanced exotic wager construction.
 - Personalized strategy profiles.
 
-## Current Next Decisions
+## Current Status Summary
 
-- Choose the first race-data import scope and provider endpoint.
-- Decide initial schema migration boundaries.
-- Decide when product authorization moves from valid-session access to profiles/subscriptions.
-- Define the first Opportunity scoring formula.
-- Define whether initial agent jobs run as Vercel cron, Supabase Edge Functions, or manual admin actions.
+- Complete: Phase 0 foundation and Phase 1 data model are complete enough for
+  product work to continue.
+- Partial: Phase 2 race data, Phase 3 Opportunity Engine, and Phase 5 Product
+  UI have real foundations and visible app surfaces, but they are not MVP
+  complete.
+- Queued: Wager construction, Bet Sheet, performance verification, assistant,
+  and commercial readiness remain behind the next Opportunity-centered slices.
+- Blocked: no current roadmap phase is blocked by a known P0/P1 issue.
+- Deferred: native mobile apps, marketplace/community systems, and broad scale
+  operations remain Phase 9/future work unless explicitly requested.
+
+## Next Recommended Sequence
+
+1. Finish this planning/status reconciliation and keep the roadmap plus
+   `/protected/progress` aligned.
+2. Complete the narrow Layer 2 mobile shell/navigation/touch-target work already
+   active in PR #82, then coordinate with PR #83 for race-entry mobile
+   readability without duplicating it.
+3. Return immediately to Layer 1 Opportunity loop work: tracked Opportunities
+   list/filter, recommendation context, Bet Sheet, then performance
+   verification.
+
+## Risk And Drift Watchlist
+
+- Do not let mobile/PWA work become a native app or generic mobile roadmap.
+- Do not duplicate PR #82 mobile shell work or PR #83 race-entry card work.
+- Keep provider ingestion queued behind the next validated Opportunity path
+  unless explicitly requested.
+- Keep source-fact, glossary, model, prediction, value, and operational tables
+  server-only until a reviewed product surface needs access.
+- Keep future ML, wagering, alerts, assistant, and performance work linked back
+  to Opportunity lineage wherever the PRD expects it.
