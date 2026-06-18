@@ -336,6 +336,85 @@ export function RaceDetailHeader({ race }: { race: RaceDetail }) {
   );
 }
 
+function RaceEntryResultBadge({ entry }: { entry: RaceCardEntry }) {
+  return entry.result?.finishPosition ? (
+    <Badge variant="secondary">Finish {entry.result.finishPosition}</Badge>
+  ) : (
+    <Badge variant="outline">Pending result</Badge>
+  );
+}
+
+function RaceEntryMobileField({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="text-xs font-medium uppercase tracking-normal text-muted-foreground">
+        {label}
+      </p>
+      <div className="mt-1 break-words text-sm font-medium">{value}</div>
+    </div>
+  );
+}
+
+function RaceEntryMobileCard({ entry }: { entry: RaceCardEntry }) {
+  return (
+    <div className="rounded-md border bg-muted/20 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary">
+              Program {entry.programNumber ?? "-"}
+            </Badge>
+            <Badge variant="outline">Post {entry.postPosition ?? "-"}</Badge>
+          </div>
+          <p className="mt-3 break-words text-base font-semibold">
+            {entry.horse?.name ?? "Horse pending"}
+          </p>
+        </div>
+        <RaceEntryResultBadge entry={entry} />
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <RaceEntryMobileField
+          label="Jockey"
+          value={entry.jockey?.name ?? "Jockey pending"}
+        />
+        <RaceEntryMobileField
+          label="Trainer"
+          value={entry.trainer?.name ?? "Trainer pending"}
+        />
+        <RaceEntryMobileField
+          label="Morning line"
+          value={entry.morningLineOdds ?? "-"}
+        />
+        <RaceEntryMobileField
+          label="Latest odds"
+          value={entry.latestOdds?.oddsFractional ?? "No odds"}
+        />
+        <RaceEntryMobileField
+          label="Entry status"
+          value={titleCase(entry.status)}
+        />
+      </div>
+    </div>
+  );
+}
+
+function RaceEntriesMobileList({ entries }: { entries: RaceCardEntry[] }) {
+  return (
+    <div className="flex flex-col gap-3 md:hidden" aria-label="Race entries">
+      {entries.map((entry) => (
+        <RaceEntryMobileCard key={entry.id} entry={entry} />
+      ))}
+    </div>
+  );
+}
+
 export function RaceEntriesTable({ entries }: { entries: RaceCardEntry[] }) {
   if (entries.length === 0) {
     return (
@@ -359,7 +438,8 @@ export function RaceEntriesTable({ entries }: { entries: RaceCardEntry[] }) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
+        <RaceEntriesMobileList entries={entries} />
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full min-w-[880px] text-sm">
             <thead>
               <tr className="border-b text-left text-xs uppercase tracking-normal text-muted-foreground">
@@ -396,13 +476,7 @@ export function RaceEntriesTable({ entries }: { entries: RaceCardEntry[] }) {
                   </td>
                   <td className="py-3 pr-4">{titleCase(entry.status)}</td>
                   <td className="py-3">
-                    {entry.result?.finishPosition ? (
-                      <Badge variant="secondary">
-                        Finish {entry.result.finishPosition}
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline">Pending result</Badge>
-                    )}
+                    <RaceEntryResultBadge entry={entry} />
                   </td>
                 </tr>
               ))}
