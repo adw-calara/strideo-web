@@ -105,7 +105,7 @@ const phases: ProgressPhase[] = [
     status: "complete",
     progress: 100,
     summary:
-      "Next.js, Supabase Auth, protected shell, source docs, and hardened auth-link handling are in place.",
+      "Next.js, Supabase Auth, protected shell, source docs, operating prompt, and hardened auth-link handling are in place.",
     nextStep:
       "Keep auth, environment, and protected-route checks passing as product surfaces expand.",
   },
@@ -151,9 +151,9 @@ const phases: ProgressPhase[] = [
     status: "partial",
     progress: 50,
     summary:
-      "Dashboard, races, imports, strategies, predictions, Opportunities, detail views, and progress reporting are scaffolded.",
+      "Dashboard, races, imports, strategies, predictions, Opportunities, detail views, progress reporting, and mobile/PWA readiness planning are scaffolded.",
     nextStep:
-      "Add the next Opportunity-centered workflow, then Bet Sheet, Alerts, Assistant, and Performance views.",
+      "Coordinate active mobile shell and race-readability PRs before returning to the next Opportunity-centered workflow.",
   },
   {
     phase: "6",
@@ -182,15 +182,15 @@ const phases: ProgressPhase[] = [
 ];
 
 const activeWork = [
-  "Maintain this plan-backed task list as the visible progress handoff.",
-  "Use the merged watchlist_items-backed tracking workflow as the next Opportunity-centered validation path.",
-  "Keep real provider ingestion queued behind the next validated Opportunity path.",
+  "Use docs/ROADMAP.md for phase sequencing and this dashboard as the living day-to-day status handoff.",
+  "Finish the roadmap/progress reconciliation before opening another product slice.",
+  "Coordinate active mobile readiness PRs #82 and #83 without duplicating their implementation work.",
 ];
 
 const nextSteps = [
-  "Confirm Strideo Dev before any Supabase execution: strideo-dev, ntxtakbggtljjbalgris.",
-  "Run lint and build after progress dashboard or product surface changes.",
-  "Consider a focused tracked Opportunities list or filter now that PR #58 is merged.",
+  "Finish planning/status reconciliation and keep roadmap plus progress labels aligned.",
+  "Complete the narrow Layer 2 mobile shell/navigation/touch-target pass, coordinating with PR #82 and PR #83.",
+  "Return to Layer 1 Opportunity loop work: tracked Opportunities list/filter, recommendation context, Bet Sheet, then performance verification.",
   "Keep production untouched until explicitly authorized.",
 ];
 
@@ -282,6 +282,30 @@ const tasks: ProgressTask[] = [
     phase: "Release Coordination",
     summary:
       "Audited submitted PRs #29-#58 with priority on migrations, Auth, grants, service-role usage, server actions, user-owned writes, Opportunity read models, and progress surfaces. No high-severity blocker was found; PR #58 includes the duplicate-submit hardening fix, Dev/main migration alignment is restored after merge, Production was untouched, and validation passed except for the pre-merge main dry-run skew that PR #58 resolved.",
+  },
+  {
+    id: "roadmap-progress-reconciliation",
+    title: "Roadmap and progress reconciliation",
+    status: "active",
+    phase: "Release Coordination",
+    summary:
+      "Reconcile docs/ROADMAP.md with the living progress dashboard so Phase 0 and Phase 1 completion, active Opportunity work, mobile readiness coordination, and next sequence no longer send mixed planning signals.",
+  },
+  {
+    id: "watch-pr-82-mobile-shell",
+    title: "Watch PR #82 mobile shell",
+    status: "queued",
+    phase: "Risk Watchlist",
+    summary:
+      "Watch mobile shell/navigation/touch-target work for PRD alignment, no duplicate nav systems, no native-mobile drift, and no displacement of the Layer 1 Opportunity loop. Current status: open, not merged.",
+  },
+  {
+    id: "watch-pr-83-race-entry-cards",
+    title: "Watch PR #83 race entry cards",
+    status: "queued",
+    phase: "Risk Watchlist",
+    summary:
+      "Watch race-detail mobile readability work for overlap with PR #82, no duplicate mobile implementation in planning PRs, and preservation of desktop race-entry comparison. Current status: open, not merged.",
   },
   {
     id: "watch-pr-58-opportunity-tracking",

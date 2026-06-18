@@ -10,8 +10,14 @@ Product source of truth:
 - `docs/ARCHITECTURE.md`
 - `docs/ROADMAP.md`
 - `docs/ARCHITECTURE_REVIEW.md`
+- `docs/CODEX_OPERATING_PROMPT.md`
 
 Core product rule: `Opportunity` is the central object. Recommendations, alerts, wagers, results, explanations, and performance metrics should link back to an Opportunity wherever possible.
+
+Operating rule: classify material work using `docs/CODEX_OPERATING_PROMPT.md`
+before implementation. Prefer Layer 1 Opportunity work, use Layer 2 for
+maintenance, upgrades, deployment safety, security, and mobile web/PWA
+readiness, and defer Layer 3 scale operations unless explicitly requested.
 
 ## Repository
 
