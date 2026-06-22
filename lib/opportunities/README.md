@@ -25,6 +25,13 @@ generation, persistence, and feed reads organized around that rule.
   - Future model-backed scorers should live beside this file instead of
     replacing it in place.
 
+- `scoring/contracts.ts`
+  - Defines the Opportunity feature snapshot and value-scoring result contract
+    for future real model-backed scoring.
+  - Separates feature contract/schema versioning from model runtime versioning.
+  - Provides deterministic readiness/shape validation only; it is not real ML,
+    fake ML, a wager recommendation, or a runtime scorer.
+
 - `strategies/value-overlay-demo.ts`
   - Owns demo strategy identity, version setup, and qualification thresholds.
   - Decides whether a scored candidate qualifies as an Opportunity candidate.
@@ -78,6 +85,9 @@ When adding a new Opportunity generator:
    future wager recommendations should retain history.
 7. Keep recommendations, alerts, wagers, results, explanations, and performance
    metrics linked back to an Opportunity wherever possible.
+8. Use `scoring/contracts.ts` for feature snapshot and value-scoring output
+   shape before adding model-backed scoring; do not populate missing future
+   inputs with synthetic values.
 
 ## Non-Goals
 

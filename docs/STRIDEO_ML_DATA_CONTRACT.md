@@ -269,6 +269,12 @@ It returns:
 
 The checker does not query Supabase. It accepts a typed capability input and can later be connected to actual schema/data coverage checks.
 
+The Opportunity-facing feature snapshot and value-scoring result contract lives
+separately under `lib/opportunities/scoring/contracts.ts` and is documented in
+`docs/OPPORTUNITY_SCORING_CONTRACT.md`. That contract prepares the shape future
+real scorers should use, but it is not a trained model, fake scoring path,
+wagering recommendation, or production scoring runtime.
+
 ## Recommended Next Prompt
 
 Build the Strideo racing-form ingestion coverage checker that maps real Dev data into `DataCapabilityInput` for `lib/ml/data-contract/checkAllModelReadiness`, without training models or creating production Opportunities.

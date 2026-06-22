@@ -1,0 +1,83 @@
+# Opportunity Scoring Contract
+
+Date: 2026-06-22
+Baseline: `main` at or after PR #85 merge commit `746402e50e1fea97736d0fa845246a6d4dc189b9`
+
+## Purpose
+
+This document defines the first Opportunity-facing feature snapshot and
+value-scoring result contract. It prepares the next quality layer for real
+model-backed Opportunity scoring without implementing real ML, fake ML, wager
+recommendations, Bet Sheet, Alerts, Assistant, settlement, ROI, or provider
+ingestion expansion.
+
+The contract lives in `lib/opportunities/scoring/contracts.ts`.
+
+## Feature Snapshot Contract
+
+`OpportunityFeatureSnapshot` captures the inputs a future value scorer needs:
+
+- race identity and race date
+- optional Opportunity identity through `opportunityId + opportunityRaceDate`
+- race-entry and horse identity
+- track, surface, distance, class, and condition context when available
+- measured market inputs from morning line or odds snapshots when available
+- feature snapshot lineage and source lineage references
+- explicit readiness status and missing-feature reasons
+
+Current schema/read-model fields may populate the supported identity, race,
+entry, track, and market-input shape. Future-required fields remain optional and
+must stay explicit when unavailable. They should be represented through
+`missingFeatureReasons`, not filled with synthetic values.
+
+Feature snapshot versioning is separate from model runtime versioning:
+
+- `featureContractVersion`
+- `snapshotSchemaVersion`
+
+Neither field is a trained model version.
+
+## Value-Scoring Result Contract
+
+`ValueScoringResult` is a discriminated contract with two states:
+
+- `blocked`: required inputs are unavailable. Probability, edge, confidence,
+  and value fields must be `null`.
+- `scored`: a future real model produced auditable value output.
+
+Future scored outputs can represent:
+
+- estimated win probability
+- market-implied probability
+- edge delta
+- confidence
+- value score
+- explanation factors
+- model key and model version
+- input feature snapshot reference
+- Opportunity identity linkage where applicable
+
+The `modelVersion` field belongs only to scored outputs. It must stay separate
+from `featureContractVersion` and `snapshotSchemaVersion`.
+
+## Readiness And Safety
+
+The contract provides deterministic helpers for:
+
+- building feature snapshots with readiness status
+- preserving feature snapshot references
+- validating value-scoring output shape
+- blocking synthetic scoring values when inputs are unavailable
+- preserving composite Opportunity identity where applicable
+
+This is not a runtime scorer and does not query Supabase. It does not use a
+service-role client, bypass RLS, write provider ingestion data, touch production,
+or create migrations.
+
+## Next Slice
+
+The next recommended slice is to wire audited, pre-race feature snapshot
+materialization into the existing Opportunity generation/readiness path without
+creating fake model outputs. Real model-backed scoring should come only after
+feature snapshot lineage, model-version registry usage, prediction output
+lineage, and leakage checks are validated.

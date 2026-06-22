@@ -229,6 +229,9 @@ Goal: build long-term moat.
 - Partial: Phase 2 race data, Phase 3 Opportunity Engine, and Phase 5 Product
   UI have real foundations and visible app surfaces, but they are not MVP
   complete.
+- Active: the next Opportunity quality layer is feature snapshot and
+  value-scoring contract preparation. This is contract/readiness work only, not
+  real ML, fake ML, wagering, Bet Sheet, Alerts, Assistant, settlement, or ROI.
 - Queued: Wager construction, Bet Sheet, performance verification, assistant,
   and commercial readiness remain behind the next Opportunity-centered slices.
 - Blocked: no current roadmap phase is blocked by a known P0/P1 issue.
@@ -237,14 +240,14 @@ Goal: build long-term moat.
 
 ## Next Recommended Sequence
 
-1. Finish this planning/status reconciliation and keep the roadmap plus
-   `/protected/progress` aligned.
-2. Complete the narrow Layer 2 mobile shell/navigation/touch-target work already
-   active in PR #82, then coordinate with PR #83 for race-entry mobile
-   readability without duplicating it.
-3. Return immediately to Layer 1 Opportunity loop work: tracked Opportunities
-   list/filter, recommendation context, Bet Sheet, then performance
-   verification.
+1. Keep the roadmap plus `/protected/progress` aligned after each merged
+   Opportunity slice.
+2. Complete the Opportunity feature snapshot and value-scoring contract so
+   future real scorers have explicit input/output, versioning, readiness, and
+   Opportunity-linkage shape.
+3. After the contract is merged, materialize audited pre-race feature snapshots
+   before adding real model-backed scoring. Keep Bet Sheet, Alerts, Assistant,
+   settlement, ROI, and wagering deferred until the scoring lineage is cleaner.
 
 ## Risk And Drift Watchlist
 
@@ -256,3 +259,5 @@ Goal: build long-term moat.
   server-only until a reviewed product surface needs access.
 - Keep future ML, wagering, alerts, assistant, and performance work linked back
   to Opportunity lineage wherever the PRD expects it.
+- Do not present contract-only value-scoring shapes as real predictions or
+  wagering guidance.
