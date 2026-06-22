@@ -6,7 +6,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "tsx --test lib/auth/access-control.test.ts lib/ml/data-contract/readiness-check.test.ts lib/racing-codes/normalization-core.test.ts lib/provider-ingestion/racing-form-parser-core.test.ts lib/provider-ingestion/provider-race-entry-adapter-core.test.ts lib/provider-ingestion/provider-race-entry-persistence-core.test.ts lib/provider-ingestion/provider-race-entry-readiness-core.test.ts lib/provider-ingestion/provider-race-entry-job-audit-core.test.ts lib/imports/provider-race-entry-readiness-core.test.ts",
+    "test": "tsx --test lib/auth/access-control.test.ts lib/ml/data-contract/readiness-check.test.ts lib/opportunities/scoring/contracts.test.ts lib/racing-codes/normalization-core.test.ts lib/provider-ingestion/racing-form-parser-core.test.ts lib/provider-ingestion/provider-race-entry-adapter-core.test.ts lib/provider-ingestion/provider-race-entry-persistence-core.test.ts lib/provider-ingestion/provider-race-entry-readiness-core.test.ts lib/provider-ingestion/provider-race-entry-job-audit-core.test.ts lib/imports/provider-race-entry-readiness-core.test.ts",
     "db:migrations:check": "node scripts/check-supabase-migrations.mjs",
     "db:migrations:list": "node scripts/supabase-cli-with-env.mjs migration list --linked",
     "db:migrations:dry-run": "node scripts/supabase-cli-with-env.mjs db push --linked --dry-run",

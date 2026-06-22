@@ -131,11 +131,11 @@ const phases: ProgressPhase[] = [
     phase: "3",
     title: "Opportunity Engine",
     status: "active",
-    progress: 75,
+    progress: 78,
     summary:
-      "Demo generation, narrow service-role grants, candidate quality, feed visibility, detail display, and the first user tracking workflow are validated in Dev.",
+      "Demo generation, narrow service-role grants, candidate quality, feed visibility, detail display, tracked Opportunities, and the first user tracking workflow are validated in Dev.",
     nextStep:
-      "Consider a focused tracked Opportunities list or filter before expanding to alerts or wager workflows.",
+      "Prepare the Opportunity feature snapshot and value-scoring contract before adding real model-backed scoring.",
   },
   {
     phase: "4",
@@ -149,11 +149,11 @@ const phases: ProgressPhase[] = [
     phase: "5",
     title: "Product UI MVP",
     status: "partial",
-    progress: 58,
+    progress: 60,
     summary:
       "Dashboard, races, imports, strategies, predictions, Opportunities, detail views, tracked Opportunities, progress reporting, and mobile/PWA shell improvements are scaffolded.",
     nextStep:
-      "Review the tracked Opportunities slice, then return to Opportunity quality and scoring-contract work.",
+      "Preserve the current Opportunity UI surfaces while the next slice focuses on scoring-contract preparation.",
   },
   {
     phase: "6",
@@ -183,14 +183,14 @@ const phases: ProgressPhase[] = [
 
 const activeWork = [
   "Use docs/ROADMAP.md for phase sequencing and this dashboard as the living day-to-day status handoff.",
-  "Finish and review the tracked Opportunities route backed by user-owned watchlist_items.",
-  "Keep the merged mobile shell and race-card work from PR #82 and PR #83 intact while this slice stays Opportunity-focused.",
+  "Prepare the Opportunity feature snapshot and value-scoring contract for future real scoring.",
+  "Keep the merged tracked Opportunities, mobile shell, and race-card work intact while this slice stays contract-only.",
 ];
 
 const nextSteps = [
-  "Review and merge the tracked Opportunities route once validation passes.",
-  "Return to Layer 1 Opportunity quality: feature snapshot and value-scoring contract preparation.",
-  "Defer Bet Sheet, Assistant, Alerts, wager settlement, and ROI workflows until the Opportunity scoring contract is cleaner.",
+  "Merge the feature snapshot and value-scoring contract after validation.",
+  "Materialize audited pre-race feature snapshots as the next Opportunity quality slice.",
+  "Defer Bet Sheet, Assistant, Alerts, wager settlement, and ROI workflows until Opportunity scoring lineage is cleaner.",
   "Keep production untouched until explicitly authorized.",
 ];
 
@@ -262,10 +262,18 @@ const tasks: ProgressTask[] = [
   {
     id: "tracked-opportunities-list",
     title: "Tracked Opportunities list",
+    status: "complete",
+    phase: "Opportunity Engine",
+    summary:
+      "PR #85 merged. /protected/opportunities/tracked is a user-owned watchlist_items-backed surface for saved Opportunities, preserving composite Opportunity identity and avoiding new persistence, service-role usage, fake ML, or wager scope.",
+  },
+  {
+    id: "opportunity-scoring-contract",
+    title: "Opportunity scoring contract",
     status: "active",
     phase: "Opportunity Engine",
     summary:
-      "Adds /protected/opportunities/tracked as a user-owned watchlist_items-backed surface for saved Opportunities, preserving composite Opportunity identity and avoiding new persistence, service-role usage, fake ML, or wager scope.",
+      "Prepare feature snapshot and value-scoring output contracts with readiness/missing-feature reasons, separate feature and model versioning, and explicit no-real-ML/no-wagering scope.",
   },
   {
     id: "opportunity-track-final-review",
