@@ -13,6 +13,11 @@ ingestion expansion.
 
 The contract lives in `lib/opportunities/scoring/contracts.ts`.
 
+The first in-memory pre-race builder lives in
+`lib/opportunities/scoring/pre-race-snapshot.ts`. It builds contract-shaped
+snapshots from already-loaded race, entry, and odds facts, but it does not
+persist `feature_snapshots` rows.
+
 ## Feature Snapshot Contract
 
 `OpportunityFeatureSnapshot` captures the inputs a future value scorer needs:
@@ -74,10 +79,32 @@ This is not a runtime scorer and does not query Supabase. It does not use a
 service-role client, bypass RLS, write provider ingestion data, touch production,
 or create migrations.
 
+## Pre-Race Snapshot Builder
+
+The pre-race builder is an in-memory bridge from the contract to future feature
+materialization. It:
+
+- builds `OpportunityFeatureSnapshot` objects from pre-race race, entry, and
+  market facts supplied by the caller
+- uses morning line odds only as a trusted pre-race entry field
+- uses live odds snapshots only when `snapshotAt` is strictly before a trusted
+  pre-race cutoff, defaulting to `race.scheduledAt`
+- excludes odds with missing/invalid timing, post-cutoff timing, or unusable
+  market probability
+- records excluded result, payout, settlement, and other outcome-derived inputs
+  in the audit envelope instead of adding them to the snapshot
+- returns no prediction, value score, wager recommendation, or model runtime
+  version
+
+The builder also returns audit flags confirming that no feature snapshot,
+prediction output, score, or wager was written. Persisted `feature_snapshots`
+remain future work and should be introduced only after a scoped Dev-write
+authorization and leakage-readiness review.
+
 ## Next Slice
 
 The next recommended slice is to wire audited, pre-race feature snapshot
 materialization into the existing Opportunity generation/readiness path without
-creating fake model outputs. Real model-backed scoring should come only after
-feature snapshot lineage, model-version registry usage, prediction output
-lineage, and leakage checks are validated.
+creating fake model outputs or writing production data. Real model-backed
+scoring should come only after persisted feature snapshot lineage, model-version
+registry usage, prediction output lineage, and leakage checks are validated.

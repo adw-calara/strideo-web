@@ -32,6 +32,14 @@ generation, persistence, and feed reads organized around that rule.
   - Provides deterministic readiness/shape validation only; it is not real ML,
     fake ML, a wager recommendation, or a runtime scorer.
 
+- `scoring/pre-race-snapshot.ts`
+  - Builds in-memory Opportunity feature snapshots from pre-race race, entry,
+    and odds facts according to the scoring contract.
+  - Applies a strict odds cutoff rule: live odds are used only when
+    `snapshotAt` is before a trusted pre-race cutoff.
+  - Does not persist feature snapshots, predictions, scores, wagers, or model
+    outputs.
+
 - `strategies/value-overlay-demo.ts`
   - Owns demo strategy identity, version setup, and qualification thresholds.
   - Decides whether a scored candidate qualifies as an Opportunity candidate.
@@ -88,6 +96,8 @@ When adding a new Opportunity generator:
 8. Use `scoring/contracts.ts` for feature snapshot and value-scoring output
    shape before adding model-backed scoring; do not populate missing future
    inputs with synthetic values.
+9. Use `scoring/pre-race-snapshot.ts` for audited in-memory pre-race feature
+   snapshots before adding any persisted `feature_snapshots` write path.
 
 ## Non-Goals
 
