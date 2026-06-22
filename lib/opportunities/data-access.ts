@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 
 export const EMPTY_OPPORTUNITY_FEED_MESSAGE =
   "No published Opportunities are visible yet.";
+export const EMPTY_TRACKED_OPPORTUNITIES_MESSAGE =
+  "No tracked Opportunities are saved yet.";
 
 export type OpportunityFeedDataStatus = "loaded" | "empty";
 
@@ -88,6 +90,10 @@ export type OpportunityDetailItem = OpportunityFeedItem & {
   trackingState: OpportunityTrackingState;
 };
 
+export type TrackedOpportunityFeedItem = OpportunityFeedItem & {
+  trackingState: OpportunityTrackingState;
+};
+
 export type OpportunityFeedSummary = {
   opportunityCount: number;
   subjectCount: number;
@@ -98,6 +104,13 @@ export type OpportunityFeedSummary = {
 export type OpportunityFeedResult = {
   status: OpportunityFeedDataStatus;
   opportunities: OpportunityFeedItem[];
+  summary: OpportunityFeedSummary;
+  message: string;
+};
+
+export type TrackedOpportunityFeedResult = {
+  status: OpportunityFeedDataStatus;
+  opportunities: TrackedOpportunityFeedItem[];
   summary: OpportunityFeedSummary;
   message: string;
 };
@@ -304,6 +317,19 @@ function mapById<T extends { id: string }>(rows: T[]) {
   return rows.reduce<Record<string, T>>((byId, row) => {
     byId[row.id] = row;
     return byId;
+  }, {});
+}
+
+function opportunityCompositeKey(opportunityId: string, raceDate: string) {
+  return `${opportunityId}:${raceDate}`;
+}
+
+function mapByOpportunityCompositeKey<
+  T extends { id: string; raceDate: string },
+>(rows: T[]) {
+  return rows.reduce<Record<string, T>>((byKey, row) => {
+    byKey[opportunityCompositeKey(row.id, row.raceDate)] = row;
+    return byKey;
   }, {});
 }
 
@@ -627,6 +653,15 @@ async function readOpportunityTrackingState(
   return mapTrackingState(data);
 }
 
+function emptyOpportunitySummary(): OpportunityFeedSummary {
+  return {
+    opportunityCount: 0,
+    subjectCount: 0,
+    scoreCount: 0,
+    explanationCount: 0,
+  };
+}
+
 export async function listOpportunityFeed(): Promise<OpportunityFeedResult> {
   const supabase = await createClient();
   const { data: opportunityRows, error: opportunityError } = await supabase
@@ -650,12 +685,7 @@ export async function listOpportunityFeed(): Promise<OpportunityFeedResult> {
     return {
       status: "empty",
       opportunities: [],
-      summary: {
-        opportunityCount: 0,
-        subjectCount: 0,
-        scoreCount: 0,
-        explanationCount: 0,
-      },
+      summary: emptyOpportunitySummary(),
       message: EMPTY_OPPORTUNITY_FEED_MESSAGE,
     };
   }
@@ -672,6 +702,119 @@ export async function listOpportunityFeed(): Promise<OpportunityFeedResult> {
     message: `${summary.opportunityCount} Opportunity signal${
       summary.opportunityCount === 1 ? "" : "s"
     } loaded.`,
+  };
+}
+
+export async function listTrackedOpportunityFeed(): Promise<TrackedOpportunityFeedResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    raiseOpportunityFeedError("tracked Opportunity user session");
+  }
+
+  const { data: trackedRows, error: trackedError } = await supabase
+    .from("watchlist_items")
+    .select(opportunityTrackingSelect)
+    .is("deleted_at", null)
+    .order("updated_at", { ascending: false })
+    .limit(50)
+    .returns<RawOpportunityTrackingRow[]>();
+
+  if (trackedError) {
+    raiseOpportunityFeedError("tracked Opportunity list");
+  }
+
+  const trackedItems = trackedRows ?? [];
+
+  if (trackedItems.length === 0) {
+    return {
+      status: "empty",
+      opportunities: [],
+      summary: emptyOpportunitySummary(),
+      message: EMPTY_TRACKED_OPPORTUNITIES_MESSAGE,
+    };
+  }
+
+  const opportunityIds = trackedItems.map((item) => item.opportunity_id);
+  const opportunityRaceDates = uniqueStrings(
+    trackedItems.map((item) => item.opportunity_race_date),
+  );
+  const trackedOpportunityKeys = new Set(
+    trackedItems.map((item) =>
+      opportunityCompositeKey(item.opportunity_id, item.opportunity_race_date),
+    ),
+  );
+  const { data: opportunityRows, error: opportunityError } = await supabase
+    .from("opportunities")
+    .select(opportunitySelect)
+    .in("id", opportunityIds)
+    .in("race_date", opportunityRaceDates)
+    .not("published_at", "is", null)
+    .lte("published_at", new Date().toISOString())
+    .in("state", ["published", "closed", "resulted", "verified"])
+    .returns<RawOpportunityRow[]>();
+
+  if (opportunityError) {
+    raiseOpportunityFeedError("tracked Opportunity details");
+  }
+
+  const opportunities = (opportunityRows ?? []).filter((opportunity) =>
+    trackedOpportunityKeys.has(
+      opportunityCompositeKey(opportunity.id, opportunity.race_date),
+    ),
+  );
+
+  if (opportunities.length === 0) {
+    return {
+      status: "empty",
+      opportunities: [],
+      summary: emptyOpportunitySummary(),
+      message:
+        "Your saved Opportunities are not currently visible in the protected feed.",
+    };
+  }
+
+  const hydrated = await hydrateOpportunityRows(supabase, opportunities);
+  const opportunitiesByKey = mapByOpportunityCompositeKey(hydrated.items);
+  const trackedOpportunities = trackedItems
+    .map((trackedItem) => {
+      const opportunity =
+        opportunitiesByKey[
+          opportunityCompositeKey(
+            trackedItem.opportunity_id,
+            trackedItem.opportunity_race_date,
+          )
+        ];
+
+      if (!opportunity) {
+        return null;
+      }
+
+      return {
+        ...opportunity,
+        trackingState: mapTrackingState(trackedItem),
+      };
+    })
+    .filter(
+      (opportunity): opportunity is TrackedOpportunityFeedItem =>
+        opportunity !== null,
+    );
+  const summary = summarizeOpportunityFeed(trackedOpportunities);
+
+  return {
+    status: trackedOpportunities.length > 0 ? "loaded" : "empty",
+    opportunities: trackedOpportunities,
+    summary,
+    message:
+      trackedOpportunities.length > 0
+        ? `${summary.opportunityCount} tracked Opportunity signal${
+            summary.opportunityCount === 1 ? "" : "s"
+          } loaded.`
+        : "Your saved Opportunities are not currently visible in the protected feed.",
   };
 }
 

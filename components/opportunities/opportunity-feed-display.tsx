@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   ArrowRight,
+  BookmarkCheck,
   CalendarDays,
   EyeOff,
   FileText,
@@ -22,6 +23,7 @@ import {
 import type {
   OpportunityFeedItem,
   OpportunityFeedSummary,
+  TrackedOpportunityFeedItem,
 } from "@/lib/opportunities/data-access";
 
 type BadgeTone = "default" | "secondary" | "outline";
@@ -178,6 +180,14 @@ export function OpportunityFeedHeader({
           Opportunity signals are informational and not betting instructions.
         </p>
       </div>
+      <div>
+        <Button asChild variant="outline">
+          <Link href="/protected/opportunities/tracked">
+            <BookmarkCheck aria-hidden="true" className="size-4" />
+            Tracked Opportunities
+          </Link>
+        </Button>
+      </div>
       <div className="grid gap-3 rounded-md border bg-muted/30 p-4 sm:grid-cols-4">
         <OpportunityMetric
           label="Signals"
@@ -207,6 +217,69 @@ export function OpportunityFeedEmptyState({ message }: { message: string }) {
           Dev data is available.
         </CardDescription>
       </CardHeader>
+    </Card>
+  );
+}
+
+export function TrackedOpportunitiesHeader({
+  summary,
+}: {
+  summary: OpportunityFeedSummary;
+}) {
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <p className="text-sm font-medium uppercase tracking-normal text-muted-foreground">
+          Opportunities
+        </p>
+        <Badge>{summary.opportunityCount} tracked</Badge>
+      </div>
+      <div className="max-w-3xl">
+        <h1 className="text-3xl font-semibold tracking-normal">
+          Tracked Opportunities
+        </h1>
+        <p className="mt-2 text-muted-foreground">
+          Saved Opportunity signals for follow-up. Tracking does not place,
+          record, or recommend a wager.
+        </p>
+      </div>
+      <div className="grid gap-3 rounded-md border bg-muted/30 p-4 sm:grid-cols-4">
+        <OpportunityMetric label="Tracked" value={summary.opportunityCount} />
+        <OpportunityMetric label="Subjects" value={summary.subjectCount} />
+        <OpportunityMetric label="Scores" value={summary.scoreCount} />
+        <OpportunityMetric
+          label="Explanations"
+          value={summary.explanationCount}
+        />
+      </div>
+    </section>
+  );
+}
+
+export function TrackedOpportunityEmptyState({ message }: { message: string }) {
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <BookmarkCheck
+            aria-hidden="true"
+            className="size-5 text-muted-foreground"
+          />
+          <CardTitle>No tracked Opportunities yet</CardTitle>
+        </div>
+        <CardDescription>
+          {message} Open the Opportunity Feed to save published signals for
+          follow-up.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button asChild variant="outline">
+          <Link href="/protected/opportunities">
+            Open Opportunity Feed
+            <ArrowRight aria-hidden="true" className="size-4" />
+          </Link>
+        </Button>
+      </CardContent>
     </Card>
   );
 }
@@ -341,6 +414,154 @@ export function OpportunityFeedCard({
         <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
           <p className="text-sm text-muted-foreground">
             This Opportunity stays linked to the source race context.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild size="sm">
+              <Link href={`/protected/opportunities/${opportunity.id}`}>
+                Open detail
+                <ArrowRight aria-hidden="true" className="size-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/protected/races/${opportunity.raceId}`}>
+                Open linked race
+                <ArrowRight aria-hidden="true" className="size-4" />
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function TrackedOpportunityCard({
+  opportunity,
+}: {
+  opportunity: TrackedOpportunityFeedItem;
+}) {
+  const explanation = opportunity.latestExplanation;
+  const score = opportunity.latestScore;
+  const subjectSummary = formatSubjectSummary(opportunity);
+  const raceSummary = formatRaceSummary(opportunity);
+  const trackSummary = formatTrackSummary(opportunity);
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <CardTitle className="text-lg">
+              {titleCase(opportunity.opportunityType)}
+            </CardTitle>
+            <CardDescription className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+              <span>{subjectSummary}</span>
+              <span className="inline-flex items-center gap-1">
+                <CalendarDays
+                  aria-hidden="true"
+                  className="size-4 text-muted-foreground"
+                />
+                {formatDate(opportunity.raceDate)}
+              </span>
+            </CardDescription>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary">
+              <BookmarkCheck aria-hidden="true" className="mr-1 size-3" />
+              Saved
+            </Badge>
+            <OpportunityStateBadge state={opportunity.state} />
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-5">
+        <div className="grid gap-3 rounded-md border bg-muted/20 p-4 sm:grid-cols-4">
+          <OpportunityMetric label="Subject" value={subjectSummary} />
+          <OpportunityMetric label="Race" value={raceSummary} />
+          <OpportunityMetric label="Track" value={trackSummary} />
+          <OpportunityMetric
+            label="Tracking"
+            value={titleCase(opportunity.trackingState.workflowState ?? "saved")}
+          />
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          <OpportunityMetric
+            label="Score"
+            value={
+              <span className="inline-flex items-center gap-2">
+                <Gauge
+                  aria-hidden="true"
+                  className="size-4 text-muted-foreground"
+                />
+                {formatScore(opportunity.currentScore ?? score?.score ?? null)}
+              </span>
+            }
+          />
+          <OpportunityMetric
+            label="Confidence"
+            value={formatScore(
+              opportunity.currentConfidence ?? score?.confidence ?? null,
+            )}
+          />
+          <OpportunityMetric
+            label="Edge"
+            value={formatScore(opportunity.currentEdge ?? score?.edge ?? null)}
+          />
+        </div>
+
+        {explanation?.headline || explanation?.summary ? (
+          <div className="rounded-md border bg-muted/20 p-4">
+            <div className="flex items-center gap-2">
+              <FileText
+                aria-hidden="true"
+                className="size-4 text-muted-foreground"
+              />
+              <p className="text-sm font-medium">
+                {explanation.headline ?? "Explanation available"}
+              </p>
+            </div>
+            {explanation.summary ? (
+              <p className="mt-2 text-sm text-muted-foreground">
+                {explanation.summary}
+              </p>
+            ) : null}
+          </div>
+        ) : (
+          <div className="rounded-md border bg-muted/20 p-4 text-sm text-muted-foreground">
+            Explanation summary unavailable for this saved signal.
+          </div>
+        )}
+
+        <div className="grid gap-3 border-t pt-4 sm:grid-cols-3">
+          <OpportunityMetric
+            label="Saved"
+            value={formatDateTime(opportunity.trackingState.trackedAt)}
+          />
+          <OpportunityMetric
+            label="Updated"
+            value={formatDateTime(opportunity.trackingState.updatedAt)}
+          />
+          <OpportunityMetric
+            label="Score version"
+            value={
+              score ? (
+                <span className="inline-flex items-center gap-2">
+                  <Layers3
+                    aria-hidden="true"
+                    className="size-4 text-muted-foreground"
+                  />
+                  {score.scoringVersion ?? "Not available"}
+                </span>
+              ) : (
+                "Unavailable"
+              )
+            }
+          />
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+          <p className="text-sm text-muted-foreground">
+            This saved Opportunity stays linked to the source race context.
           </p>
           <div className="flex flex-wrap gap-2">
             <Button asChild size="sm">

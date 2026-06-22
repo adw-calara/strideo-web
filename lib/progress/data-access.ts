@@ -149,11 +149,11 @@ const phases: ProgressPhase[] = [
     phase: "5",
     title: "Product UI MVP",
     status: "partial",
-    progress: 50,
+    progress: 58,
     summary:
-      "Dashboard, races, imports, strategies, predictions, Opportunities, detail views, progress reporting, and mobile/PWA readiness planning are scaffolded.",
+      "Dashboard, races, imports, strategies, predictions, Opportunities, detail views, tracked Opportunities, progress reporting, and mobile/PWA shell improvements are scaffolded.",
     nextStep:
-      "Coordinate active mobile shell and race-readability PRs before returning to the next Opportunity-centered workflow.",
+      "Review the tracked Opportunities slice, then return to Opportunity quality and scoring-contract work.",
   },
   {
     phase: "6",
@@ -183,14 +183,14 @@ const phases: ProgressPhase[] = [
 
 const activeWork = [
   "Use docs/ROADMAP.md for phase sequencing and this dashboard as the living day-to-day status handoff.",
-  "Finish the roadmap/progress reconciliation before opening another product slice.",
-  "Coordinate active mobile readiness PRs #82 and #83 without duplicating their implementation work.",
+  "Finish and review the tracked Opportunities route backed by user-owned watchlist_items.",
+  "Keep the merged mobile shell and race-card work from PR #82 and PR #83 intact while this slice stays Opportunity-focused.",
 ];
 
 const nextSteps = [
-  "Finish planning/status reconciliation and keep roadmap plus progress labels aligned.",
-  "Complete the narrow Layer 2 mobile shell/navigation/touch-target pass, coordinating with PR #82 and PR #83.",
-  "Return to Layer 1 Opportunity loop work: tracked Opportunities list/filter, recommendation context, Bet Sheet, then performance verification.",
+  "Review and merge the tracked Opportunities route once validation passes.",
+  "Return to Layer 1 Opportunity quality: feature snapshot and value-scoring contract preparation.",
+  "Defer Bet Sheet, Assistant, Alerts, wager settlement, and ROI workflows until the Opportunity scoring contract is cleaner.",
   "Keep production untouched until explicitly authorized.",
 ];
 
@@ -257,7 +257,15 @@ const tasks: ProgressTask[] = [
     status: "complete",
     phase: "Opportunity Engine",
     summary:
-      "PR #58 added migration 20260615141628_opportunity_tracking_watchlist_grants.sql and a minimal detail-page Track Opportunity action backed by watchlist_items. The migration was applied to Dev only, dry-run is up to date, the authenticated runtime path saved an Opportunity as watching, the refreshed detail view shows Saved, anon access remains denied, Production was untouched, and untrack UI, tracked-list view, alerts, and wager workflows remain deferred.",
+      "PR #58 added migration 20260615141628_opportunity_tracking_watchlist_grants.sql and a minimal detail-page Track Opportunity action backed by watchlist_items. The migration was applied to Dev only, dry-run is up to date, the authenticated runtime path saved an Opportunity as watching, the refreshed detail view shows Saved, anon access remains denied, Production was untouched, and untrack UI, alerts, and wager workflows remain deferred.",
+  },
+  {
+    id: "tracked-opportunities-list",
+    title: "Tracked Opportunities list",
+    status: "active",
+    phase: "Opportunity Engine",
+    summary:
+      "Adds /protected/opportunities/tracked as a user-owned watchlist_items-backed surface for saved Opportunities, preserving composite Opportunity identity and avoiding new persistence, service-role usage, fake ML, or wager scope.",
   },
   {
     id: "opportunity-track-final-review",
@@ -294,18 +302,18 @@ const tasks: ProgressTask[] = [
   {
     id: "watch-pr-82-mobile-shell",
     title: "Watch PR #82 mobile shell",
-    status: "queued",
+    status: "complete",
     phase: "Risk Watchlist",
     summary:
-      "Watch mobile shell/navigation/touch-target work for PRD alignment, no duplicate nav systems, no native-mobile drift, and no displacement of the Layer 1 Opportunity loop. Current status: open, not merged.",
+      "PR #82 merged. Mobile shell/navigation/touch-target work is now on main; future slices should preserve it and avoid duplicate nav systems.",
   },
   {
     id: "watch-pr-83-race-entry-cards",
     title: "Watch PR #83 race entry cards",
-    status: "queued",
+    status: "complete",
     phase: "Risk Watchlist",
     summary:
-      "Watch race-detail mobile readability work for overlap with PR #82, no duplicate mobile implementation in planning PRs, and preservation of desktop race-entry comparison. Current status: open, not merged.",
+      "PR #83 merged. Race-detail mobile entry cards are now on main; future Opportunity slices should not re-solve race-detail mobile readability.",
   },
   {
     id: "watch-pr-58-opportunity-tracking",
