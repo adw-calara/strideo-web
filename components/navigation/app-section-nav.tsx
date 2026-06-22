@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  BookmarkCheck,
   Brain,
   DatabaseZap,
   LayoutDashboard,
@@ -43,6 +44,12 @@ const navItems = [
     mobileRole: "primary",
   },
   {
+    href: "/protected/opportunities/tracked",
+    label: "Tracked",
+    icon: BookmarkCheck,
+    mobileRole: "secondary",
+  },
+  {
     href: "/protected/predictions",
     label: "Predictions",
     icon: Brain,
@@ -77,7 +84,14 @@ const navItems = [
 type NavItem = (typeof navItems)[number];
 
 function isActivePath(pathname: string, href: NavItem["href"]) {
-  return pathname === href || (href !== "/protected" && pathname.startsWith(href));
+  const isTrackedRoute = pathname.startsWith("/protected/opportunities/tracked");
+
+  return (
+    pathname === href ||
+    (href !== "/protected" &&
+      pathname.startsWith(href) &&
+      !(href === "/protected/opportunities" && isTrackedRoute))
+  );
 }
 
 function NavLink({
