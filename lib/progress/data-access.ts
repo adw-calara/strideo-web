@@ -135,7 +135,7 @@ const phases: ProgressPhase[] = [
     summary:
       "Demo generation, narrow service-role grants, candidate quality, feed visibility, detail display, tracked Opportunities, scoring contracts, and the first user tracking workflow are validated.",
     nextStep:
-      "Build in-memory pre-race feature snapshots and leakage checks before any persisted feature snapshot write path.",
+      "Use the Dev-only feature snapshots plan to scope persisted readiness materialization before any write path.",
   },
   {
     phase: "4",
@@ -183,13 +183,13 @@ const phases: ProgressPhase[] = [
 
 const activeWork = [
   "Use docs/ROADMAP.md for phase sequencing and this dashboard as the living day-to-day status handoff.",
-  "Build audited in-memory pre-race Opportunity feature snapshots with leakage/readiness checks.",
-  "Keep the merged tracked Opportunities, scoring contracts, mobile shell, and race-card work intact while this slice stays no-write/no-scoring.",
+  "Plan Dev-only persisted Opportunity feature snapshots against the existing public.feature_snapshots schema.",
+  "Keep the merged tracked Opportunities, scoring contracts, pre-race snapshot builder, mobile shell, and race-card work intact while this slice stays documentation-only.",
 ];
 
 const nextSteps = [
-  "Merge the in-memory pre-race feature snapshot builder after validation.",
-  "Scope persisted Dev-only feature snapshot materialization after the in-memory builder is reviewed.",
+  "Review docs/DEV_ONLY_FEATURE_SNAPSHOTS_PLAN.md.",
+  "Authorize a separate Dev-only feature snapshot implementation or migration slice only after the plan is accepted.",
   "Defer real ML, fake ML, scoring runtime, Bet Sheet, Assistant, Alerts, wager settlement, and ROI workflows until Opportunity scoring lineage is cleaner.",
   "Keep production untouched until explicitly authorized.",
 ];
@@ -278,10 +278,18 @@ const tasks: ProgressTask[] = [
   {
     id: "pre-race-feature-snapshots",
     title: "Pre-race feature snapshots",
+    status: "complete",
+    phase: "Opportunity Engine",
+    summary:
+      "PR #87 merged. In-memory Opportunity feature snapshots now build from pre-race race, entry, and market facts with odds cutoff leakage checks, missing-feature reasons, and explicit no-persistence/no-scoring behavior.",
+  },
+  {
+    id: "dev-only-feature-snapshots-plan",
+    title: "Dev-only persisted feature snapshots plan",
     status: "active",
     phase: "Opportunity Engine",
     summary:
-      "Build in-memory Opportunity feature snapshots from pre-race race, entry, and market facts with odds cutoff leakage checks, missing-feature reasons, and explicit no-persistence/no-scoring behavior.",
+      "Plan persisted Dev-only feature_snapshots against the existing table before adding any migration, Supabase write path, prediction output, Opportunity score, wager, Bet Sheet, or provider-ingestion scope.",
   },
   {
     id: "opportunity-track-final-review",
