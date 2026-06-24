@@ -131,11 +131,11 @@ const phases: ProgressPhase[] = [
     phase: "3",
     title: "Opportunity Engine",
     status: "active",
-    progress: 78,
+    progress: 80,
     summary:
-      "Demo generation, narrow service-role grants, candidate quality, feed visibility, detail display, tracked Opportunities, and the first user tracking workflow are validated in Dev.",
+      "Demo generation, narrow service-role grants, candidate quality, feed visibility, detail display, tracked Opportunities, scoring contracts, and the first user tracking workflow are validated.",
     nextStep:
-      "Prepare the Opportunity feature snapshot and value-scoring contract before adding real model-backed scoring.",
+      "Build in-memory pre-race feature snapshots and leakage checks before any persisted feature snapshot write path.",
   },
   {
     phase: "4",
@@ -183,14 +183,14 @@ const phases: ProgressPhase[] = [
 
 const activeWork = [
   "Use docs/ROADMAP.md for phase sequencing and this dashboard as the living day-to-day status handoff.",
-  "Prepare the Opportunity feature snapshot and value-scoring contract for future real scoring.",
-  "Keep the merged tracked Opportunities, mobile shell, and race-card work intact while this slice stays contract-only.",
+  "Build audited in-memory pre-race Opportunity feature snapshots with leakage/readiness checks.",
+  "Keep the merged tracked Opportunities, scoring contracts, mobile shell, and race-card work intact while this slice stays no-write/no-scoring.",
 ];
 
 const nextSteps = [
-  "Merge the feature snapshot and value-scoring contract after validation.",
-  "Materialize audited pre-race feature snapshots as the next Opportunity quality slice.",
-  "Defer Bet Sheet, Assistant, Alerts, wager settlement, and ROI workflows until Opportunity scoring lineage is cleaner.",
+  "Merge the in-memory pre-race feature snapshot builder after validation.",
+  "Scope persisted Dev-only feature snapshot materialization after the in-memory builder is reviewed.",
+  "Defer real ML, fake ML, scoring runtime, Bet Sheet, Assistant, Alerts, wager settlement, and ROI workflows until Opportunity scoring lineage is cleaner.",
   "Keep production untouched until explicitly authorized.",
 ];
 
@@ -270,10 +270,18 @@ const tasks: ProgressTask[] = [
   {
     id: "opportunity-scoring-contract",
     title: "Opportunity scoring contract",
+    status: "complete",
+    phase: "Opportunity Engine",
+    summary:
+      "PR #86 merged. Feature snapshot and value-scoring output contracts now define readiness/missing-feature reasons, separate feature and model versioning, and explicit no-real-ML/no-wagering scope.",
+  },
+  {
+    id: "pre-race-feature-snapshots",
+    title: "Pre-race feature snapshots",
     status: "active",
     phase: "Opportunity Engine",
     summary:
-      "Prepare feature snapshot and value-scoring output contracts with readiness/missing-feature reasons, separate feature and model versioning, and explicit no-real-ML/no-wagering scope.",
+      "Build in-memory Opportunity feature snapshots from pre-race race, entry, and market facts with odds cutoff leakage checks, missing-feature reasons, and explicit no-persistence/no-scoring behavior.",
   },
   {
     id: "opportunity-track-final-review",

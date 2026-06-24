@@ -229,9 +229,10 @@ Goal: build long-term moat.
 - Partial: Phase 2 race data, Phase 3 Opportunity Engine, and Phase 5 Product
   UI have real foundations and visible app surfaces, but they are not MVP
   complete.
-- Active: the next Opportunity quality layer is feature snapshot and
-  value-scoring contract preparation. This is contract/readiness work only, not
-  real ML, fake ML, wagering, Bet Sheet, Alerts, Assistant, settlement, or ROI.
+- Active: the next Opportunity quality layer is in-memory pre-race feature
+  snapshot readiness with leakage checks. This is still contract/readiness work,
+  not real ML, fake ML, persisted scoring, wagering, Bet Sheet, Alerts,
+  Assistant, settlement, or ROI.
 - Queued: Wager construction, Bet Sheet, performance verification, assistant,
   and commercial readiness remain behind the next Opportunity-centered slices.
 - Blocked: no current roadmap phase is blocked by a known P0/P1 issue.
@@ -242,12 +243,12 @@ Goal: build long-term moat.
 
 1. Keep the roadmap plus `/protected/progress` aligned after each merged
    Opportunity slice.
-2. Complete the Opportunity feature snapshot and value-scoring contract so
-   future real scorers have explicit input/output, versioning, readiness, and
-   Opportunity-linkage shape.
-3. After the contract is merged, materialize audited pre-race feature snapshots
-   before adding real model-backed scoring. Keep Bet Sheet, Alerts, Assistant,
-   settlement, ROI, and wagering deferred until the scoring lineage is cleaner.
+2. Complete the in-memory pre-race feature snapshot builder and leakage checks
+   so future materialization has deterministic input/readiness behavior.
+3. After the in-memory builder is merged, scope persisted Dev-only
+   `feature_snapshots` materialization before adding real model-backed scoring.
+   Keep Bet Sheet, Alerts, Assistant, settlement, ROI, and wagering deferred
+   until the scoring lineage is cleaner.
 
 ## Risk And Drift Watchlist
 

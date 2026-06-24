@@ -31,6 +31,7 @@ export type OpportunityMissingFeatureReasonCode =
   | "not_materialized"
   | "schema_gap"
   | "coverage_unproven"
+  | "leakage_risk"
   | "future_required";
 
 export type OpportunityMissingFeatureReason = {
