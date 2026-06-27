@@ -135,7 +135,7 @@ const phases: ProgressPhase[] = [
     summary:
       "Demo generation, narrow service-role grants, candidate quality, feed visibility, detail display, tracked Opportunities, scoring contracts, and the first user tracking workflow are validated.",
     nextStep:
-      "Use the Dev-only feature snapshots plan to scope persisted readiness materialization before any write path.",
+      "Review the Dev-only feature snapshot materialization dry-run before any controlled Dev apply.",
   },
   {
     phase: "4",
@@ -183,13 +183,13 @@ const phases: ProgressPhase[] = [
 
 const activeWork = [
   "Use docs/ROADMAP.md for phase sequencing and this dashboard as the living day-to-day status handoff.",
-  "Plan Dev-only persisted Opportunity feature snapshots against the existing public.feature_snapshots schema.",
-  "Keep the merged tracked Opportunities, scoring contracts, pre-race snapshot builder, mobile shell, and race-card work intact while this slice stays documentation-only.",
+  "Implement Dev-only persisted Opportunity feature snapshot materialization against the existing public.feature_snapshots schema.",
+  "Keep the merged tracked Opportunities, scoring contracts, pre-race snapshot builder, mobile shell, and race-card work intact while this slice stays Dev-only and non-production.",
 ];
 
 const nextSteps = [
-  "Review docs/DEV_ONLY_FEATURE_SNAPSHOTS_PLAN.md.",
-  "Authorize a separate Dev-only feature snapshot implementation or migration slice only after the plan is accepted.",
+  "Review docs/DEV_ONLY_FEATURE_SNAPSHOTS_MATERIALIZATION.md and the dry-run output.",
+  "Authorize a controlled Dev apply only after reviewing planned rows; keep any schema changes in a separate migration prompt.",
   "Defer real ML, fake ML, scoring runtime, Bet Sheet, Assistant, Alerts, wager settlement, and ROI workflows until Opportunity scoring lineage is cleaner.",
   "Keep production untouched until explicitly authorized.",
 ];
@@ -286,10 +286,18 @@ const tasks: ProgressTask[] = [
   {
     id: "dev-only-feature-snapshots-plan",
     title: "Dev-only persisted feature snapshots plan",
+    status: "complete",
+    phase: "Opportunity Engine",
+    summary:
+      "PR #88 merged. Persisted Dev-only feature_snapshots are planned against the existing table before any prediction output, Opportunity score, wager, Bet Sheet, or provider-ingestion scope.",
+  },
+  {
+    id: "dev-only-feature-snapshots-materialization",
+    title: "Dev-only feature snapshot materialization",
     status: "active",
     phase: "Opportunity Engine",
     summary:
-      "Plan persisted Dev-only feature_snapshots against the existing table before adding any migration, Supabase write path, prediction output, Opportunity score, wager, Bet Sheet, or provider-ingestion scope.",
+      "Add a Dev-only dry-run/apply CLI that materializes pre-race Opportunity feature snapshots with deterministic IDs and skip-existing replay safety, without migrations, production, real ML, provider ingestion, scoring, or wagering work.",
   },
   {
     id: "opportunity-track-final-review",

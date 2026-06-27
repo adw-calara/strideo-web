@@ -230,7 +230,7 @@ Goal: build long-term moat.
   UI have real foundations and visible app surfaces, but they are not MVP
   complete.
 - Active: the next Opportunity quality layer is Dev-only persisted
-  `feature_snapshots` planning after the in-memory pre-race snapshot builder
+  `feature_snapshots` materialization capability after the planning slice
   merged. This is still contract/readiness work, not real ML, fake ML,
   persisted scoring, wagering, Bet Sheet, Alerts, Assistant, settlement, or ROI.
 - Queued: Wager construction, Bet Sheet, performance verification, assistant,
@@ -243,11 +243,10 @@ Goal: build long-term moat.
 
 1. Keep the roadmap plus `/protected/progress` aligned after each merged
    Opportunity slice.
-2. Use `docs/DEV_ONLY_FEATURE_SNAPSHOTS_PLAN.md` to scope persisted Dev-only
-   `feature_snapshots` materialization against the existing schema before
-   adding any write path.
-3. After the plan is approved, create a separately authorized implementation
-   slice before adding real model-backed scoring.
+2. Review `docs/DEV_ONLY_FEATURE_SNAPSHOTS_MATERIALIZATION.md` and the Dev-only
+   dry-run output before authorizing any controlled Dev apply.
+3. After Dev materialization is reviewed, keep real model-backed scoring in a
+   separate slice with feature snapshot lineage as an explicit prerequisite.
    Keep Bet Sheet, Alerts, Assistant, settlement, ROI, and wagering deferred
    until the scoring lineage is cleaner.
 
