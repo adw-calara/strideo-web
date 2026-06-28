@@ -131,11 +131,11 @@ const phases: ProgressPhase[] = [
     phase: "3",
     title: "Opportunity Engine",
     status: "active",
-    progress: 80,
+    progress: 85,
     summary:
-      "Demo generation, narrow service-role grants, candidate quality, feed visibility, detail display, tracked Opportunities, scoring contracts, and the first user tracking workflow are validated.",
+      "Demo generation, narrow service-role grants, candidate quality, feed visibility, detail display, tracked Opportunities, scoring contracts, pre-race snapshot contracts, and Dev-only persisted feature snapshot materialization are validated.",
     nextStep:
-      "Review the Dev-only feature snapshot materialization dry-run before any controlled Dev apply.",
+      "Choose the next Opportunity/ML foundation slice separately, keeping real ML, prediction outputs, scoring, wagers, and production rollout out of scope until lineage is cleaner.",
   },
   {
     phase: "4",
@@ -183,13 +183,13 @@ const phases: ProgressPhase[] = [
 
 const activeWork = [
   "Use docs/ROADMAP.md for phase sequencing and this dashboard as the living day-to-day status handoff.",
-  "Implement Dev-only persisted Opportunity feature snapshot materialization against the existing public.feature_snapshots schema.",
-  "Keep the merged tracked Opportunities, scoring contracts, pre-race snapshot builder, mobile shell, and race-card work intact while this slice stays Dev-only and non-production.",
+  "Use the merged Dev-only feature snapshot materialization as the completed persisted-readiness baseline for the next Opportunity/ML foundation slice.",
+  "Keep the merged tracked Opportunities, scoring contracts, pre-race snapshot builder, mobile shell, race-card work, and Dev-only materialization intact while future work stays scoped and non-production unless explicitly authorized.",
 ];
 
 const nextSteps = [
-  "Review docs/DEV_ONLY_FEATURE_SNAPSHOTS_MATERIALIZATION.md and the dry-run output.",
-  "Authorize a controlled Dev apply only after reviewing planned rows; keep any schema changes in a separate migration prompt.",
+  "Review docs/DEV_ONLY_FEATURE_SNAPSHOTS_MATERIALIZATION.md as the completed Dev-only materialization record.",
+  "Choose the next Opportunity/ML foundation slice separately; keep any schema changes in a separate migration prompt.",
   "Defer real ML, fake ML, scoring runtime, Bet Sheet, Assistant, Alerts, wager settlement, and ROI workflows until Opportunity scoring lineage is cleaner.",
   "Keep production untouched until explicitly authorized.",
 ];
@@ -294,10 +294,10 @@ const tasks: ProgressTask[] = [
   {
     id: "dev-only-feature-snapshots-materialization",
     title: "Dev-only feature snapshot materialization",
-    status: "active",
+    status: "complete",
     phase: "Opportunity Engine",
     summary:
-      "Add a Dev-only dry-run/apply CLI that materializes pre-race Opportunity feature snapshots with deterministic IDs and skip-existing replay safety, without migrations, production, real ML, provider ingestion, scoring, or wagering work.",
+      "PR #89 merged. Dev-only dry-run/apply materialization now writes only public.feature_snapshots through a server-only CLI, with service_role select/insert grants, 7 initial Dev rows inserted and readback verified, and deterministic skip-existing replay safety confirmed without production, real ML, provider ingestion, scoring, or wagering work.",
   },
   {
     id: "opportunity-track-final-review",
