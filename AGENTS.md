@@ -4,13 +4,27 @@
 
 Strideo is an AI-powered wagering intelligence platform for horseplayers.
 
-Product source of truth:
+Product and status source of truth:
 
 - `PRD.md`
 - `docs/ARCHITECTURE.md`
 - `docs/ROADMAP.md`
-- `docs/ARCHITECTURE_REVIEW.md`
 - `docs/CODEX_OPERATING_PROMPT.md`
+
+Living implementation/status references:
+
+- `lib/progress/data-access.ts`
+- current migrations
+- current tests
+- current implementation docs, including
+  `docs/DEV_ONLY_FEATURE_SNAPSHOTS_MATERIALIZATION.md`,
+  `docs/STRIDEO_ML_DATA_CONTRACT.md`, and
+  `docs/OPPORTUNITY_SCORING_CONTRACT.md`
+
+Historical reviews and audits, including `docs/ARCHITECTURE_REVIEW.md`, are
+evidence snapshots. Use them for context, but reconcile stale readiness language
+against the current roadmap, progress surface, migrations, tests, and
+implementation docs.
 
 Core product rule: `Opportunity` is the central object. Recommendations, alerts, wagers, results, explanations, and performance metrics should link back to an Opportunity wherever possible.
 

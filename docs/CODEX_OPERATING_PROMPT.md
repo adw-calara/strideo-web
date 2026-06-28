@@ -17,10 +17,19 @@ review the relevant source material:
 - `PRD.md`
 - `docs/ARCHITECTURE.md`
 - `docs/ROADMAP.md`
-- `docs/ARCHITECTURE_REVIEW.md`
-- current progress or audit docs, especially `docs/PROGRESS_DATABASE_AUDIT.md`
-- related feature docs in `docs/`
+- `/protected/progress`, backed by `lib/progress/data-access.ts`
+- current migrations and tests
+- current implementation docs, especially
+  `docs/DEV_ONLY_FEATURE_SNAPSHOTS_MATERIALIZATION.md`,
+  `docs/STRIDEO_ML_DATA_CONTRACT.md`, and
+  `docs/OPPORTUNITY_SCORING_CONTRACT.md`
 - open PRs, recently merged PRs, current branch state, and roadmap status
+
+Historical reviews and audits, including `docs/ARCHITECTURE_REVIEW.md` and
+older phase approvals, are evidence snapshots. Use them for context, but do not
+treat stale readiness statements as current product status when they conflict
+with the roadmap, progress surface, migrations, tests, or current
+implementation docs.
 
 If the work duplicates an existing implementation, migration, document,
 architecture path, or open workstream, stop and recommend consolidation or

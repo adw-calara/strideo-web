@@ -1,5 +1,12 @@
 # Architecture Review Report
 
+Historical note: this report is an evidence snapshot from the early foundation
+phase. It is not the living readiness or progress source. For current status,
+use `docs/ROADMAP.md`, `/protected/progress` backed by
+`lib/progress/data-access.ts`, current migrations, current tests, and current
+implementation docs. In particular, stale statements below about being ready
+only for initial database design have been superseded by later merged work.
+
 ## Review Scope
 
 This report reviews `/PRD.md` and the current Strideo repository state before additional application code is written.
