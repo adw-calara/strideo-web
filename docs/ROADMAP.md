@@ -252,6 +252,9 @@ Goal: build long-term moat.
    separate slice with feature snapshot lineage as an explicit prerequisite.
    Keep Bet Sheet, Alerts, Assistant, settlement, ROI, and wagering deferred
    until the scoring lineage is cleaner.
+4. Use the Dev-only racing-form coverage readiness report to identify the next
+   source-fact or lineage blocker before any provider-ingestion, prediction,
+   scoring, or production Opportunity work.
 
 ## Risk And Drift Watchlist
 
