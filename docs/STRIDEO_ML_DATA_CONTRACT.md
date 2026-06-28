@@ -267,7 +267,10 @@ It returns:
 - recommended next data work
 - whether Opportunity linkage is satisfied
 
-The checker does not query Supabase. It accepts a typed capability input and can later be connected to actual schema/data coverage checks.
+The core checker does not query Supabase. It accepts a typed capability input
+and the Dev-only racing-form coverage report maps aggregate Supabase Dev counts
+into that input without provider ingestion, writes, training, scoring, or
+production access.
 
 The Opportunity-facing feature snapshot and value-scoring result contract lives
 separately under `lib/opportunities/scoring/contracts.ts` and is documented in
@@ -277,4 +280,6 @@ wagering recommendation, or production scoring runtime.
 
 ## Recommended Next Prompt
 
-Build the Strideo racing-form ingestion coverage checker that maps real Dev data into `DataCapabilityInput` for `lib/ml/data-contract/checkAllModelReadiness`, without training models or creating production Opportunities.
+Run and review the Dev-only racing-form coverage report, then scope the smallest
+next blocker separately without training models, creating prediction outputs, or
+creating production Opportunities.
