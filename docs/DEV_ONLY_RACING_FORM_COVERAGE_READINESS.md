@@ -52,6 +52,9 @@ The output includes explicit no-write flags:
 Read failures are classified for planning only. A `permission_or_api_exposure`
 classification means the checker could not read the table through the current
 Dev API path; it does not apply grants, change RLS, or fix schema exposure.
+The prepared service-role read-access migration for model/result lineage tables
+must be reviewed and applied to Dev in a separate explicitly authorized task
+before those read blockers can clear.
 
 ## Boundaries
 
