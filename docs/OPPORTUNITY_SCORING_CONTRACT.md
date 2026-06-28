@@ -97,14 +97,15 @@ materialization. It:
   version
 
 The builder also returns audit flags confirming that no feature snapshot,
-prediction output, score, or wager was written. Persisted `feature_snapshots`
-remain future work and should be introduced only after a scoped Dev-write
-authorization and leakage-readiness review.
+prediction output, score, or wager was written. PR #89 added a separate
+Dev-only materialization path for persisted `feature_snapshots`; that path
+remains outside the pure builder and does not create prediction outputs,
+Opportunity scores, wagers, or production data.
 
 ## Next Slice
 
-The next recommended slice is to wire audited, pre-race feature snapshot
-materialization into the existing Opportunity generation/readiness path without
-creating fake model outputs or writing production data. Real model-backed
-scoring should come only after persisted feature snapshot lineage, model-version
-registry usage, prediction output lineage, and leakage checks are validated.
+The next recommended slice should build on the Dev-only persisted feature
+snapshot lineage without creating fake model outputs or writing production data.
+Real model-backed scoring should come only after model-version registry usage,
+prediction output lineage, broader leakage checks, and production-readiness
+boundaries are validated.

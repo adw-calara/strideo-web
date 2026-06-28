@@ -229,10 +229,12 @@ Goal: build long-term moat.
 - Partial: Phase 2 race data, Phase 3 Opportunity Engine, and Phase 5 Product
   UI have real foundations and visible app surfaces, but they are not MVP
   complete.
-- Active: the next Opportunity quality layer is Dev-only persisted
-  `feature_snapshots` materialization capability after the planning slice
-  merged. This is still contract/readiness work, not real ML, fake ML,
-  persisted scoring, wagering, Bet Sheet, Alerts, Assistant, settlement, or ROI.
+- Complete: Dev-only persisted `feature_snapshots` materialization has merged.
+  Strideo Dev has the initial 7 audited pre-race snapshots, readback verified,
+  and replay safety verified with deterministic IDs plus skip-existing behavior.
+  This remains Dev-only contract/readiness work, not production rollout, real
+  ML, fake ML, persisted scoring, wagering, Bet Sheet, Alerts, Assistant,
+  settlement, or ROI.
 - Queued: Wager construction, Bet Sheet, performance verification, assistant,
   and commercial readiness remain behind the next Opportunity-centered slices.
 - Blocked: no current roadmap phase is blocked by a known P0/P1 issue.
@@ -243,9 +245,10 @@ Goal: build long-term moat.
 
 1. Keep the roadmap plus `/protected/progress` aligned after each merged
    Opportunity slice.
-2. Review `docs/DEV_ONLY_FEATURE_SNAPSHOTS_MATERIALIZATION.md` and the Dev-only
-   dry-run output before authorizing any controlled Dev apply.
-3. After Dev materialization is reviewed, keep real model-backed scoring in a
+2. Treat `docs/DEV_ONLY_FEATURE_SNAPSHOTS_MATERIALIZATION.md` as the completed
+   Dev-only materialization record: the first controlled Dev apply inserted 7
+   snapshots and the follow-up dry-run skipped all 7 existing deterministic IDs.
+3. Keep real model-backed scoring in a
    separate slice with feature snapshot lineage as an explicit prerequisite.
    Keep Bet Sheet, Alerts, Assistant, settlement, ROI, and wagering deferred
    until the scoring lineage is cleaner.

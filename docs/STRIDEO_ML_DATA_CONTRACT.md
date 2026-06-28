@@ -35,7 +35,7 @@ These are source-fact and lineage paths only. They do not prove ingestion covera
 | value calculations | partial | Append-only lineage table exists; no production value lineage is populated or validated. |
 | Opportunity score lineage | partial | `opportunity_scores.value_calculation_id` exists; generator wiring and real value evidence are not complete. |
 | model versions | ready | Structural registry exists; no fake model rows should be inserted for demo scoring. |
-| feature snapshots | partial | Storage exists; exact pre-race feature materialization and leakage checks are still required. |
+| feature snapshots | partial | Storage exists; Dev-only pre-race materialization is merged and replay-verified for the first 7 Dev rows; production coverage, broader leakage validation, and model linkage are still required. |
 | prediction outputs | partial | Storage exists; depends on real model versions and feature snapshots. |
 | odds snapshots | partial | Live odds storage exists; final/closing odds semantics and pool taxonomy are incomplete. |
 | result versions | ready | Append-only result versions exist. |

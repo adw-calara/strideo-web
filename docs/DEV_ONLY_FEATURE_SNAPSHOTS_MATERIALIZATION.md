@@ -2,6 +2,18 @@
 
 Date: 2026-06-27
 
+## Post-Merge Status
+
+PR #89 merged this Dev-only capability into `main`. The narrow service-role
+grant migration was applied to confirmed Strideo Dev (`strideo-dev` /
+`ntxtakbggtljjbalgris`) and the remote migration dry-run reported the database
+was up to date.
+
+A single controlled Dev apply inserted 7 rows into `public.feature_snapshots`.
+Readback verified exactly those 7 IDs, and the follow-up dry-run planned 0
+snapshots, skipped the 7 existing deterministic IDs, and blocked 0 snapshots.
+Production was not touched.
+
 ## Goal
 
 Implement Dev-only materialization for audited pre-race
@@ -23,7 +35,8 @@ uses deterministic feature snapshot IDs plus skip-existing logic.
   `skipped_existing`.
 - Apply mode inserts only planned rows whose deterministic IDs do not already
   exist.
-- No upsert is used and no migration is created.
+- No upsert is used. PR #89 added only the narrow service-role grant migration
+  needed for the server-only Dev read/apply path.
 
 This keeps the table append-oriented while making repeated Dev runs safe for
 the same source facts.
@@ -60,8 +73,9 @@ project marker for `strideo-dev` / `ntxtakbggtljjbalgris`.
 
 - Writes only `public.feature_snapshots` in apply mode.
 - Keeps the PR #87 in-memory builder pure.
-- Does not create, edit, or apply migrations.
+- Adds only `select, insert` on `public.feature_snapshots` for `service_role`.
 - Does not grant browser, anon, or authenticated access.
+- Does not grant `UPDATE` or `DELETE`.
 - Does not expose service-role execution through app routes or protected UI.
 - Does not write predictions, Opportunity scores, wagers, Bet Sheet rows,
   provider-ingestion rows, value calculations, model-training rows, or
