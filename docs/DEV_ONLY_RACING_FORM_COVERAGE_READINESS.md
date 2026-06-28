@@ -49,6 +49,10 @@ The output includes explicit no-write flags:
 - `mlTrainingRun: false`
 - `scoringRun: false`
 
+Read failures are classified for planning only. A `permission_or_api_exposure`
+classification means the checker could not read the table through the current
+Dev API path; it does not apply grants, change RLS, or fix schema exposure.
+
 ## Boundaries
 
 - Reads only Strideo Dev.

@@ -13,6 +13,7 @@ import {
   type RacingFormCoverageReadError,
   type RacingFormCoverageReviewedScope,
 } from "./coverage-readiness-core";
+import { classifyRacingFormReadFailure } from "./coverage-readiness-read-errors";
 
 type CountResult = {
   count: number;
@@ -27,24 +28,6 @@ type RaceDateRow = {
   race_date: string;
 };
 
-function readErrorMessage(error: {
-  code?: string;
-  details?: string;
-  hint?: string;
-  message?: string;
-}) {
-  const message = [
-    error.message,
-    error.code ? `code=${error.code}` : null,
-    error.details ? `details=${error.details}` : null,
-    error.hint ? `hint=${error.hint}` : null,
-  ]
-    .filter((part): part is string => Boolean(part))
-    .join("; ");
-
-  return message || "Unknown read error returned by Supabase client.";
-}
-
 async function countQuery(
   client: SupabaseClient,
   table: string,
@@ -57,15 +40,23 @@ async function countQuery(
       head: true,
     }),
   );
-  const { count, error } = await query;
+  const { count, error, status, statusText } = await query;
 
   if (error) {
+    const diagnostic = classifyRacingFormReadFailure({
+      error,
+      status,
+      statusText,
+    });
+
     return {
       count: 0,
       error: {
         table,
         operation,
-        message: readErrorMessage(error),
+        category: diagnostic.category,
+        httpStatus: diagnostic.httpStatus,
+        message: diagnostic.message,
       },
     };
   }
@@ -90,7 +81,7 @@ async function readRaceDateBoundary(
   client: SupabaseClient,
   ascending: boolean,
 ) {
-  const { data, error } = await client
+  const { data, error, status, statusText } = await client
     .from("races")
     .select("race_date")
     .order("race_date", { ascending })
@@ -98,12 +89,20 @@ async function readRaceDateBoundary(
     .returns<RaceDateRow[]>();
 
   if (error) {
+    const diagnostic = classifyRacingFormReadFailure({
+      error,
+      status,
+      statusText,
+    });
+
     return {
       value: null,
       error: {
         table: "races",
         operation: ascending ? "earliest race date" : "latest race date",
-        message: readErrorMessage(error),
+        category: diagnostic.category,
+        httpStatus: diagnostic.httpStatus,
+        message: diagnostic.message,
       },
     };
   }

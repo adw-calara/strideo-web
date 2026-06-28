@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 
 import { STRIDEO_DEV_PROJECT_REF } from "@/lib/provider-ingestion/provider-race-entry-dev-boundary";
 import { getRacingFormCoverageDevTargetBlocker } from "./coverage-readiness-dev-boundary";
+import { classifyRacingFormReadFailure } from "./coverage-readiness-read-errors";
 import {
   buildRacingFormCoverageReport,
   type RacingFormCoverageInput,
@@ -219,5 +220,69 @@ describe("racing-form coverage readiness planner", () => {
     });
 
     assert.match(blocker ?? "", /Refusing linked project/);
+  });
+
+  it("classifies forbidden count reads as permission or API exposure issues", () => {
+    const diagnostic = classifyRacingFormReadFailure({
+      error: { message: "" },
+      status: 403,
+      statusText: "Forbidden",
+    });
+
+    assert.equal(diagnostic.category, "permission_or_api_exposure");
+    assert.equal(diagnostic.httpStatus, 403);
+    assert.match(diagnostic.message, /status=403/);
+    assert.match(diagnostic.message, /statusText=Forbidden/);
+  });
+
+  it("classifies missing relation errors without implying a grant fix", () => {
+    const diagnostic = classifyRacingFormReadFailure({
+      error: {
+        code: "42P01",
+        message: "relation public.missing_table does not exist",
+      },
+      status: 404,
+      statusText: "Not Found",
+    });
+
+    assert.equal(diagnostic.category, "relation_missing");
+    assert.equal(diagnostic.httpStatus, 404);
+  });
+
+  it("classifies other client errors as query construction diagnostics", () => {
+    const diagnostic = classifyRacingFormReadFailure({
+      error: {
+        code: "PGRST100",
+        message: "failed to parse filter",
+      },
+      status: 400,
+      statusText: "Bad Request",
+    });
+
+    assert.equal(diagnostic.category, "query_construction");
+  });
+
+  it("includes read error categories in report blockers", () => {
+    const report = buildRacingFormCoverageReport({
+      ...makeInput(),
+      readErrors: [
+        {
+          table: "model_versions",
+          operation: "count",
+          category: "permission_or_api_exposure",
+          httpStatus: 403,
+          message: "status=403; statusText=Forbidden",
+        },
+      ],
+    });
+
+    assert.equal(report.status, "blocked");
+    assert.ok(
+      report.blockers.some((blocker) =>
+        blocker.includes(
+          "model_versions count read failed (permission_or_api_exposure, HTTP 403)",
+        ),
+      ),
+    );
   });
 });

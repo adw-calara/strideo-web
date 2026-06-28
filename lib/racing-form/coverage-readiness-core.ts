@@ -6,6 +6,7 @@ import type {
   ModelKey,
   ModelReadinessResult,
 } from "@/lib/ml/data-contract/types";
+import type { RacingFormReadErrorCategory } from "./coverage-readiness-read-errors";
 
 export type RacingFormCoverageStatus = "ready" | "partial" | "blocked";
 
@@ -91,6 +92,8 @@ export type RacingFormCoverageMetricInput = {
 export type RacingFormCoverageReadError = {
   table: string;
   operation: string;
+  category: RacingFormReadErrorCategory;
+  httpStatus?: number;
   message: string;
 };
 
@@ -332,7 +335,8 @@ export function buildRacingFormCoverageReport(
       .filter((item) => item.status === "blocked")
       .map((item) => `${item.label} is blocked for Dev coverage readiness.`),
     ...((input.readErrors ?? []).map(
-      (error) => `${error.table} ${error.operation} read failed: ${error.message}`,
+      (error) =>
+        `${error.table} ${error.operation} read failed (${error.category}${error.httpStatus ? `, HTTP ${error.httpStatus}` : ""}): ${error.message}`,
     )),
   ].sort();
 
