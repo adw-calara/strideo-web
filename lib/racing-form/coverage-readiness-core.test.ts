@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 
 import { STRIDEO_DEV_PROJECT_REF } from "@/lib/provider-ingestion/provider-race-entry-dev-boundary";
@@ -180,6 +181,33 @@ describe("racing-form coverage readiness planner", () => {
     assert.ok(report.warnings.some((warning) => warning.includes("Workouts")));
   });
 
+  it("recognizes covered past performances and workouts with source lineage", () => {
+    const report = buildRacingFormCoverageReport(
+      makeInput({
+        raceEntries: 14,
+        pastPerformances: 14,
+        pastPerformancesWithSpeed: 14,
+        pastPerformancesWithFinalTime: 14,
+        workouts: 14,
+        sourceLineageRows: 14,
+      }),
+    );
+    const pastPerformanceDomain = report.domains.find(
+      (item) => item.key === "past_performances",
+    );
+    const workoutDomain = report.domains.find((item) => item.key === "workouts");
+
+    assert.equal(pastPerformanceDomain?.status, "ready");
+    assert.equal(pastPerformanceDomain?.counts.percent, 100);
+    assert.equal(workoutDomain?.status, "ready");
+    assert.equal(workoutDomain?.counts.percent, 100);
+    assert.ok(
+      !report.warnings.some((warning) =>
+        warning.includes("No reviewed racing-form source-fact rows"),
+      ),
+    );
+  });
+
   it("reports missing trainer stats", () => {
     const report = buildRacingFormCoverageReport(makeInput({ trainerStats: 0 }));
     const domain = report.domains.find((item) => item.key === "trainer_stats");
@@ -238,6 +266,28 @@ describe("racing-form coverage readiness planner", () => {
     assert.doesNotMatch(json, /"auth/i);
     assert.doesNotMatch(json, /raw_payload/i);
     assert.doesNotMatch(json, /sample_payload/i);
+  });
+
+  it("keeps the Dev source-fact fixture scoped away from scoring and wagering", () => {
+    const fixture = readFileSync(
+      new URL(
+        "../../supabase/fixtures/dev/demo_racing_form_source_facts.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+
+    assert.match(fixture, /horse_past_performances/);
+    assert.match(fixture, /horse_workouts/);
+    assert.match(fixture, /source_data_files/);
+    assert.match(fixture, /data_ingestion_batches/);
+    assert.match(fixture, /job_runs/);
+    assert.match(fixture, /provider = 'demo'/);
+    assert.doesNotMatch(fixture, /insert into public\.prediction_outputs/i);
+    assert.doesNotMatch(fixture, /insert into public\.opportunity_scores/i);
+    assert.doesNotMatch(fixture, /insert into public\.value_calculations/i);
+    assert.doesNotMatch(fixture, /insert into public\.wager/i);
+    assert.doesNotMatch(fixture, /SUPABASE_/i);
   });
 
   it("fails closed before Dev reads when the target is not confirmed", () => {

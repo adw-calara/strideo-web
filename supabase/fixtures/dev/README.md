@@ -6,6 +6,7 @@ This directory contains Dev-only fixture data for Strideo race-card UI work.
 
 - `demo_race_card.sql`
 - `demo_import_status.sql`
+- `demo_racing_form_source_facts.sql`
 - `starter_racing_glossary.sql`
 - `race_entry_verification_aliases.sql`
 
@@ -14,6 +15,9 @@ The fixtures are deterministic and reviewable. The race-card fixture uses
 against Dev without creating duplicate reference, race, entry, or result
 records. The import-status fixture uses deterministic `batch_key` values so it
 can be re-run against Dev without creating duplicate import-status rows. The
+source-fact fixture uses deterministic provider IDs plus sanitized lineage rows
+so it can be re-run after the base race-card fixture without creating duplicate
+past-performance or workout rows. The
 starter racing glossary fixture uses source-attributed code-set, canonical
 value, and alias upserts so it can be re-run against Dev without creating
 duplicate glossary rows. The race-entry verification alias fixture is an even
@@ -43,6 +47,19 @@ shorthand used by the controlled PR #71 runtime verification harness.
 - Coverage date: `2026-06-08`
 - Sanitized metadata with affected track, race, entry, odds, and result counts
 - Source-details-hidden markers for UI display
+
+## What `demo_racing_form_source_facts.sql` Adds
+
+- 1 sanitized demo job run for fixture lineage
+- 1 sanitized demo data-ingestion batch for racing-form source facts
+- 1 sanitized demo source-data file row without file URI or raw payload
+- 14 demo `horse_past_performances` rows, one for each `demo_race_card.sql`
+  entry
+- 14 demo `horse_workouts` rows, one for each `demo_race_card.sql` entry
+- Source-file, ingestion-batch, and job-run lineage on every source-fact row
+- No predictions, Opportunities, opportunity scores, value scores, wagers, Bet
+  Sheet rows, ROI, provider-ingestion writes, ML training rows, credentials,
+  file URIs, raw provider payloads, or production data
 
 ## What `starter_racing_glossary.sql` Adds
 
@@ -84,10 +101,16 @@ shorthand used by the controlled PR #71 runtime verification harness.
 - No provider credentials
 - No raw provider payloads
 - No file or storage URIs
-- No `job_runs`, `source_data_files`, or `raw_archive_objects` rows
+- No `raw_archive_objects` rows
 - No schema changes or migrations
 - No ML feature snapshots or model-training data
 - No all-track-code seed set
+
+The exception is `demo_racing_form_source_facts.sql`, which intentionally
+prepares the minimum sanitized `job_runs`, `data_ingestion_batches`, and
+`source_data_files` lineage rows needed for Dev-only racing-form source-fact
+coverage. Those rows are not provider ingestion, production data, ML training,
+prediction output, scoring, or wagering data.
 
 ## Apply In Dev Only
 
@@ -115,6 +138,24 @@ direct Dev database URL, the equivalent manual path is:
 psql "$STRIDEO_DEV_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
   -f supabase/fixtures/dev/demo_race_card.sql
 ```
+
+Apply the racing-form source-fact fixture only after the race-card fixture has
+already been applied, reviewed, and explicitly authorized:
+
+```bash
+node scripts/supabase-cli-with-env.mjs db query --linked \
+  --file supabase/fixtures/dev/demo_racing_form_source_facts.sql
+```
+
+Equivalent `psql` path:
+
+```bash
+psql "$STRIDEO_DEV_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
+  -f supabase/fixtures/dev/demo_racing_form_source_facts.sql
+```
+
+This fixture is prepared for a later reviewed Dev-only apply. Adding or updating
+the file in git does not change live Dev racing-form coverage by itself.
 
 Apply the import-status fixture only after migration `0019` has been applied
 and verified in Dev:
