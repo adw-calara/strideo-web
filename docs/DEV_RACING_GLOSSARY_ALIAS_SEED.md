@@ -21,9 +21,12 @@ File:
 Apply in Dev only:
 
 ```bash
-psql "$STRIDEO_DEV_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
-  -f supabase/fixtures/dev/race_entry_verification_aliases.sql
+node scripts/supabase-cli-with-env.mjs db query --linked \
+  --file supabase/fixtures/dev/race_entry_verification_aliases.sql
 ```
+
+If local `psql` is available and `STRIDEO_DEV_SUPABASE_DB_URL` is set to the
+direct Dev database URL, the equivalent manual path can also be used.
 
 The fixture is idempotent. It upserts the minimum code sets, canonical values,
 and aliases needed by the verification payload. It does not create schema,

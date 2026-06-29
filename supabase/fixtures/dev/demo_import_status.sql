@@ -12,8 +12,8 @@
 --   - Does not run automatically.
 --
 -- Apply in Dev only after review and explicit authorization:
---   psql "$STRIDEO_DEV_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
---     -f supabase/fixtures/dev/demo_import_status.sql
+--   node scripts/supabase-cli-with-env.mjs db query --linked \
+--     --file supabase/fixtures/dev/demo_import_status.sql
 
 begin;
 

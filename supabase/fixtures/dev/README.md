@@ -93,8 +93,23 @@ shorthand used by the controlled PR #71 runtime verification harness.
 
 Do not run this fixture against production.
 
-After review and explicit authorization, apply manually to Dev with a database
-URL for the Dev project:
+The preferred Codex/repo path is the linked Supabase CLI wrapper. It loads the
+local, gitignored `SUPABASE_DB_PASSWORD`, targets the linked Dev project, and
+does not require a full database URL or `psql` on PATH.
+
+Before any fixture apply, confirm the linked project is `strideo-dev` /
+`ntxtakbggtljjbalgris`, run `npm run db:migrations:dry-run`, and obtain
+explicit Dev-only authorization for the specific fixture file.
+
+Apply the race-card fixture after review and explicit Dev-only authorization:
+
+```bash
+node scripts/supabase-cli-with-env.mjs db query --linked \
+  --file supabase/fixtures/dev/demo_race_card.sql
+```
+
+If local `psql` is available and `STRIDEO_DEV_SUPABASE_DB_URL` is set to the
+direct Dev database URL, the equivalent manual path is:
 
 ```bash
 psql "$STRIDEO_DEV_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
@@ -103,6 +118,13 @@ psql "$STRIDEO_DEV_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
 
 Apply the import-status fixture only after migration `0019` has been applied
 and verified in Dev:
+
+```bash
+node scripts/supabase-cli-with-env.mjs db query --linked \
+  --file supabase/fixtures/dev/demo_import_status.sql
+```
+
+Equivalent `psql` path:
 
 ```bash
 psql "$STRIDEO_DEV_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
@@ -115,12 +137,26 @@ Apply the starter racing glossary fixture only after PR review and explicit
 Dev-only authorization:
 
 ```bash
+node scripts/supabase-cli-with-env.mjs db query --linked \
+  --file supabase/fixtures/dev/starter_racing_glossary.sql
+```
+
+Equivalent `psql` path:
+
+```bash
 psql "$STRIDEO_DEV_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
   -f supabase/fixtures/dev/starter_racing_glossary.sql
 ```
 
 Apply the race-entry verification alias fixture only after PR review and
 explicit Dev-only authorization:
+
+```bash
+node scripts/supabase-cli-with-env.mjs db query --linked \
+  --file supabase/fixtures/dev/race_entry_verification_aliases.sql
+```
+
+Equivalent `psql` path:
 
 ```bash
 psql "$STRIDEO_DEV_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
