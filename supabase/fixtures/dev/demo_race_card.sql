@@ -11,9 +11,9 @@
 --     betting recommendations.
 --   - Uses provider = 'demo' and deterministic provider IDs.
 --
--- Apply manually after review, for example:
---   psql "$STRIDEO_DEV_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
---     -f supabase/fixtures/dev/demo_race_card.sql
+-- Apply manually after review and explicit Dev-only authorization, for example:
+--   node scripts/supabase-cli-with-env.mjs db query --linked \
+--     --file supabase/fixtures/dev/demo_race_card.sql
 --
 -- Cleanup/reset:
 --   Run the cleanup block at the bottom of this file, or re-run this fixture to

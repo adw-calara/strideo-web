@@ -15,8 +15,8 @@
 --     rows, or user workflow rows.
 --
 -- Apply manually after review and explicit Dev-only authorization:
---   psql "$STRIDEO_DEV_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
---     -f supabase/fixtures/dev/race_entry_verification_aliases.sql
+--   node scripts/supabase-cli-with-env.mjs db query --linked \
+--     --file supabase/fixtures/dev/race_entry_verification_aliases.sql
 
 begin;
 

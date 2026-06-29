@@ -17,8 +17,8 @@
 --     docs/RACING_FORM_GLOSSARY_AUDIT.md.
 --
 -- Apply manually after review and explicit authorization, for example:
---   psql "$STRIDEO_DEV_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
---     -f supabase/fixtures/dev/starter_racing_glossary.sql
+--   node scripts/supabase-cli-with-env.mjs db query --linked \
+--     --file supabase/fixtures/dev/starter_racing_glossary.sql
 
 begin;
 
