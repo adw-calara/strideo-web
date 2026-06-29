@@ -7,6 +7,7 @@ This directory contains Dev-only fixture data for Strideo race-card UI work.
 - `demo_race_card.sql`
 - `demo_import_status.sql`
 - `demo_racing_form_source_facts.sql`
+- `demo_racing_form_owner_context.sql`
 - `starter_racing_glossary.sql`
 - `race_entry_verification_aliases.sql`
 
@@ -18,6 +19,9 @@ can be re-run against Dev without creating duplicate import-status rows. The
 source-fact fixture uses deterministic provider IDs plus sanitized lineage rows
 so it can be re-run after the base race-card fixture without creating duplicate
 past-performance or workout rows. The
+owner-context fixture uses deterministic demo owners and updates only existing
+demo race-card entries with owner/context signals, so it can be re-run after the
+base race-card fixture without creating duplicate owner rows. The
 starter racing glossary fixture uses source-attributed code-set, canonical
 value, and alias upserts so it can be re-run against Dev without creating
 duplicate glossary rows. The race-entry verification alias fixture is an even
@@ -60,6 +64,20 @@ shorthand used by the controlled PR #71 runtime verification harness.
 - No predictions, Opportunities, opportunity scores, value scores, wagers, Bet
   Sheet rows, ROI, provider-ingestion writes, ML training rows, credentials,
   file URIs, raw provider payloads, or production data
+
+## What `demo_racing_form_owner_context.sql` Adds
+
+- 14 deterministic demo `owners` rows for the existing `demo_race_card.sql`
+  entries
+- `owner_id` links on each of the 14 existing demo race entries
+- Deterministic `layoff_days` and sanitized `entry_comments` for owner/context
+  signal coverage
+- No claim-transfer facts; claim fields remain untouched unless a future
+  reviewed fixture has meaningful demo claim context
+- No predictions, Opportunities, opportunity scores, value scores, wagers, Bet
+  Sheet rows, ROI, provider-ingestion writes, source-file/job lineage, trainer
+  stats, ML training rows, credentials, file URIs, raw provider payloads, or
+  production data
 
 ## What `starter_racing_glossary.sql` Adds
 
@@ -112,6 +130,11 @@ prepares the minimum sanitized `job_runs`, `data_ingestion_batches`, and
 coverage. Those rows are not provider ingestion, production data, ML training,
 prediction output, scoring, or wagering data.
 
+`demo_racing_form_owner_context.sql` intentionally prepares only owner/context
+signals for existing demo entries. It does not add source-file/job lineage,
+trainer stats, claim-transfer facts, predictions, value calculations, scoring,
+or wagering data.
+
 ## Apply In Dev Only
 
 Do not run this fixture against production.
@@ -156,6 +179,24 @@ psql "$STRIDEO_DEV_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
 
 This fixture is prepared for a later reviewed Dev-only apply. Adding or updating
 the file in git does not change live Dev racing-form coverage by itself.
+
+Apply the owner/context fixture only after the race-card fixture has already
+been applied, reviewed, and explicitly authorized:
+
+```bash
+node scripts/supabase-cli-with-env.mjs db query --linked \
+  --file supabase/fixtures/dev/demo_racing_form_owner_context.sql
+```
+
+Equivalent `psql` path:
+
+```bash
+psql "$STRIDEO_DEV_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
+  -f supabase/fixtures/dev/demo_racing_form_owner_context.sql
+```
+
+This fixture is prepared for a later reviewed Dev-only apply. Adding the file in
+git does not change live Dev racing-form coverage by itself.
 
 Apply the import-status fixture only after migration `0019` has been applied
 and verified in Dev:

@@ -91,7 +91,32 @@ describe("racing-form coverage readiness planner", () => {
     assert.equal(report.status, "partial");
     assert.ok(
       report.warnings.some((warning) =>
-        warning.includes("Owner, claim, layoff, and comment context"),
+        warning.includes("Owner, claim, layoff, or comment context signals"),
+      ),
+    );
+  });
+
+  it("recognizes owner links as honest owner/context signal coverage", () => {
+    const report = buildRacingFormCoverageReport(
+      makeInput({
+        raceEntries: 14,
+        raceEntriesWithOwner: 14,
+        raceEntriesWithClaim: 0,
+        raceEntriesWithLayoff: 0,
+        raceEntriesWithComments: 0,
+        owners: 14,
+      }),
+    );
+    const domain = report.domains.find(
+      (item) => item.key === "owner_claim_context",
+    );
+
+    assert.equal(domain?.status, "ready");
+    assert.equal(domain?.counts.percent, 100);
+    assert.ok(domain?.notes.includes("0 entries have claim links."));
+    assert.ok(
+      !report.warnings.some((warning) =>
+        warning.includes("Owner, claim, layoff, or comment context signals"),
       ),
     );
   });
@@ -287,6 +312,32 @@ describe("racing-form coverage readiness planner", () => {
     assert.doesNotMatch(fixture, /insert into public\.opportunity_scores/i);
     assert.doesNotMatch(fixture, /insert into public\.value_calculations/i);
     assert.doesNotMatch(fixture, /insert into public\.wager/i);
+    assert.doesNotMatch(fixture, /SUPABASE_/i);
+  });
+
+  it("keeps the Dev owner context fixture scoped away from scoring and ingestion", () => {
+    const fixture = readFileSync(
+      new URL(
+        "../../supabase/fixtures/dev/demo_racing_form_owner_context.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+
+    assert.match(fixture, /insert into public\.owners/i);
+    assert.match(fixture, /update public\.race_entries/i);
+    assert.match(fixture, /provider = 'demo'/);
+    assert.match(fixture, /owner_id/);
+    assert.match(fixture, /layoff_days/);
+    assert.match(fixture, /entry_comments/);
+    assert.doesNotMatch(fixture, /insert into public\.trainer_performance_stats/i);
+    assert.doesNotMatch(fixture, /insert into public\.source_data_files/i);
+    assert.doesNotMatch(fixture, /insert into public\.job_runs/i);
+    assert.doesNotMatch(fixture, /insert into public\.prediction_outputs/i);
+    assert.doesNotMatch(fixture, /insert into public\.opportunity_scores/i);
+    assert.doesNotMatch(fixture, /insert into public\.value_calculations/i);
+    assert.doesNotMatch(fixture, /insert into public\.wager/i);
+    assert.doesNotMatch(fixture, /raw_payload/i);
     assert.doesNotMatch(fixture, /SUPABASE_/i);
   });
 
