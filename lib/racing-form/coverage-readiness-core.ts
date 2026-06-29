@@ -74,6 +74,8 @@ export type RacingFormCoverageMetricInput = {
   pastPerformancesWithFinalTime: number;
   workouts: number;
   trainerStats: number;
+  distinctRaceEntryTrainers: number;
+  distinctRaceEntryTrainersWithStats: number;
   valueCalculations: number;
   featureSnapshots: number;
   modelVersions: number;
@@ -253,8 +255,8 @@ export function buildRacingFormCoverageReport(
     metrics.raceEntries,
   );
   const trainerStatCounts = counts(
-    Math.min(metrics.trainerStats, metrics.raceEntriesWithTrainer),
-    metrics.raceEntriesWithTrainer,
+    metrics.distinctRaceEntryTrainersWithStats,
+    metrics.distinctRaceEntryTrainers,
   );
   const valueCalculationCounts = counts(
     metrics.valueCalculations,
@@ -309,7 +311,11 @@ export function buildRacingFormCoverageReport(
     }),
     domain("trainer_stats", "Trainer stats", trainerStatCounts, {
       required: false,
-      notes: [`${metrics.trainerStats} trainer-stat rows are available.`],
+      notes: [
+        `${metrics.distinctRaceEntryTrainers} distinct reviewed trainers are represented by race entries.`,
+        `${metrics.distinctRaceEntryTrainersWithStats} distinct reviewed trainers have trainer-stat profiles.`,
+        `${metrics.trainerStats} total trainer-stat rows are available.`,
+      ],
     }),
     domain("value_calculation_inputs", "Value calculation inputs", valueCalculationCounts, {
       required: false,
@@ -398,7 +404,7 @@ export function buildRacingFormCoverageReport(
       distance_fit: field(metrics.races > 0 ? "partial" : "missing", "Race and past-performance distance coverage."),
       surface_fit: field(metrics.races > 0 ? "partial" : "missing", "Race and past-performance surface coverage."),
       track_fit: field(metrics.tracks > 0 ? "partial" : "missing", "Track identity coverage."),
-      trainer_performance: field(capabilityFromCounts(trainerStatCounts), "Trainer-stat row coverage."),
+      trainer_performance: field(capabilityFromCounts(trainerStatCounts), "Distinct reviewed trainer-stat profile coverage."),
       workouts: field(capabilityFromCounts(workoutCounts), "Workout row coverage."),
       feature_snapshots: field(metrics.featureSnapshots > 0 ? "partial" : "missing", "Feature snapshot storage/readiness coverage."),
       pre_race_feature_snapshots: field(

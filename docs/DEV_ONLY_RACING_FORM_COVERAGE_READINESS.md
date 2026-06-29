@@ -37,7 +37,7 @@ Coverage domains:
 - owner, claim, layoff, and comment context
 - past performances
 - workouts
-- trainer stats
+- trainer stats, measured as distinct reviewed trainer profile coverage
 - value calculation inputs
 - glossary and normalization readiness
 
