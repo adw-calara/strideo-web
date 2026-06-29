@@ -113,6 +113,49 @@ describe("racing-form coverage readiness planner", () => {
     assert.ok(report.blockers.some((reason) => reason.includes("Race entries")));
   });
 
+  it("blocks race metadata when reviewed races lack structured condition coverage", () => {
+    const report = buildRacingFormCoverageReport(
+      makeInput({
+        races: 2,
+        raceConditionRows: 0,
+        raceEntries: 14,
+      }),
+    );
+    const domain = report.domains.find((item) => item.key === "race_metadata");
+
+    assert.equal(report.status, "blocked");
+    assert.equal(domain?.status, "blocked");
+    assert.deepEqual(domain?.counts, {
+      available: 0,
+      missing: 2,
+      total: 2,
+      percent: 0,
+    });
+    assert.ok(report.blockers.some((reason) => reason.includes("Race metadata")));
+  });
+
+  it("clears race metadata when reviewed races have structured condition coverage", () => {
+    const report = buildRacingFormCoverageReport(
+      makeInput({
+        races: 2,
+        raceConditionRows: 2,
+        raceEntries: 14,
+      }),
+    );
+    const domain = report.domains.find((item) => item.key === "race_metadata");
+
+    assert.equal(domain?.status, "ready");
+    assert.deepEqual(domain?.counts, {
+      available: 2,
+      missing: 0,
+      total: 2,
+      percent: 100,
+    });
+    assert.ok(
+      !report.blockers.some((reason) => reason.includes("Race metadata")),
+    );
+  });
+
   it("reports missing past performances without inventing source facts", () => {
     const report = buildRacingFormCoverageReport(
       makeInput({

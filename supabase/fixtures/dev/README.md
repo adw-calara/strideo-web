@@ -25,6 +25,8 @@ shorthand used by the controlled PR #71 runtime verification harness.
 - 1 demo track: Strideo Park
 - 2 demo surfaces: Demo Dirt and Demo Turf
 - 2 races on `2026-06-08`
+- Minimum structured race-condition metadata on both races for the
+  racing-form coverage readiness checker
 - 14 total entries, 7 per race
 - Linked demo horses, jockeys, and trainers
 - Morning-line odds on every entry
