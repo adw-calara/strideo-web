@@ -285,7 +285,7 @@ export function buildRacingFormCoverageReport(
         `${metrics.raceEntriesWithTrainer} entries have trainer identity.`,
       ],
     }),
-    domain("owner_claim_context", "Owner, claim, layoff, and comment context", ownerClaimContextCounts, {
+    domain("owner_claim_context", "Owner, claim, layoff, or comment context signals", ownerClaimContextCounts, {
       required: false,
       notes: [
         `${metrics.owners} owner rows are available.`,
@@ -376,7 +376,7 @@ export function buildRacingFormCoverageReport(
         capabilityFromCounts(counts(metrics.raceEntriesWithMorningLine, metrics.raceEntries)),
         "Race entries with morning-line odds.",
       ),
-      owner_identity: field(capabilityFromCounts(ownerClaimContextCounts), "Owner and claim context coverage."),
+      owner_identity: field(capabilityFromCounts(ownerClaimContextCounts), "Owner, claim, layoff, or comment context signal coverage."),
       horse_historical_form: field(capabilityFromCounts(pastPerformanceCounts), "Past-performance row coverage."),
       speed_features: field(
         metrics.pastPerformancesWithSpeed > 0 ? "partial" : "missing",
