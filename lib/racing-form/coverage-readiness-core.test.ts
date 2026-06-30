@@ -31,6 +31,8 @@ function completeMetrics(): RacingFormCoverageMetricInput {
     pastPerformancesWithFinalTime: 80,
     workouts: 80,
     trainerStats: 80,
+    distinctRaceEntryTrainers: 40,
+    distinctRaceEntryTrainersWithStats: 40,
     valueCalculations: 80,
     featureSnapshots: 80,
     modelVersions: 3,
@@ -233,12 +235,96 @@ describe("racing-form coverage readiness planner", () => {
     );
   });
 
-  it("reports missing trainer stats", () => {
-    const report = buildRacingFormCoverageReport(makeInput({ trainerStats: 0 }));
+  it("reports missing trainer stats against distinct reviewed trainers", () => {
+    const report = buildRacingFormCoverageReport(
+      makeInput({
+        raceEntries: 14,
+        raceEntriesWithTrainer: 14,
+        trainerStats: 0,
+        distinctRaceEntryTrainers: 4,
+        distinctRaceEntryTrainersWithStats: 0,
+      }),
+    );
     const domain = report.domains.find((item) => item.key === "trainer_stats");
 
     assert.equal(domain?.status, "partial");
+    assert.deepEqual(domain?.counts, {
+      available: 0,
+      missing: 4,
+      total: 4,
+      percent: 0,
+    });
     assert.ok(report.warnings.some((warning) => warning.includes("Trainer stats")));
+  });
+
+  it("does not inflate trainer_stats coverage for repeated trainers", () => {
+    const report = buildRacingFormCoverageReport(
+      makeInput({
+        raceEntries: 14,
+        raceEntriesWithTrainer: 14,
+        trainerStats: 2,
+        distinctRaceEntryTrainers: 4,
+        distinctRaceEntryTrainersWithStats: 2,
+      }),
+    );
+    const domain = report.domains.find((item) => item.key === "trainer_stats");
+
+    assert.equal(domain?.status, "partial");
+    assert.deepEqual(domain?.counts, {
+      available: 2,
+      missing: 2,
+      total: 4,
+      percent: 50,
+    });
+    assert.ok(
+      domain?.notes.includes(
+        "4 distinct reviewed trainers are represented by race entries.",
+      ),
+    );
+  });
+
+  it("does not require one trainer-stat row per race entry", () => {
+    const report = buildRacingFormCoverageReport(
+      makeInput({
+        raceEntries: 14,
+        raceEntriesWithTrainer: 14,
+        trainerStats: 4,
+        distinctRaceEntryTrainers: 4,
+        distinctRaceEntryTrainersWithStats: 4,
+      }),
+    );
+    const domain = report.domains.find((item) => item.key === "trainer_stats");
+
+    assert.equal(domain?.status, "ready");
+    assert.deepEqual(domain?.counts, {
+      available: 4,
+      missing: 0,
+      total: 4,
+      percent: 100,
+    });
+    assert.ok(
+      !report.warnings.some((warning) => warning.includes("Trainer stats")),
+    );
+  });
+
+  it("counts trainer-stat coverage once per distinct reviewed trainer", () => {
+    const report = buildRacingFormCoverageReport(
+      makeInput({
+        raceEntries: 14,
+        raceEntriesWithTrainer: 14,
+        trainerStats: 14,
+        distinctRaceEntryTrainers: 4,
+        distinctRaceEntryTrainersWithStats: 4,
+      }),
+    );
+    const domain = report.domains.find((item) => item.key === "trainer_stats");
+
+    assert.equal(domain?.status, "ready");
+    assert.equal(domain?.counts.available, 4);
+    assert.equal(domain?.counts.total, 4);
+    assert.ok(
+      domain?.notes.includes("14 total trainer-stat rows are available."),
+    );
   });
 
   it("blocks glossary readiness when canonical normalization tables are empty", () => {
@@ -263,6 +349,7 @@ describe("racing-form coverage readiness planner", () => {
       makeInput({
         workouts: 0,
         trainerStats: 0,
+        distinctRaceEntryTrainersWithStats: 0,
         openUnresolvedSourceCodes: 2,
       }),
     );

@@ -28,6 +28,10 @@ type RaceDateRow = {
   race_date: string;
 };
 
+type TrainerIdRow = {
+  trainer_id: string | null;
+};
+
 async function countQuery(
   client: SupabaseClient,
   table: string,
@@ -75,6 +79,46 @@ function countNotNull(client: SupabaseClient, table: string, column: string) {
   return countQuery(client, table, `${column} not-null count`, (query) =>
     query.not(column, "is", null),
   );
+}
+
+async function readDistinctTrainerIds(
+  client: SupabaseClient,
+  table: "race_entries" | "trainer_performance_stats",
+): Promise<{ trainerIds: Set<string>; error: RacingFormCoverageReadError | null }> {
+  const { data, error, status, statusText } = await client
+    .from(table)
+    .select("trainer_id")
+    .not("trainer_id", "is", null)
+    .limit(10_000)
+    .returns<TrainerIdRow[]>();
+
+  if (error) {
+    const diagnostic = classifyRacingFormReadFailure({
+      error,
+      status,
+      statusText,
+    });
+
+    return {
+      trainerIds: new Set(),
+      error: {
+        table,
+        operation: "distinct trainer_id read",
+        category: diagnostic.category,
+        httpStatus: diagnostic.httpStatus,
+        message: diagnostic.message,
+      },
+    };
+  }
+
+  return {
+    trainerIds: new Set(
+      (data ?? [])
+        .map((row) => row.trainer_id)
+        .filter((trainerId): trainerId is string => Boolean(trainerId)),
+    ),
+    error: null,
+  };
 }
 
 async function readRaceDateBoundary(
@@ -150,6 +194,8 @@ async function collectRacingFormCoverageInput(
     trainerStatsWithSourceFile,
     trainerStatsWithBatch,
     trainerStatsWithJob,
+    raceEntryTrainerIds,
+    trainerStatTrainerIds,
     valueCalculations,
     featureSnapshots,
     modelVersions,
@@ -198,6 +244,8 @@ async function collectRacingFormCoverageInput(
     countNotNull(client, "trainer_performance_stats", "source_data_file_id"),
     countNotNull(client, "trainer_performance_stats", "data_ingestion_batch_id"),
     countNotNull(client, "trainer_performance_stats", "source_job_run_id"),
+    readDistinctTrainerIds(client, "race_entries"),
+    readDistinctTrainerIds(client, "trainer_performance_stats"),
     countRows(client, "value_calculations"),
     countRows(client, "feature_snapshots"),
     countRows(client, "model_versions"),
@@ -267,6 +315,8 @@ async function collectRacingFormCoverageInput(
     ...countResults
       .map((result) => result.error)
       .filter((error): error is RacingFormCoverageReadError => Boolean(error)),
+    raceEntryTrainerIds.error,
+    trainerStatTrainerIds.error,
     earliestRaceDate.error,
     latestRaceDate.error,
   ].filter((error): error is RacingFormCoverageReadError => Boolean(error));
@@ -310,6 +360,10 @@ async function collectRacingFormCoverageInput(
     pastPerformancesWithFinalTime: pastPerformancesWithFinalTime.count,
     workouts: workouts.count,
     trainerStats: trainerStats.count,
+    distinctRaceEntryTrainers: raceEntryTrainerIds.trainerIds.size,
+    distinctRaceEntryTrainersWithStats: [...raceEntryTrainerIds.trainerIds].filter(
+      (trainerId) => trainerStatTrainerIds.trainerIds.has(trainerId),
+    ).length,
     valueCalculations: valueCalculations.count,
     featureSnapshots: featureSnapshots.count,
     modelVersions: modelVersions.count,
