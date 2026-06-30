@@ -133,9 +133,9 @@ const phases: ProgressPhase[] = [
     status: "active",
     progress: 85,
     summary:
-      "Demo generation, narrow service-role grants, candidate quality, feed visibility, detail display, tracked Opportunities, scoring contracts, pre-race snapshot contracts, Dev-only persisted feature snapshot materialization, the Dev-only racing-form readiness ladder through glossary normalization, and value-calculation input semantics are validated.",
+      "Demo generation, narrow service-role grants, candidate quality, feed visibility, detail display, tracked Opportunities, scoring contracts, pre-race snapshot contracts, Dev-only persisted feature snapshot materialization, the Dev-only racing-form readiness ladder through glossary normalization, and read-only value-calculation input sub-signal reporting are validated.",
     nextStep:
-      "Use the proposed value-calculation input readiness model for the next read-only checker enhancement, while keeping real ML, prediction outputs, scoring, wagers, and production rollout out of scope until lineage is cleaner.",
+      "Review value-calculation input sub-signals before any value fixture or write path, while keeping real ML, prediction outputs, scoring, wagers, and production rollout out of scope until lineage is cleaner.",
   },
   {
     phase: "4",
@@ -184,7 +184,7 @@ const phases: ProgressPhase[] = [
 const activeWork = [
   "Use docs/ROADMAP.md for phase sequencing and this dashboard as the living day-to-day status handoff.",
   "Use the merged Dev-only feature snapshot materialization as the completed persisted-readiness baseline for the next Opportunity/ML foundation slice.",
-  "Use the Dev-only racing-form coverage readiness report and value-calculation input semantics audit before provider ingestion, model training, or scoring work.",
+  "Use the Dev-only racing-form coverage readiness report and implemented value-calculation input sub-signals before provider ingestion, model training, or scoring work.",
   "Keep the merged tracked Opportunities, scoring contracts, pre-race snapshot builder, mobile shell, race-card work, and Dev-only materialization intact while future work stays scoped and non-production unless explicitly authorized.",
 ];
 
@@ -192,7 +192,7 @@ const nextSteps = [
   "Review docs/DEV_ONLY_FEATURE_SNAPSHOTS_MATERIALIZATION.md as the completed Dev-only materialization record.",
   "Run and review the Dev-only racing-form coverage readiness report before planning provider ingestion, prediction output, or Opportunity scoring work.",
   "Treat the current value_calculation_inputs 0/7 as zero value-calculation rows over seven Dev feature snapshots, not seven implemented readiness signals.",
-  "Use docs/DEV_ONLY_RACING_FORM_COVERAGE_READINESS.md to scope the next read-only value-calculation input checker enhancement.",
+  "Use the implemented value_calculation_inputs sub-signals to scope any future value-calculation fixture or write path separately.",
   "Defer real ML, fake ML, scoring runtime, Bet Sheet, Assistant, Alerts, wager settlement, and ROI workflows until Opportunity scoring lineage is cleaner.",
   "Keep production untouched until explicitly authorized.",
 ];
@@ -308,7 +308,7 @@ const tasks: ProgressTask[] = [
     status: "complete",
     phase: "Opportunity Engine",
     summary:
-      "Read-only audit completed. The current value_calculation_inputs 0/7 report means 0 value_calculations over 7 Dev feature_snapshots, not seven repo-defined sub-signals; the proposed planning-only signal model is documented before any fixture, write, migration, provider ingestion, scoring, ML, wager, or production work.",
+      "Read-only audit and checker enhancement completed. The current value_calculation_inputs 0/7 report means 0 value_calculations over 7 Dev feature_snapshots, and the report now exposes seven evidence-based sub-signals without fixture, write, migration, provider ingestion, scoring, ML, wager, or production work.",
   },
   {
     id: "glossary-track-code-alias-readiness",

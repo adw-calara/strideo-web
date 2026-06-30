@@ -31,12 +31,37 @@ export type RacingFormCoverageCounts = {
   percent: number | null;
 };
 
+export const VALUE_CALCULATION_INPUT_SIGNAL_KEYS = [
+  "feature_snapshot_lineage",
+  "pre_race_leakage_boundary",
+  "model_version_lineage",
+  "prediction_probability_lineage",
+  "market_odds_input",
+  "append_only_value_fact",
+  "opportunity_score_lineage",
+] as const;
+
+export type ValueCalculationInputSignalKey =
+  (typeof VALUE_CALCULATION_INPUT_SIGNAL_KEYS)[number];
+
+export type ValueCalculationInputSignalReport = {
+  key: ValueCalculationInputSignalKey;
+  label: string;
+  status: RacingFormCoverageStatus;
+  implemented: boolean;
+  evidenceSufficient: boolean;
+  sourceDependencies: string[];
+  currentEvidence: string[];
+  blocker: string | null;
+};
+
 export type RacingFormCoverageDomainReport = {
   key: RacingFormCoverageDomainKey;
   label: string;
   status: RacingFormCoverageStatus;
   counts: RacingFormCoverageCounts;
   notes: string[];
+  signals?: ValueCalculationInputSignalReport[];
 };
 
 export type RacingFormCoverageReviewedScope = {
@@ -77,7 +102,16 @@ export type RacingFormCoverageMetricInput = {
   distinctRaceEntryTrainers: number;
   distinctRaceEntryTrainersWithStats: number;
   valueCalculations: number;
+  valueCalculationsWithFeatureSnapshot: number;
+  valueCalculationsWithModelVersion: number;
+  valueCalculationsWithPredictionOutput: number;
+  valueCalculationsWithModelProbability: number;
+  valueCalculationsWithMarketProbability: number;
+  valueCalculationsWithOddsSnapshot: number;
+  valueCalculationsWithOpportunity: number;
+  opportunityScoresWithValueCalculation: number;
   featureSnapshots: number;
+  preRaceFeatureSnapshots: number;
   modelVersions: number;
   predictionOutputs: number;
   oddsSnapshots: number;
@@ -148,6 +182,7 @@ const READ_TABLES = [
   "feature_snapshots",
   "model_versions",
   "prediction_outputs",
+  "opportunity_scores",
   "odds_snapshots",
   "result_versions",
   "result_entries",
@@ -201,14 +236,20 @@ function domain(
   key: RacingFormCoverageDomainKey,
   label: string,
   coverageCounts: RacingFormCoverageCounts,
-  options: { required: boolean; notes?: string[] },
+  options: {
+    required: boolean;
+    notes?: string[];
+    signals?: ValueCalculationInputSignalReport[];
+    status?: RacingFormCoverageStatus;
+  },
 ): RacingFormCoverageDomainReport {
   return {
     key,
     label,
-    status: statusForCounts(coverageCounts, options),
+    status: options.status ?? statusForCounts(coverageCounts, options),
     counts: coverageCounts,
     notes: [...(options.notes ?? [])].sort(),
+    ...(options.signals ? { signals: options.signals } : {}),
   };
 }
 
@@ -226,6 +267,147 @@ function field(status: CapabilityStatus, detail: string): FieldCapability {
 
 function max(...values: number[]) {
   return Math.max(0, ...values);
+}
+
+function valueSignal(
+  key: ValueCalculationInputSignalKey,
+  label: string,
+  evidenceSufficient: boolean,
+  sourceDependencies: string[],
+  currentEvidence: string[],
+  blocker: string,
+): ValueCalculationInputSignalReport {
+  return {
+    key,
+    label,
+    status: evidenceSufficient ? "ready" : "partial",
+    implemented: true,
+    evidenceSufficient,
+    sourceDependencies,
+    currentEvidence,
+    blocker: evidenceSufficient ? null : blocker,
+  };
+}
+
+function buildValueCalculationInputSignals(
+  metrics: RacingFormCoverageMetricInput,
+): ValueCalculationInputSignalReport[] {
+  return [
+    valueSignal(
+      "feature_snapshot_lineage",
+      "Feature snapshot lineage",
+      metrics.valueCalculations > 0 &&
+        metrics.valueCalculationsWithFeatureSnapshot === metrics.valueCalculations,
+      ["feature_snapshots", "value_calculations.feature_snapshot_id"],
+      [
+        `${metrics.featureSnapshots} feature snapshot rows are available.`,
+        `${metrics.valueCalculationsWithFeatureSnapshot} value calculation rows have feature_snapshot_id.`,
+      ],
+      "No value calculation rows currently prove feature-snapshot lineage.",
+    ),
+    valueSignal(
+      "pre_race_leakage_boundary",
+      "Pre-race leakage boundary",
+      metrics.preRaceFeatureSnapshots > 0 && metrics.valueCalculations > 0,
+      [
+        "feature_snapshots.feature_set_key",
+        "feature_snapshots.captured_at",
+        "feature_snapshots.features",
+      ],
+      [
+        `${metrics.preRaceFeatureSnapshots} pre-race feature snapshot rows are available.`,
+        "Persisted snapshot payloads are not dumped by this report.",
+      ],
+      "Pre-race snapshot rows exist, but no value calculation rows use them yet.",
+    ),
+    valueSignal(
+      "model_version_lineage",
+      "Model version lineage",
+      metrics.valueCalculations > 0 &&
+        metrics.valueCalculationsWithModelVersion === metrics.valueCalculations,
+      [
+        "model_versions",
+        "value_calculations.model_version_id",
+        "value_calculations.value_method_key",
+        "value_calculations.value_method_version",
+      ],
+      [
+        `${metrics.modelVersions} model version rows are available.`,
+        `${metrics.valueCalculationsWithModelVersion} value calculation rows have model_version_id.`,
+      ],
+      "No value calculation rows currently prove model-version lineage.",
+    ),
+    valueSignal(
+      "prediction_probability_lineage",
+      "Prediction probability lineage",
+      metrics.valueCalculations > 0 &&
+        metrics.valueCalculationsWithPredictionOutput === metrics.valueCalculations &&
+        metrics.valueCalculationsWithModelProbability === metrics.valueCalculations,
+      [
+        "prediction_outputs",
+        "value_calculations.prediction_output_id",
+        "value_calculations.model_probability",
+      ],
+      [
+        `${metrics.predictionOutputs} prediction output rows are available.`,
+        `${metrics.valueCalculationsWithPredictionOutput} value calculation rows have prediction_output_id.`,
+        `${metrics.valueCalculationsWithModelProbability} value calculation rows have model_probability.`,
+      ],
+      "No value calculation rows currently prove prediction-output probability lineage.",
+    ),
+    valueSignal(
+      "market_odds_input",
+      "Market odds input",
+      metrics.valueCalculations > 0 &&
+        metrics.valueCalculationsWithMarketProbability === metrics.valueCalculations &&
+        (metrics.valueCalculationsWithOddsSnapshot > 0 ||
+          metrics.raceEntriesWithMorningLine > 0),
+      [
+        "odds_snapshots",
+        "race_entries.morning_line_odds",
+        "value_calculations.odds_snapshot_id",
+        "value_calculations.market_probability",
+      ],
+      [
+        `${metrics.oddsSnapshots} odds snapshot rows are available.`,
+        `${metrics.raceEntriesWithMorningLine} race entries have morning-line odds.`,
+        `${metrics.valueCalculationsWithMarketProbability} value calculation rows have market_probability.`,
+        `${metrics.valueCalculationsWithOddsSnapshot} value calculation rows have odds_snapshot_id.`,
+      ],
+      "No value calculation rows currently prove market probability inputs.",
+    ),
+    valueSignal(
+      "append_only_value_fact",
+      "Append-only value fact",
+      metrics.valueCalculations > 0,
+      [
+        "value_calculations",
+        "value_calculations_calculation_identity_uniq",
+      ],
+      [
+        `${metrics.valueCalculations} value calculation rows are available.`,
+        "Schema contains append-oriented value calculation identity constraints.",
+      ],
+      "No append-only value calculation facts are currently populated.",
+    ),
+    valueSignal(
+      "opportunity_score_lineage",
+      "Opportunity score lineage",
+      metrics.valueCalculations > 0 &&
+        metrics.valueCalculationsWithOpportunity > 0 &&
+        metrics.opportunityScoresWithValueCalculation > 0,
+      [
+        "value_calculations.opportunity_id",
+        "opportunity_scores.value_calculation_id",
+        "opportunities",
+      ],
+      [
+        `${metrics.valueCalculationsWithOpportunity} value calculation rows have opportunity_id.`,
+        `${metrics.opportunityScoresWithValueCalculation} opportunity score rows have value_calculation_id.`,
+      ],
+      "No Opportunity score rows currently prove value-calculation linkage.",
+    ),
+  ];
 }
 
 export function buildRacingFormCoverageReport(
@@ -264,6 +446,11 @@ export function buildRacingFormCoverageReport(
     metrics.valueCalculations,
     metrics.featureSnapshots > 0 ? metrics.featureSnapshots : metrics.raceEntries,
   );
+  const valueCalculationInputSignals = buildValueCalculationInputSignals(metrics);
+  const valueCalculationInputStatus: RacingFormCoverageStatus =
+    valueCalculationInputSignals.every((signal) => signal.evidenceSufficient)
+      ? "ready"
+      : "partial";
   const reviewedTrackCodeAliasCounts = counts(
     metrics.reviewedTrackCodeAliasesResolved,
     metrics.reviewedTrackCodeAliasTargets,
@@ -327,9 +514,13 @@ export function buildRacingFormCoverageReport(
     domain("value_calculation_inputs", "Value calculation inputs", valueCalculationCounts, {
       required: false,
       notes: [
+        "The row-count denominator is context only; readiness is determined by explicit sub-signals.",
         `${metrics.featureSnapshots} feature snapshot rows are available.`,
+        `${metrics.preRaceFeatureSnapshots} pre-race feature snapshot rows are available.`,
         `${metrics.valueCalculations} value calculation rows are available.`,
       ],
+      signals: valueCalculationInputSignals,
+      status: valueCalculationInputStatus,
     }),
     domain("glossary_normalization", "Glossary and normalization readiness", glossaryCounts, {
       required: true,

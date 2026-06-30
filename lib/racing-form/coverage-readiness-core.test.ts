@@ -6,6 +6,7 @@ import { STRIDEO_DEV_PROJECT_REF } from "@/lib/provider-ingestion/provider-race-
 import { getRacingFormCoverageDevTargetBlocker } from "./coverage-readiness-dev-boundary";
 import { classifyRacingFormReadFailure } from "./coverage-readiness-read-errors";
 import {
+  VALUE_CALCULATION_INPUT_SIGNAL_KEYS,
   buildRacingFormCoverageReport,
   type RacingFormCoverageInput,
   type RacingFormCoverageMetricInput,
@@ -34,7 +35,16 @@ function completeMetrics(): RacingFormCoverageMetricInput {
     distinctRaceEntryTrainers: 40,
     distinctRaceEntryTrainersWithStats: 40,
     valueCalculations: 80,
+    valueCalculationsWithFeatureSnapshot: 80,
+    valueCalculationsWithModelVersion: 80,
+    valueCalculationsWithPredictionOutput: 80,
+    valueCalculationsWithModelProbability: 80,
+    valueCalculationsWithMarketProbability: 80,
+    valueCalculationsWithOddsSnapshot: 80,
+    valueCalculationsWithOpportunity: 80,
+    opportunityScoresWithValueCalculation: 80,
     featureSnapshots: 80,
+    preRaceFeatureSnapshots: 80,
     modelVersions: 3,
     predictionOutputs: 80,
     oddsSnapshots: 120,
@@ -326,6 +336,102 @@ describe("racing-form coverage readiness planner", () => {
     assert.equal(domain?.counts.total, 4);
     assert.ok(
       domain?.notes.includes("14 total trainer-stat rows are available."),
+    );
+  });
+
+  it("reports value_calculation_inputs sub-signals without treating 0/7 as seven existing signals", () => {
+    const report = buildRacingFormCoverageReport(
+      makeInput({
+        raceEntries: 14,
+        featureSnapshots: 7,
+        preRaceFeatureSnapshots: 7,
+        valueCalculations: 0,
+        valueCalculationsWithFeatureSnapshot: 0,
+        valueCalculationsWithModelVersion: 0,
+        valueCalculationsWithPredictionOutput: 0,
+        valueCalculationsWithModelProbability: 0,
+        valueCalculationsWithMarketProbability: 0,
+        valueCalculationsWithOddsSnapshot: 0,
+        valueCalculationsWithOpportunity: 0,
+        opportunityScoresWithValueCalculation: 0,
+      }),
+    );
+    const domain = report.domains.find(
+      (item) => item.key === "value_calculation_inputs",
+    );
+
+    assert.equal(domain?.status, "partial");
+    assert.deepEqual(domain?.counts, {
+      available: 0,
+      missing: 7,
+      total: 7,
+      percent: 0,
+    });
+    assert.deepEqual(
+      domain?.signals?.map((signal) => signal.key),
+      [...VALUE_CALCULATION_INPUT_SIGNAL_KEYS],
+    );
+    assert.equal(domain?.signals?.length, 7);
+    assert.equal(
+      domain?.signals?.every((signal) => signal.implemented),
+      true,
+    );
+    assert.equal(
+      domain?.signals?.every((signal) => signal.evidenceSufficient),
+      false,
+    );
+    assert.ok(
+      domain?.notes.includes(
+        "The row-count denominator is context only; readiness is determined by explicit sub-signals.",
+      ),
+    );
+    assert.ok(
+      domain?.signals?.some(
+        (signal) =>
+          signal.key === "append_only_value_fact" &&
+          signal.blocker ===
+            "No append-only value calculation facts are currently populated.",
+      ),
+    );
+  });
+
+  it("keeps value_calculation_inputs partial when row counts are complete but lineage is incomplete", () => {
+    const report = buildRacingFormCoverageReport(
+      makeInput({
+        valueCalculations: 80,
+        featureSnapshots: 80,
+        valueCalculationsWithFeatureSnapshot: 80,
+        valueCalculationsWithPredictionOutput: 0,
+        valueCalculationsWithModelProbability: 0,
+      }),
+    );
+    const domain = report.domains.find(
+      (item) => item.key === "value_calculation_inputs",
+    );
+    const predictionSignal = domain?.signals?.find(
+      (signal) => signal.key === "prediction_probability_lineage",
+    );
+
+    assert.equal(domain?.counts.percent, 100);
+    assert.equal(domain?.status, "partial");
+    assert.equal(predictionSignal?.status, "partial");
+    assert.equal(predictionSignal?.evidenceSufficient, false);
+  });
+
+  it("marks value_calculation_inputs ready when all implemented sub-signal evidence is present", () => {
+    const report = buildRacingFormCoverageReport(makeInput());
+    const domain = report.domains.find(
+      (item) => item.key === "value_calculation_inputs",
+    );
+
+    assert.equal(domain?.status, "ready");
+    assert.equal(
+      domain?.signals?.every((signal) => signal.status === "ready"),
+      true,
+    );
+    assert.equal(
+      domain?.signals?.every((signal) => signal.evidenceSufficient),
+      true,
     );
   });
 
