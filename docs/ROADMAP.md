@@ -243,6 +243,12 @@ Goal: build long-term moat.
   This remains Dev-only contract/readiness work, not production rollout, real
   ML, fake ML, persisted scoring, wagering, Bet Sheet, Alerts, Assistant,
   settlement, or ROI.
+- Complete: The read-only `value_calculation_inputs` semantic audit reconciled
+  the current `0/7` report as zero value-calculation rows over seven Dev
+  feature snapshots, not seven pre-existing implemented signals. The canonical
+  signal model is now implemented as read-only readiness observability in
+  `docs/DEV_ONLY_RACING_FORM_COVERAGE_READINESS.md` and the Dev coverage
+  report.
 - Queued: Wager construction, Bet Sheet, performance verification, assistant,
   and commercial readiness remain behind the next Opportunity-centered slices.
 - Blocked: no current roadmap phase is blocked by a known P0/P1 issue.
@@ -256,11 +262,15 @@ Goal: build long-term moat.
 2. Treat `docs/DEV_ONLY_FEATURE_SNAPSHOTS_MATERIALIZATION.md` as the completed
    Dev-only materialization record: the first controlled Dev apply inserted 7
    snapshots and the follow-up dry-run skipped all 7 existing deterministic IDs.
-3. Keep real model-backed scoring in a
+3. Review the implemented `value_calculation_inputs` sub-signals in the
+   Dev-only racing-form coverage report before planning any value-calculation
+   fixture, write path, prediction output, scoring, or Opportunity generation
+   work.
+4. Keep real model-backed scoring in a
    separate slice with feature snapshot lineage as an explicit prerequisite.
    Keep Bet Sheet, Alerts, Assistant, settlement, ROI, and wagering deferred
    until the scoring lineage is cleaner.
-4. Use the Dev-only racing-form coverage readiness report to identify the next
+5. Use the Dev-only racing-form coverage readiness report to identify the next
    source-fact or lineage blocker before any provider-ingestion, prediction,
    scoring, or production Opportunity work.
 

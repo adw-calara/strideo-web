@@ -133,9 +133,9 @@ const phases: ProgressPhase[] = [
     status: "active",
     progress: 85,
     summary:
-      "Demo generation, narrow service-role grants, candidate quality, feed visibility, detail display, tracked Opportunities, scoring contracts, pre-race snapshot contracts, Dev-only persisted feature snapshot materialization, and the Dev-only racing-form readiness ladder through trainer stats are validated.",
+      "Demo generation, narrow service-role grants, candidate quality, feed visibility, detail display, tracked Opportunities, scoring contracts, pre-race snapshot contracts, Dev-only persisted feature snapshot materialization, the Dev-only racing-form readiness ladder through glossary normalization, and read-only value-calculation input sub-signal reporting are validated.",
     nextStep:
-      "Finish glossary track-code alias readiness, then value-calculation input readiness, while keeping real ML, prediction outputs, scoring, wagers, and production rollout out of scope until lineage is cleaner.",
+      "Review value-calculation input sub-signals before any value fixture or write path, while keeping real ML, prediction outputs, scoring, wagers, and production rollout out of scope until lineage is cleaner.",
   },
   {
     phase: "4",
@@ -184,14 +184,15 @@ const phases: ProgressPhase[] = [
 const activeWork = [
   "Use docs/ROADMAP.md for phase sequencing and this dashboard as the living day-to-day status handoff.",
   "Use the merged Dev-only feature snapshot materialization as the completed persisted-readiness baseline for the next Opportunity/ML foundation slice.",
-  "Use the Dev-only racing-form coverage readiness report to finish glossary track-code alias and value-calculation input blockers before provider ingestion, model training, or scoring work.",
+  "Use the Dev-only racing-form coverage readiness report and implemented value-calculation input sub-signals before provider ingestion, model training, or scoring work.",
   "Keep the merged tracked Opportunities, scoring contracts, pre-race snapshot builder, mobile shell, race-card work, and Dev-only materialization intact while future work stays scoped and non-production unless explicitly authorized.",
 ];
 
 const nextSteps = [
   "Review docs/DEV_ONLY_FEATURE_SNAPSHOTS_MATERIALIZATION.md as the completed Dev-only materialization record.",
   "Run and review the Dev-only racing-form coverage readiness report before planning provider ingestion, prediction output, or Opportunity scoring work.",
-  "Prepare reviewed Dev-only glossary track-code alias coverage before moving to value-calculation input readiness.",
+  "Treat the current value_calculation_inputs 0/7 as zero value-calculation rows over seven Dev feature snapshots, not seven implemented readiness signals.",
+  "Use the implemented value_calculation_inputs sub-signals to scope any future value-calculation fixture or write path separately.",
   "Defer real ML, fake ML, scoring runtime, Bet Sheet, Assistant, Alerts, wager settlement, and ROI workflows until Opportunity scoring lineage is cleaner.",
   "Keep production untouched until explicitly authorized.",
 ];
@@ -302,12 +303,20 @@ const tasks: ProgressTask[] = [
       "PR #89 merged. Dev-only dry-run/apply materialization now writes only public.feature_snapshots through a server-only CLI, with service_role select/insert grants, 7 initial Dev rows inserted and readback verified, and deterministic skip-existing replay safety confirmed without production, real ML, provider ingestion, scoring, or wagering work.",
   },
   {
-    id: "glossary-track-code-alias-readiness",
-    title: "Glossary track-code alias readiness",
-    status: "active",
+    id: "value-calculation-input-semantics",
+    title: "Value calculation input semantics",
+    status: "complete",
     phase: "Opportunity Engine",
     summary:
-      "Refine glossary readiness so track-code aliases are measured against reviewed provider/track identity, then prepare the narrow Dev-only Strideo Park alias fixture without applying it.",
+      "Read-only audit and checker enhancement completed. The current value_calculation_inputs 0/7 report means 0 value_calculations over 7 Dev feature_snapshots, and the report now exposes seven evidence-based sub-signals without fixture, write, migration, provider ingestion, scoring, ML, wager, or production work.",
+  },
+  {
+    id: "glossary-track-code-alias-readiness",
+    title: "Glossary track-code alias readiness",
+    status: "complete",
+    phase: "Opportunity Engine",
+    summary:
+      "Read-only Dev coverage reports glossary normalization ready for the reviewed demo scope: canonical code sets, values, aliases, and the reviewed Strideo Park track-code alias are covered without provider ingestion, scoring, ML, wager, or production work.",
   },
   {
     id: "opportunity-track-final-review",
