@@ -428,6 +428,54 @@ describe("racing-form coverage readiness planner", () => {
     assert.doesNotMatch(fixture, /SUPABASE_/i);
   });
 
+  it("keeps the Dev trainer-stat fixture scoped to distinct trainer profiles", () => {
+    const fixture = readFileSync(
+      new URL(
+        "../../supabase/fixtures/dev/demo_racing_form_trainer_stats.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    const trainerIds = [
+      "demo-trainer-lena-west",
+      "demo-trainer-owen-field",
+      "demo-trainer-mira-stone",
+      "demo-trainer-cal-rowan",
+    ];
+    const profileKeys = new Set(
+      [...fixture.matchAll(/demo-trainer-stat-profile-[a-z-]+/g)].map(
+        ([profileKey]) => profileKey,
+      ),
+    );
+
+    assert.match(fixture, /insert into public\.trainer_performance_stats/i);
+    assert.match(fixture, /job_runs/);
+    assert.match(fixture, /data_ingestion_batches/);
+    assert.match(fixture, /source_data_files/);
+    assert.match(fixture, /provider = 'demo'/);
+    assert.deepEqual(
+      [...profileKeys].sort(),
+      [
+        "demo-trainer-stat-profile-cal-rowan",
+        "demo-trainer-stat-profile-lena-west",
+        "demo-trainer-stat-profile-mira-stone",
+        "demo-trainer-stat-profile-owen-field",
+      ],
+    );
+    assert.match(fixture, /distinct_trainer_profiles', 4/);
+    for (const trainerId of trainerIds) {
+      assert.match(fixture, new RegExp(trainerId));
+    }
+    assert.doesNotMatch(fixture, /insert into public\.prediction_outputs/i);
+    assert.doesNotMatch(fixture, /insert into public\.opportunity_scores/i);
+    assert.doesNotMatch(fixture, /insert into public\.value_calculations/i);
+    assert.doesNotMatch(fixture, /insert into public\.wager/i);
+    assert.doesNotMatch(fixture, /insert into public\.model_/i);
+    assert.doesNotMatch(fixture, /raw_payload/i);
+    assert.doesNotMatch(fixture, /sample_payload/i);
+    assert.doesNotMatch(fixture, /SUPABASE_/i);
+  });
+
   it("fails closed before Dev reads when the target is not confirmed", () => {
     const blocker = getRacingFormCoverageDevTargetBlocker({
       nodeEnv: "development",
