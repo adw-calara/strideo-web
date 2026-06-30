@@ -133,9 +133,9 @@ const phases: ProgressPhase[] = [
     status: "active",
     progress: 85,
     summary:
-      "Demo generation, narrow service-role grants, candidate quality, feed visibility, detail display, tracked Opportunities, scoring contracts, pre-race snapshot contracts, and Dev-only persisted feature snapshot materialization are validated.",
+      "Demo generation, narrow service-role grants, candidate quality, feed visibility, detail display, tracked Opportunities, scoring contracts, pre-race snapshot contracts, Dev-only persisted feature snapshot materialization, and the Dev-only racing-form readiness ladder through trainer stats are validated.",
     nextStep:
-      "Choose the next Opportunity/ML foundation slice separately, keeping real ML, prediction outputs, scoring, wagers, and production rollout out of scope until lineage is cleaner.",
+      "Finish glossary track-code alias readiness, then value-calculation input readiness, while keeping real ML, prediction outputs, scoring, wagers, and production rollout out of scope until lineage is cleaner.",
   },
   {
     phase: "4",
@@ -153,7 +153,7 @@ const phases: ProgressPhase[] = [
     summary:
       "Dashboard, races, imports, strategies, predictions, Opportunities, detail views, tracked Opportunities, progress reporting, and mobile/PWA shell improvements are scaffolded.",
     nextStep:
-      "Preserve the current Opportunity UI surfaces while the next slice focuses on scoring-contract preparation.",
+      "Preserve the current Opportunity UI surfaces while the next slice focuses on Dev-only data-quality readiness.",
   },
   {
     phase: "6",
@@ -184,14 +184,14 @@ const phases: ProgressPhase[] = [
 const activeWork = [
   "Use docs/ROADMAP.md for phase sequencing and this dashboard as the living day-to-day status handoff.",
   "Use the merged Dev-only feature snapshot materialization as the completed persisted-readiness baseline for the next Opportunity/ML foundation slice.",
-  "Use the Dev-only racing-form coverage readiness report to identify source-fact, lineage, and glossary blockers before provider ingestion, model training, or scoring work.",
+  "Use the Dev-only racing-form coverage readiness report to finish glossary track-code alias and value-calculation input blockers before provider ingestion, model training, or scoring work.",
   "Keep the merged tracked Opportunities, scoring contracts, pre-race snapshot builder, mobile shell, race-card work, and Dev-only materialization intact while future work stays scoped and non-production unless explicitly authorized.",
 ];
 
 const nextSteps = [
   "Review docs/DEV_ONLY_FEATURE_SNAPSHOTS_MATERIALIZATION.md as the completed Dev-only materialization record.",
   "Run and review the Dev-only racing-form coverage readiness report before planning provider ingestion, prediction output, or Opportunity scoring work.",
-  "Choose the next Opportunity/ML foundation slice separately; keep any schema changes in a separate migration prompt.",
+  "Prepare reviewed Dev-only glossary track-code alias coverage before moving to value-calculation input readiness.",
   "Defer real ML, fake ML, scoring runtime, Bet Sheet, Assistant, Alerts, wager settlement, and ROI workflows until Opportunity scoring lineage is cleaner.",
   "Keep production untouched until explicitly authorized.",
 ];
@@ -300,6 +300,14 @@ const tasks: ProgressTask[] = [
     phase: "Opportunity Engine",
     summary:
       "PR #89 merged. Dev-only dry-run/apply materialization now writes only public.feature_snapshots through a server-only CLI, with service_role select/insert grants, 7 initial Dev rows inserted and readback verified, and deterministic skip-existing replay safety confirmed without production, real ML, provider ingestion, scoring, or wagering work.",
+  },
+  {
+    id: "glossary-track-code-alias-readiness",
+    title: "Glossary track-code alias readiness",
+    status: "active",
+    phase: "Opportunity Engine",
+    summary:
+      "Refine glossary readiness so track-code aliases are measured against reviewed provider/track identity, then prepare the narrow Dev-only Strideo Park alias fixture without applying it.",
   },
   {
     id: "opportunity-track-final-review",

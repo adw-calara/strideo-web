@@ -41,6 +41,13 @@ Coverage domains:
 - value calculation inputs
 - glossary and normalization readiness
 
+Glossary normalization includes canonical racing code sets, canonical values,
+source aliases, and reviewed track-code alias coverage. Track-code alias
+readiness is measured against reviewed track/provider identity, not raw
+`track_code_aliases` row count, so an unrelated alias row cannot clear the
+component. The current reviewed demo race-card target is the Strideo Park track
+alias for source system `demo` and source track code `SDP`.
+
 The output includes explicit no-write flags:
 
 - `writesPerformed: false`

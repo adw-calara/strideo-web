@@ -28,6 +28,19 @@ type RaceDateRow = {
   race_date: string;
 };
 
+type ReviewedTrackRow = {
+  id: string;
+  provider: string | null;
+  code: string | null;
+  provider_track_id: string | null;
+};
+
+type TrackCodeAliasRow = {
+  track_id: string | null;
+  source_system: string | null;
+  source_track_code: string | null;
+};
+
 type TrainerIdRow = {
   trainer_id: string | null;
 };
@@ -121,6 +134,121 @@ async function readDistinctTrainerIds(
   };
 }
 
+async function readReviewedTrackRows(
+  client: SupabaseClient,
+): Promise<{ tracks: ReviewedTrackRow[]; error: RacingFormCoverageReadError | null }> {
+  const { data, error, status, statusText } = await client
+    .from("tracks")
+    .select("id, provider, code, provider_track_id")
+    .limit(10_000)
+    .returns<ReviewedTrackRow[]>();
+
+  if (error) {
+    const diagnostic = classifyRacingFormReadFailure({
+      error,
+      status,
+      statusText,
+    });
+
+    return {
+      tracks: [],
+      error: {
+        table: "tracks",
+        operation: "reviewed track identity read",
+        category: diagnostic.category,
+        httpStatus: diagnostic.httpStatus,
+        message: diagnostic.message,
+      },
+    };
+  }
+
+  return {
+    tracks: data ?? [],
+    error: null,
+  };
+}
+
+async function readCurrentTrackCodeAliasRows(
+  client: SupabaseClient,
+): Promise<{ aliases: TrackCodeAliasRow[]; error: RacingFormCoverageReadError | null }> {
+  const { data, error, status, statusText } = await client
+    .from("track_code_aliases")
+    .select("track_id, source_system, source_track_code")
+    .eq("is_active", true)
+    .is("effective_to", null)
+    .limit(10_000)
+    .returns<TrackCodeAliasRow[]>();
+
+  if (error) {
+    const diagnostic = classifyRacingFormReadFailure({
+      error,
+      status,
+      statusText,
+    });
+
+    return {
+      aliases: [],
+      error: {
+        table: "track_code_aliases",
+        operation: "current provider track-code alias read",
+        category: diagnostic.category,
+        httpStatus: diagnostic.httpStatus,
+        message: diagnostic.message,
+      },
+    };
+  }
+
+  return {
+    aliases: data ?? [],
+    error: null,
+  };
+}
+
+function normalizeAliasPart(value: string | null) {
+  return value?.trim().toLowerCase() ?? "";
+}
+
+function trackAliasKey(
+  trackId: string | null,
+  sourceSystem: string | null,
+  sourceTrackCode: string | null,
+) {
+  const normalizedTrackId = normalizeAliasPart(trackId);
+  const normalizedSourceSystem = normalizeAliasPart(sourceSystem);
+  const normalizedSourceTrackCode = normalizeAliasPart(sourceTrackCode);
+
+  if (!normalizedTrackId || !normalizedSourceSystem || !normalizedSourceTrackCode) {
+    return null;
+  }
+
+  return [
+    normalizedTrackId,
+    normalizedSourceSystem,
+    normalizedSourceTrackCode,
+  ].join(":");
+}
+
+function getReviewedTrackCodeAliasCoverage(
+  tracks: ReviewedTrackRow[],
+  aliases: TrackCodeAliasRow[],
+) {
+  const aliasKeys = new Set(
+    aliases
+      .map((alias) =>
+        trackAliasKey(alias.track_id, alias.source_system, alias.source_track_code),
+      )
+      .filter((key): key is string => Boolean(key)),
+  );
+  const reviewedTrackKeys = tracks
+    .map((track) => trackAliasKey(track.id, track.provider, track.code))
+    .filter((key): key is string => Boolean(key));
+
+  return {
+    targets: reviewedTrackKeys.length,
+    resolved: reviewedTrackKeys.filter((key) => aliasKeys.has(key)).length,
+  };
+}
+
 async function readRaceDateBoundary(
   client: SupabaseClient,
   ascending: boolean,
@@ -196,6 +324,8 @@ async function collectRacingFormCoverageInput(
     trainerStatsWithJob,
     raceEntryTrainerIds,
     trainerStatTrainerIds,
+    reviewedTrackRows,
+    currentTrackCodeAliases,
     valueCalculations,
     featureSnapshots,
     modelVersions,
@@ -246,6 +376,8 @@ async function collectRacingFormCoverageInput(
     countNotNull(client, "trainer_performance_stats", "source_job_run_id"),
     readDistinctTrainerIds(client, "race_entries"),
     readDistinctTrainerIds(client, "trainer_performance_stats"),
+    readReviewedTrackRows(client),
+    readCurrentTrackCodeAliasRows(client),
     countRows(client, "value_calculations"),
     countRows(client, "feature_snapshots"),
     countRows(client, "model_versions"),
@@ -317,9 +449,15 @@ async function collectRacingFormCoverageInput(
       .filter((error): error is RacingFormCoverageReadError => Boolean(error)),
     raceEntryTrainerIds.error,
     trainerStatTrainerIds.error,
+    reviewedTrackRows.error,
+    currentTrackCodeAliases.error,
     earliestRaceDate.error,
     latestRaceDate.error,
   ].filter((error): error is RacingFormCoverageReadError => Boolean(error));
+  const trackCodeAliasCoverage = getReviewedTrackCodeAliasCoverage(
+    reviewedTrackRows.tracks,
+    currentTrackCodeAliases.aliases,
+  );
   const reviewedScope: RacingFormCoverageReviewedScope = {
     racesReviewed: raceCount.count,
     entriesReviewed: raceEntries.count,
@@ -375,6 +513,8 @@ async function collectRacingFormCoverageInput(
     racingCodeValues: racingCodeValues.count,
     racingCodeAliases: racingCodeAliases.count,
     trackCodeAliases: trackCodeAliases.count,
+    reviewedTrackCodeAliasTargets: trackCodeAliasCoverage.targets,
+    reviewedTrackCodeAliasesResolved: trackCodeAliasCoverage.resolved,
     openUnresolvedSourceCodes: openUnresolvedCodes.count,
     sourceLineageRows: Math.max(
       pastPerformancesWithSourceFile.count,

@@ -82,6 +82,14 @@ Status: active
 
 Goal: generate first measurable Opportunities.
 
+Current implementation note: the app has protected Opportunity feed/detail,
+tracked Opportunities, scoring contracts, pre-race feature snapshot contracts,
+Dev-only persisted feature snapshot materialization, and Dev-only racing-form
+readiness through trainer stats. The next readiness work is glossary
+track-code alias coverage and value-calculation input coverage only; real ML,
+prediction output writes, scoring runtime, wagering, and production rollout
+remain out of scope until explicitly authorized.
+
 - Implement baseline prediction outputs: probability, ranking, confidence score.
 - Implement value outputs: edge score, value score, Opportunity score.
 - Implement MVP strategies:

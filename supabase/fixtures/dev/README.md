@@ -9,6 +9,7 @@ This directory contains Dev-only fixture data for Strideo race-card UI work.
 - `demo_racing_form_source_facts.sql`
 - `demo_racing_form_owner_context.sql`
 - `demo_racing_form_trainer_stats.sql`
+- `demo_track_code_aliases.sql`
 - `starter_racing_glossary.sql`
 - `race_entry_verification_aliases.sql`
 
@@ -25,7 +26,9 @@ demo race-card entries with owner/context signals, so it can be re-run after the
 base race-card fixture without creating duplicate owner rows. The
 trainer-stat fixture uses deterministic trainer-stat IDs and sanitized lineage
 rows so it can be re-run after the base race-card fixture without creating
-duplicate trainer performance rows. The
+duplicate trainer performance rows. The track-code alias fixture uses the
+reviewed demo provider/track code for Strideo Park so it can be re-run after
+the base race-card fixture without creating duplicate alias rows. The
 starter racing glossary fixture uses source-attributed code-set, canonical
 value, and alias upserts so it can be re-run against Dev without creating
 duplicate glossary rows. The race-entry verification alias fixture is an even
@@ -101,6 +104,19 @@ shorthand used by the controlled PR #71 runtime verification harness.
   Sheet rows, ROI, provider-ingestion writes, ML training rows, credentials,
   file URIs, raw provider payloads, or production data
 
+## What `demo_track_code_aliases.sql` Adds
+
+- 1 active/current `track_code_aliases` row for the reviewed demo track:
+  - source system: `demo`
+  - source track code: `SDP`
+  - target track: Strideo Park (`demo-track-strideo-park`)
+- No broad U.S. track-code seed and no aliases for tracks outside the reviewed
+  demo race card
+- No predictions, Opportunities, opportunity scores, value scores, wagers, Bet
+  Sheet rows, ROI, provider-ingestion writes, source-file/job lineage, trainer
+  stats, ML training rows, credentials, file URIs, raw provider payloads, or
+  production data
+
 ## What `starter_racing_glossary.sql` Adds
 
 - Starter reviewed racing-form code sets
@@ -161,6 +177,11 @@ production data, ML training, prediction output, scoring, or wagering data.
 signals for existing demo entries. It does not add source-file/job lineage,
 trainer stats, claim-transfer facts, predictions, value calculations, scoring,
 or wagering data.
+
+`demo_track_code_aliases.sql` intentionally prepares only the reviewed
+provider/track-code alias needed for the Strideo Park demo race card. It does
+not add a broad track-code seed, source-file/job lineage, trainer stats,
+predictions, value calculations, scoring, or wagering data.
 
 ## Apply In Dev Only
 
@@ -241,6 +262,24 @@ Equivalent `psql` path:
 ```bash
 psql "$STRIDEO_DEV_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
   -f supabase/fixtures/dev/demo_racing_form_trainer_stats.sql
+```
+
+Apply the track-code alias fixture only after the race-card fixture has already
+been applied, reviewed, and explicitly authorized. This fixture is prepared for
+a later reviewed Dev-only apply; adding the file in git does not change live Dev
+racing-form coverage, so the glossary track-code alias component remains
+partial until the explicit apply occurs.
+
+```bash
+node scripts/supabase-cli-with-env.mjs db query --linked \
+  --file supabase/fixtures/dev/demo_track_code_aliases.sql
+```
+
+Equivalent `psql` path:
+
+```bash
+psql "$STRIDEO_DEV_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
+  -f supabase/fixtures/dev/demo_track_code_aliases.sql
 ```
 
 Apply the import-status fixture only after migration `0019` has been applied
