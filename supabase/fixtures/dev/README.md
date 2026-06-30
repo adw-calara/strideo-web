@@ -8,6 +8,7 @@ This directory contains Dev-only fixture data for Strideo race-card UI work.
 - `demo_import_status.sql`
 - `demo_racing_form_source_facts.sql`
 - `demo_racing_form_owner_context.sql`
+- `demo_racing_form_trainer_stats.sql`
 - `starter_racing_glossary.sql`
 - `race_entry_verification_aliases.sql`
 
@@ -22,6 +23,9 @@ past-performance or workout rows. The
 owner-context fixture uses deterministic demo owners and updates only existing
 demo race-card entries with owner/context signals, so it can be re-run after the
 base race-card fixture without creating duplicate owner rows. The
+trainer-stat fixture uses deterministic trainer-stat IDs and sanitized lineage
+rows so it can be re-run after the base race-card fixture without creating
+duplicate trainer performance rows. The
 starter racing glossary fixture uses source-attributed code-set, canonical
 value, and alias upserts so it can be re-run against Dev without creating
 duplicate glossary rows. The race-entry verification alias fixture is an even
@@ -79,6 +83,24 @@ shorthand used by the controlled PR #71 runtime verification harness.
   stats, ML training rows, credentials, file URIs, raw provider payloads, or
   production data
 
+## What `demo_racing_form_trainer_stats.sql` Adds
+
+- 1 sanitized demo job run for fixture lineage
+- 1 sanitized demo data-ingestion batch for trainer-stat source facts
+- 1 sanitized demo source-data file row without file URI or raw payload
+- 4 demo `trainer_performance_stats` rows, one for each distinct demo trainer
+  represented on the `demo_race_card.sql` entries:
+  - Lena West
+  - Owen Field
+  - Mira Stone
+  - Cal Rowan
+- Source-file, ingestion-batch, and job-run lineage on every trainer-stat row
+- No 14-row entry-shaped trainer-stat padding; readiness is measured against
+  distinct reviewed trainers
+- No predictions, Opportunities, opportunity scores, value scores, wagers, Bet
+  Sheet rows, ROI, provider-ingestion writes, ML training rows, credentials,
+  file URIs, raw provider payloads, or production data
+
 ## What `starter_racing_glossary.sql` Adds
 
 - Starter reviewed racing-form code sets
@@ -129,6 +151,11 @@ prepares the minimum sanitized `job_runs`, `data_ingestion_batches`, and
 `source_data_files` lineage rows needed for Dev-only racing-form source-fact
 coverage. Those rows are not provider ingestion, production data, ML training,
 prediction output, scoring, or wagering data.
+
+`demo_racing_form_trainer_stats.sql` also intentionally prepares sanitized
+`job_runs`, `data_ingestion_batches`, and `source_data_files` lineage rows, but
+only for 4 distinct demo trainer-stat profiles. It is not provider ingestion,
+production data, ML training, prediction output, scoring, or wagering data.
 
 `demo_racing_form_owner_context.sql` intentionally prepares only owner/context
 signals for existing demo entries. It does not add source-file/job lineage,
@@ -197,6 +224,24 @@ psql "$STRIDEO_DEV_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
 
 This fixture is prepared for a later reviewed Dev-only apply. Adding the file in
 git does not change live Dev racing-form coverage by itself.
+
+Apply the trainer-stat fixture only after the race-card, source-fact, and
+owner/context fixtures have already been applied, reviewed, and explicitly
+authorized. This fixture is prepared for a later reviewed Dev-only apply; adding
+the file in git does not change live Dev racing-form coverage, so
+`trainer_stats` remains `0/4` until the explicit apply occurs.
+
+```bash
+node scripts/supabase-cli-with-env.mjs db query --linked \
+  --file supabase/fixtures/dev/demo_racing_form_trainer_stats.sql
+```
+
+Equivalent `psql` path:
+
+```bash
+psql "$STRIDEO_DEV_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
+  -f supabase/fixtures/dev/demo_racing_form_trainer_stats.sql
+```
 
 Apply the import-status fixture only after migration `0019` has been applied
 and verified in Dev:
