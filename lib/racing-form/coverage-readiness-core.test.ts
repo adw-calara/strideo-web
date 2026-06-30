@@ -44,6 +44,8 @@ function completeMetrics(): RacingFormCoverageMetricInput {
     racingCodeValues: 100,
     racingCodeAliases: 100,
     trackCodeAliases: 20,
+    reviewedTrackCodeAliasTargets: 4,
+    reviewedTrackCodeAliasesResolved: 4,
     openUnresolvedSourceCodes: 0,
     sourceLineageRows: 80,
   };
@@ -334,6 +336,7 @@ describe("racing-form coverage readiness planner", () => {
         racingCodeValues: 0,
         racingCodeAliases: 0,
         trackCodeAliases: 0,
+        reviewedTrackCodeAliasesResolved: 0,
       }),
     );
     const domain = report.domains.find(
@@ -342,6 +345,70 @@ describe("racing-form coverage readiness planner", () => {
 
     assert.equal(report.status, "blocked");
     assert.equal(domain?.status, "blocked");
+  });
+
+  it("does not clear glossary readiness for unrelated track-code aliases", () => {
+    const report = buildRacingFormCoverageReport(
+      makeInput({
+        tracks: 1,
+        racingCodeSets: 8,
+        racingCodeValues: 100,
+        racingCodeAliases: 100,
+        trackCodeAliases: 1,
+        reviewedTrackCodeAliasTargets: 1,
+        reviewedTrackCodeAliasesResolved: 0,
+      }),
+    );
+    const domain = report.domains.find(
+      (item) => item.key === "glossary_normalization",
+    );
+
+    assert.equal(report.status, "partial");
+    assert.equal(domain?.status, "partial");
+    assert.deepEqual(domain?.counts, {
+      available: 3,
+      missing: 1,
+      total: 4,
+      percent: 75,
+    });
+    assert.ok(
+      domain?.notes.includes(
+        "0 reviewed tracks have provider track-code aliases.",
+      ),
+    );
+    assert.ok(
+      domain?.notes.includes("1 total track code alias rows are available."),
+    );
+  });
+
+  it("clears glossary track-code readiness for reviewed demo track aliases", () => {
+    const report = buildRacingFormCoverageReport(
+      makeInput({
+        tracks: 1,
+        racingCodeSets: 8,
+        racingCodeValues: 100,
+        racingCodeAliases: 100,
+        trackCodeAliases: 1,
+        reviewedTrackCodeAliasTargets: 1,
+        reviewedTrackCodeAliasesResolved: 1,
+      }),
+    );
+    const domain = report.domains.find(
+      (item) => item.key === "glossary_normalization",
+    );
+
+    assert.equal(domain?.status, "ready");
+    assert.deepEqual(domain?.counts, {
+      available: 4,
+      missing: 0,
+      total: 4,
+      percent: 100,
+    });
+    assert.ok(
+      !report.warnings.some((warning) =>
+        warning.includes("Glossary and normalization readiness"),
+      ),
+    );
   });
 
   it("keeps deterministic domain and warning ordering", () => {
@@ -466,6 +533,30 @@ describe("racing-form coverage readiness planner", () => {
     for (const trainerId of trainerIds) {
       assert.match(fixture, new RegExp(trainerId));
     }
+    assert.doesNotMatch(fixture, /insert into public\.prediction_outputs/i);
+    assert.doesNotMatch(fixture, /insert into public\.opportunity_scores/i);
+    assert.doesNotMatch(fixture, /insert into public\.value_calculations/i);
+    assert.doesNotMatch(fixture, /insert into public\.wager/i);
+    assert.doesNotMatch(fixture, /insert into public\.model_/i);
+    assert.doesNotMatch(fixture, /raw_payload/i);
+    assert.doesNotMatch(fixture, /sample_payload/i);
+    assert.doesNotMatch(fixture, /SUPABASE_/i);
+  });
+
+  it("keeps the Dev track-code alias fixture scoped to reviewed demo aliases", () => {
+    const fixture = readFileSync(
+      new URL(
+        "../../supabase/fixtures/dev/demo_track_code_aliases.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+
+    assert.match(fixture, /insert into public\.track_code_aliases/i);
+    assert.match(fixture, /provider = 'demo'/);
+    assert.match(fixture, /provider_track_id = 'demo-track-strideo-park'/);
+    assert.match(fixture, /source_system,\s*source_track_code/i);
+    assert.match(fixture, /'demo',\s*'SDP'/);
     assert.doesNotMatch(fixture, /insert into public\.prediction_outputs/i);
     assert.doesNotMatch(fixture, /insert into public\.opportunity_scores/i);
     assert.doesNotMatch(fixture, /insert into public\.value_calculations/i);

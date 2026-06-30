@@ -87,6 +87,8 @@ export type RacingFormCoverageMetricInput = {
   racingCodeValues: number;
   racingCodeAliases: number;
   trackCodeAliases: number;
+  reviewedTrackCodeAliasTargets: number;
+  reviewedTrackCodeAliasesResolved: number;
   openUnresolvedSourceCodes: number;
   sourceLineageRows: number;
 };
@@ -262,12 +264,17 @@ export function buildRacingFormCoverageReport(
     metrics.valueCalculations,
     metrics.featureSnapshots > 0 ? metrics.featureSnapshots : metrics.raceEntries,
   );
+  const reviewedTrackCodeAliasCounts = counts(
+    metrics.reviewedTrackCodeAliasesResolved,
+    metrics.reviewedTrackCodeAliasTargets,
+  );
   const glossaryComponentsAvailable = [
-    metrics.racingCodeSets,
-    metrics.racingCodeValues,
-    metrics.racingCodeAliases,
-    metrics.trackCodeAliases,
-  ].filter((value) => value > 0).length;
+    metrics.racingCodeSets > 0,
+    metrics.racingCodeValues > 0,
+    metrics.racingCodeAliases > 0,
+    reviewedTrackCodeAliasCounts.total > 0 &&
+      reviewedTrackCodeAliasCounts.missing === 0,
+  ].filter(Boolean).length;
   const glossaryCounts = counts(glossaryComponentsAvailable, 4);
 
   const domains = [
@@ -330,7 +337,9 @@ export function buildRacingFormCoverageReport(
         `${metrics.racingCodeSets} racing code sets are available.`,
         `${metrics.racingCodeValues} racing code values are available.`,
         `${metrics.racingCodeAliases} racing code aliases are available.`,
-        `${metrics.trackCodeAliases} track code aliases are available.`,
+        `${metrics.trackCodeAliases} total track code alias rows are available.`,
+        `${metrics.reviewedTrackCodeAliasTargets} reviewed tracks require provider track-code alias coverage.`,
+        `${metrics.reviewedTrackCodeAliasesResolved} reviewed tracks have provider track-code aliases.`,
         `${metrics.openUnresolvedSourceCodes} open unresolved source codes are queued.`,
       ],
     }),
