@@ -170,6 +170,33 @@ describe("value calculation input lineage dry-run planner", () => {
     );
   });
 
+  it("blocks output when market odds input is invalid", () => {
+    const row = inputRow();
+    const snapshot = row.features!.snapshot;
+    row.features = {
+      ...row.features!,
+      snapshot: {
+        ...snapshot,
+        market: {
+          ...snapshot.market,
+          marketImpliedProbability: 1.2,
+        },
+      },
+    };
+    const plan = buildValueCalculationInputLineagePlan([row]);
+    const item = plan.items[0];
+
+    assert.equal(item.status, "blocked");
+    assert.equal(item.row, null);
+    assert.equal(plan.summary.plannedRows, 0);
+    assert.equal(plan.summary.blockedRows, 1);
+    assert.ok(
+      item.blockingReasons.includes(
+        "Feature snapshot market implied probability is missing or invalid.",
+      ),
+    );
+  });
+
   it("blocks output when feature snapshot lineage is missing", () => {
     const row = inputRow();
     const plan = buildValueCalculationInputLineagePlan([
@@ -184,6 +211,31 @@ describe("value calculation input lineage dry-run planner", () => {
     assert.equal(item.row, null);
     assert.ok(
       item.blockingReasons.includes("Feature snapshot row is missing id."),
+    );
+  });
+
+  it("blocks output when feature snapshot lineage does not match the row", () => {
+    const row = inputRow();
+    const snapshot = row.features!.snapshot;
+    row.features = {
+      ...row.features!,
+      snapshot: {
+        ...snapshot,
+        lineage: {
+          ...snapshot.lineage,
+          featureSnapshotId: "55555555-5555-4555-8555-555555555555",
+        },
+      },
+    };
+    const plan = buildValueCalculationInputLineagePlan([row]);
+    const item = plan.items[0];
+
+    assert.equal(item.status, "blocked");
+    assert.equal(item.row, null);
+    assert.ok(
+      item.blockingReasons.includes(
+        "Feature snapshot row id does not match snapshot lineage featureSnapshotId.",
+      ),
     );
   });
 
