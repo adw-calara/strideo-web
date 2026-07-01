@@ -102,10 +102,17 @@ Dev-only materialization path for persisted `feature_snapshots`; that path
 remains outside the pure builder and does not create prediction outputs,
 Opportunity scores, wagers, or production data.
 
+The later Dev-only value-calculation lineage path materializes 7 scoped
+`value_calculations` rows from those persisted feature snapshots. Those rows
+prove feature-snapshot and market-input lineage for Dev only; they keep
+`model_version_id`, `prediction_output_id`, `model_probability`, and
+Opportunity-score linkage empty until real model and prediction lineage are
+explicitly authorized.
+
 ## Next Slice
 
-The next recommended slice should build on the Dev-only persisted feature
-snapshot lineage without creating fake model outputs or writing production data.
-Real model-backed scoring should come only after model-version registry usage,
-prediction output lineage, broader leakage checks, and production-readiness
-boundaries are validated.
+The next recommended slice should build on the Dev-only persisted feature and
+value-calculation lineage without creating fake model outputs or writing
+production data. Real model-backed scoring should come only after model-version
+registry usage, prediction output lineage, broader leakage checks, and
+production-readiness boundaries are validated.

@@ -13,6 +13,7 @@ import {
   VALUE_CALCULATION_INPUT_LINEAGE_METHOD_KEY,
   VALUE_CALCULATION_INPUT_LINEAGE_METHOD_VERSION,
   buildValueCalculationInputLineagePlan,
+  getValueCalculationInputLineageIdentity,
   type ValueCalculationInputFeatureSnapshotRow,
 } from "./value-calculation-input-lineage-core";
 
@@ -118,6 +119,7 @@ describe("value calculation input lineage dry-run planner", () => {
     assert.equal(first.summary.featureSnapshotsReviewed, 1);
     assert.equal(first.summary.plannedRows, 1);
     assert.equal(first.summary.blockedRows, 0);
+    assert.equal(first.summary.skippedExistingRows, 0);
     assert.equal(first.summary.writesPerformed, false);
     assert.equal(item.status, "planned");
     assert.equal(item.row.feature_snapshot_id, row.id);
@@ -136,6 +138,30 @@ describe("value calculation input lineage dry-run planner", () => {
       VALUE_CALCULATION_INPUT_LINEAGE_METHOD_VERSION,
     );
     assert.ok(item.sourceReadPaths.includes("feature_snapshots.id"));
+  });
+
+  it("skips existing deterministic calculation identities instead of duplicating rows", () => {
+    const row = inputRow();
+    const identity = getValueCalculationInputLineageIdentity({
+      featureSnapshotId: row.id!,
+      oddsSnapshotId: odds().id,
+      predictionOutputId: null,
+    });
+    const plan = buildValueCalculationInputLineagePlan([row], {
+      existingCalculationIdentities: new Set([identity]),
+    });
+    const item = plan.items[0];
+
+    assert.equal(plan.summary.plannedRows, 0);
+    assert.equal(plan.summary.blockedRows, 0);
+    assert.equal(plan.summary.skippedExistingRows, 1);
+    assert.equal(item.status, "skipped_existing");
+    assert.equal(item.calculationIdentity, identity);
+    assert.equal(item.skippedReason, "already_materialized");
+    assert.equal(item.row.feature_snapshot_id, row.id);
+    assert.equal(item.row.model_version_id, null);
+    assert.equal(item.row.prediction_output_id, null);
+    assert.equal(item.row.model_probability, null);
   });
 
   it("blocks output when market odds input is missing", () => {
@@ -301,6 +327,30 @@ describe("value calculation input lineage dry-run planner", () => {
         "model_training_runs",
       ],
     });
+  });
+
+  it("keeps value-calculation planning in the existing pure planner path", () => {
+    const row = inputRow();
+    const plan = buildValueCalculationInputLineagePlan([row]);
+
+    assert.equal(
+      plan.summary.replayStrategy,
+      "deterministic_identity_skip_existing",
+    );
+    assert.equal(plan.summary.featureSnapshotsReviewed, 1);
+    assert.equal(plan.items.length, 1);
+    assert.deepEqual(plan.items[0].sourceReadPaths, [
+      "feature_snapshots.id",
+      "feature_snapshots.race_id",
+      "feature_snapshots.race_date",
+      "feature_snapshots.race_entry_id",
+      "feature_snapshots.feature_set_key",
+      "feature_snapshots.features.snapshot.lineage.featureSnapshotId",
+      "feature_snapshots.features.snapshot.market.latestOddsSnapshotId",
+      "feature_snapshots.features.snapshot.market.marketImpliedProbability",
+      "feature_snapshots.features.snapshot.market.marketProbabilitySource",
+      "feature_snapshots.features.snapshot.entry.horseId",
+    ]);
   });
 
   it("blocks non pre-race feature snapshots", () => {

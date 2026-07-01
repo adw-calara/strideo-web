@@ -32,7 +32,7 @@ These are source-fact and lineage paths only. They do not prove ingestion covera
 | horse past performances | partial | Schema exists for historical form, figures, fractions, times, and source lineage; coverage is not proven. |
 | horse workouts | partial | Schema exists for workout timing, rank, type, and source lineage; coverage is not proven. |
 | trainer performance stats | partial | Schema exists; source quality, context taxonomy, and coverage are not proven. |
-| value calculations | partial | Append-only lineage table exists; no production value lineage is populated or validated. |
+| value calculations | partial | Append-only lineage table exists; 7 Dev-only market-input lineage rows are populated for the initial Dev feature snapshots, but production, model-backed, prediction-backed, and score-linked value lineage are not validated. |
 | Opportunity score lineage | partial | `opportunity_scores.value_calculation_id` exists; generator wiring and real value evidence are not complete. |
 | model versions | ready | Structural registry exists; no fake model rows should be inserted for demo scoring. |
 | feature snapshots | partial | Storage exists; Dev-only pre-race materialization is merged and replay-verified for the first 7 Dev rows; production coverage, broader leakage validation, and model linkage are still required. |
@@ -281,5 +281,5 @@ wagering recommendation, or production scoring runtime.
 ## Recommended Next Prompt
 
 Run and review the Dev-only racing-form coverage report, then scope the smallest
-next blocker separately without training models, creating prediction outputs, or
-creating production Opportunities.
+model-version and prediction-output lineage blocker separately without training
+models, fake scoring, wager recommendations, or production Opportunities.
