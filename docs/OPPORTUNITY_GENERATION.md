@@ -114,10 +114,16 @@ Future PR: connect a real model-backed scorer by writing `model_versions`,
 `strategy_matches.prediction_output_id` and
 `opportunity_scores.prediction_output_id`.
 
-## Known Schema Gap
+## Current Source-Fact Note
 
-The requested `owners` table is not present in migrations through
-`0020_opportunity_read_access`. This slice records owner-related feature fields
-as unavailable/null and does not add a migration. A follow-up schema PR should
-add provider-aware owner identity, link race entries to owner facts, and include
-owner performance aggregates in the feature snapshot contract.
+The earlier owner schema gap is closed on current main: the racing-form data
+foundation added `owners` plus owner and claim links on `race_entries`, and
+`docs/STRIDEO_ML_DATA_CONTRACT.md` treats owner identity as an existing
+source-fact foundation with remaining ingestion, dedupe, reconciliation, and
+coverage work.
+
+This demo generation slice still predates that owner/source-fact wiring and
+must not create duplicate owner schema. Future Opportunity-lineage work should
+reuse the existing `owners`, `race_entries` owner fields, `feature_snapshots`,
+`prediction_outputs`, `value_calculations`, and `opportunity_scores` lineage
+tables instead of introducing parallel identity or scoring paths.

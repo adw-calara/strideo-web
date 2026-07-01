@@ -345,10 +345,18 @@ const tasks: ProgressTask[] = [
   {
     id: "roadmap-progress-reconciliation",
     title: "Roadmap and progress reconciliation",
-    status: "active",
+    status: "complete",
     phase: "Release Coordination",
     summary:
-      "Reconcile docs/ROADMAP.md with the living progress dashboard so Phase 0 and Phase 1 completion, active Opportunity work, mobile readiness coordination, and next sequence no longer send mixed planning signals.",
+      "docs/ROADMAP.md and the living progress dashboard now agree that Phase 0 and Phase 1 are complete enough for continued product work, Opportunity Engine work is active, and the next sequence remains Dev-only value-calculation lineage readiness before real ML, scoring, wagers, Bet Sheet, Assistant, Alerts, or production rollout.",
+  },
+  {
+    id: "dev-only-value-calculation-lineage-plan",
+    title: "Dev-only value-calculation lineage plan",
+    status: "next",
+    phase: "Opportunity Engine",
+    summary:
+      "Use the read-only Dev racing-form coverage report to scope value_calculation lineage rows for the 7 existing Dev feature_snapshots, keeping model_version_id, prediction_output_id, and model_probability null unless real model and prediction lineage are explicitly authorized.",
   },
   {
     id: "watch-pr-82-mobile-shell",
