@@ -16,6 +16,7 @@
     "provider-ingestion:audit:race-entry-dev": "NODE_OPTIONS=--conditions=react-server tsx scripts/report-provider-race-entry-readiness-audit-dev.ts",
     "provider-ingestion:verify:race-entry-dev": "NODE_OPTIONS=--conditions=react-server tsx scripts/verify-provider-race-entry-persistence-dev.ts",
     "feature-snapshots:materialize:dev": "NODE_OPTIONS=--conditions=react-server tsx scripts/materialize-feature-snapshots-dev.ts",
+    "value-calculations:materialize:dev": "NODE_OPTIONS=--conditions=react-server tsx scripts/materialize-value-calculations-dev.ts",
     "racing-form:coverage:dev": "NODE_OPTIONS=--conditions=react-server tsx scripts/report-racing-form-coverage-dev.ts",
     "racing-codes:unresolved:report": "NODE_OPTIONS=--conditions=react-server tsx scripts/report-unresolved-racing-codes.ts",
     "verify": "npm run db:migrations:check && npm run lint && npm run test && npm run build && npm audit --audit-level=moderate"

@@ -133,9 +133,9 @@ const phases: ProgressPhase[] = [
     status: "active",
     progress: 85,
     summary:
-      "Demo generation, narrow service-role grants, candidate quality, feed visibility, detail display, tracked Opportunities, scoring contracts, pre-race snapshot contracts, Dev-only persisted feature snapshot materialization, the Dev-only racing-form readiness ladder through glossary normalization, and read-only value-calculation input sub-signal reporting are validated.",
+      "Demo generation, narrow service-role grants, candidate quality, feed visibility, detail display, tracked Opportunities, scoring contracts, pre-race snapshot contracts, Dev-only persisted feature snapshot materialization, the Dev-only racing-form readiness ladder through glossary normalization, and Dev-only value-calculation input lineage rows are validated.",
     nextStep:
-      "Review value-calculation input sub-signals before any value fixture or write path, while keeping real ML, prediction outputs, scoring, wagers, and production rollout out of scope until lineage is cleaner.",
+      "Plan model-version and prediction-output lineage separately while keeping real ML, scoring, wagers, and production rollout out of scope until lineage is cleaner.",
   },
   {
     phase: "4",
@@ -184,15 +184,15 @@ const phases: ProgressPhase[] = [
 const activeWork = [
   "Use docs/ROADMAP.md for phase sequencing and this dashboard as the living day-to-day status handoff.",
   "Use the merged Dev-only feature snapshot materialization as the completed persisted-readiness baseline for the next Opportunity/ML foundation slice.",
-  "Use the Dev-only racing-form coverage readiness report and implemented value-calculation input sub-signals before provider ingestion, model training, or scoring work.",
+  "Use the Dev-only value-calculation lineage rows as the completed market-input lineage baseline before model training, prediction output, or scoring work.",
   "Keep the merged tracked Opportunities, scoring contracts, pre-race snapshot builder, mobile shell, race-card work, and Dev-only materialization intact while future work stays scoped and non-production unless explicitly authorized.",
 ];
 
 const nextSteps = [
   "Review docs/DEV_ONLY_FEATURE_SNAPSHOTS_MATERIALIZATION.md as the completed Dev-only materialization record.",
   "Run and review the Dev-only racing-form coverage readiness report before planning provider ingestion, prediction output, or Opportunity scoring work.",
-  "Treat the current value_calculation_inputs 0/7 as zero value-calculation rows over seven Dev feature snapshots, not seven implemented readiness signals.",
-  "Use the implemented value_calculation_inputs sub-signals to scope any future value-calculation fixture or write path separately.",
+  "Review docs/DEV_ONLY_VALUE_CALCULATIONS_LINEAGE.md as the completed Dev-only value-calculation input-lineage record.",
+  "Treat current value_calculation_inputs partial status as missing model-version, prediction-output, calibrated model_probability, and Opportunity-score linkage, not as missing Dev value_calculations.",
   "Defer real ML, fake ML, scoring runtime, Bet Sheet, Assistant, Alerts, wager settlement, and ROI workflows until Opportunity scoring lineage is cleaner.",
   "Keep production untouched until explicitly authorized.",
 ];
@@ -308,7 +308,7 @@ const tasks: ProgressTask[] = [
     status: "complete",
     phase: "Opportunity Engine",
     summary:
-      "Read-only audit and checker enhancement completed. The current value_calculation_inputs 0/7 report means 0 value_calculations over 7 Dev feature_snapshots, and the report now exposes seven evidence-based sub-signals without fixture, write, migration, provider ingestion, scoring, ML, wager, or production work.",
+      "Read-only audit and checker enhancement completed. The earlier value_calculation_inputs 0/7 report meant 0 value_calculations over 7 Dev feature_snapshots, and the report now exposes seven evidence-based sub-signals without fixture, migration, provider ingestion, scoring, ML, wager, or production work.",
   },
   {
     id: "glossary-track-code-alias-readiness",
@@ -352,11 +352,19 @@ const tasks: ProgressTask[] = [
   },
   {
     id: "dev-only-value-calculation-lineage-plan",
-    title: "Dev-only value-calculation lineage plan",
+    title: "Dev-only value-calculation lineage",
+    status: "complete",
+    phase: "Opportunity Engine",
+    summary:
+      "Dev-only materialization inserted 7 public.value_calculations rows linked to the 7 existing Dev feature_snapshots, replay dry-run skips all 7 existing deterministic identities, and model_version_id, prediction_output_id, model_probability, opportunity_id, and opportunity_scores linkage remain null until real model/prediction/scoring lineage is explicitly authorized.",
+  },
+  {
+    id: "dev-only-model-prediction-lineage-plan",
+    title: "Dev-only model and prediction lineage plan",
     status: "next",
     phase: "Opportunity Engine",
     summary:
-      "Use the read-only Dev racing-form coverage report to scope value_calculation lineage rows for the 7 existing Dev feature_snapshots, keeping model_version_id, prediction_output_id, and model_probability null unless real model and prediction lineage are explicitly authorized.",
+      "Scope the smallest non-production model_versions and prediction_outputs lineage path only after reviewing the Dev coverage blockers; do not create real ML claims, fake scoring, opportunity_scores linkage, wagers, Bet Sheet, Assistant, Alerts, or production writes.",
   },
   {
     id: "watch-pr-82-mobile-shell",
