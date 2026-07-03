@@ -185,6 +185,7 @@ const activeWork = [
   "Use docs/ROADMAP.md for phase sequencing and this dashboard as the living day-to-day status handoff.",
   "Use the merged Dev-only feature snapshot materialization as the completed persisted-readiness baseline for the next Opportunity/ML foundation slice.",
   "Use the Dev-only value-calculation lineage rows as the completed market-input lineage baseline before model training, prediction output, or scoring work.",
+  "Use the Dev-only model/prediction lineage dry-run report to review planned row shapes before any model_versions or prediction_outputs materialization work.",
   "Keep the merged tracked Opportunities, scoring contracts, pre-race snapshot builder, mobile shell, race-card work, and Dev-only materialization intact while future work stays scoped and non-production unless explicitly authorized.",
 ];
 
@@ -192,6 +193,7 @@ const nextSteps = [
   "Review docs/DEV_ONLY_FEATURE_SNAPSHOTS_MATERIALIZATION.md as the completed Dev-only materialization record.",
   "Run and review the Dev-only racing-form coverage readiness report before planning provider ingestion, prediction output, or Opportunity scoring work.",
   "Review docs/DEV_ONLY_VALUE_CALCULATIONS_LINEAGE.md as the completed Dev-only value-calculation input-lineage record.",
+  "Review docs/DEV_ONLY_MODEL_PREDICTION_LINEAGE_PLAN.md and the dry-run report before authorizing any model/prediction materialization or grant changes.",
   "Treat current value_calculation_inputs partial status as missing model-version, prediction-output, calibrated model_probability, and Opportunity-score linkage, not as missing Dev value_calculations.",
   "Defer real ML, fake ML, scoring runtime, Bet Sheet, Assistant, Alerts, wager settlement, and ROI workflows until Opportunity scoring lineage is cleaner.",
   "Keep production untouched until explicitly authorized.",
@@ -361,10 +363,18 @@ const tasks: ProgressTask[] = [
   {
     id: "dev-only-model-prediction-lineage-plan",
     title: "Dev-only model and prediction lineage plan",
+    status: "complete",
+    phase: "Opportunity Engine",
+    summary:
+      "Dry-run-only planner/report proposes one honest non-production model_versions row shape and 7 market-derived baseline prediction_outputs row shapes linked to existing Dev feature_snapshots and value_calculations, with no writes, migrations, trained ML claims, scoring, opportunity_scores linkage, wagers, Bet Sheet, Assistant, Alerts, or production access.",
+  },
+  {
+    id: "dev-only-model-prediction-materialization-plan",
+    title: "Dev-only model and prediction materialization plan",
     status: "next",
     phase: "Opportunity Engine",
     summary:
-      "Scope the smallest non-production model_versions and prediction_outputs lineage path only after reviewing the Dev coverage blockers; do not create real ML claims, fake scoring, opportunity_scores linkage, wagers, Bet Sheet, Assistant, Alerts, or production writes.",
+      "Review the dry-run model/prediction lineage report before separately authorizing any service-role grants, model_versions writes, prediction_outputs writes, value_calculations linkage changes, or calibrated model_probability work.",
   },
   {
     id: "watch-pr-82-mobile-shell",

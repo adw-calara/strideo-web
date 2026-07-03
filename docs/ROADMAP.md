@@ -255,6 +255,11 @@ Goal: build long-term moat.
   `model_version_id`, `prediction_output_id`, `model_probability`,
   `opportunity_id`, and `opportunity_scores` linkage empty until real
   model/prediction/scoring lineage is explicitly authorized.
+- Complete: Dev-only model/prediction lineage dry-run planning exists. The
+  report proposes one honest non-production model-version identity and 7
+  market-derived baseline prediction-output row shapes without database writes,
+  migrations, trained ML claims, scoring, `value_calculations` updates, or
+  `opportunity_scores` updates.
 - Queued: Wager construction, Bet Sheet, performance verification, assistant,
   and commercial readiness remain behind the next Opportunity-centered slices.
 - Blocked: no current roadmap phase is blocked by a known P0/P1 issue.
@@ -272,13 +277,16 @@ Goal: build long-term moat.
    Dev-only value-calculation input-lineage record: the controlled Dev apply
    inserted 7 `value_calculations` rows and the follow-up dry-run skipped all 7
    existing deterministic identities.
-4. Scope the next model-version and prediction-output lineage slice separately
+4. Treat `docs/DEV_ONLY_MODEL_PREDICTION_LINEAGE_PLAN.md` as the dry-run-only
+   model/prediction lineage planning record. Review the report before any
+   materialization, grant, scoring, or Opportunity generation work.
+5. Scope any model-version and prediction-output materialization separately
    before any scoring or Opportunity generation work.
-5. Keep real model-backed scoring in a
+6. Keep real model-backed scoring in a
    separate slice with feature snapshot lineage as an explicit prerequisite.
    Keep Bet Sheet, Alerts, Assistant, settlement, ROI, and wagering deferred
    until the scoring lineage is cleaner.
-6. Use the Dev-only racing-form coverage readiness report to identify the next
+7. Use the Dev-only racing-form coverage readiness report to identify the next
    source-fact or lineage blocker before any provider-ingestion, prediction,
    scoring, or production Opportunity work.
 
