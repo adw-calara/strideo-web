@@ -244,11 +244,17 @@ Goal: build long-term moat.
   ML, fake ML, persisted scoring, wagering, Bet Sheet, Alerts, Assistant,
   settlement, or ROI.
 - Complete: The read-only `value_calculation_inputs` semantic audit reconciled
-  the current `0/7` report as zero value-calculation rows over seven Dev
+  the earlier `0/7` report as zero value-calculation rows over seven Dev
   feature snapshots, not seven pre-existing implemented signals. The canonical
   signal model is now implemented as read-only readiness observability in
   `docs/DEV_ONLY_RACING_FORM_COVERAGE_READINESS.md` and the Dev coverage
   report.
+- Complete: Dev-only `value_calculations` input lineage is populated for the
+  initial 7 Dev pre-race `feature_snapshots`. The rows are linked to their
+  source feature snapshots and market inputs, replay as skip-existing, and keep
+  `model_version_id`, `prediction_output_id`, `model_probability`,
+  `opportunity_id`, and `opportunity_scores` linkage empty until real
+  model/prediction/scoring lineage is explicitly authorized.
 - Queued: Wager construction, Bet Sheet, performance verification, assistant,
   and commercial readiness remain behind the next Opportunity-centered slices.
 - Blocked: no current roadmap phase is blocked by a known P0/P1 issue.
@@ -262,15 +268,17 @@ Goal: build long-term moat.
 2. Treat `docs/DEV_ONLY_FEATURE_SNAPSHOTS_MATERIALIZATION.md` as the completed
    Dev-only materialization record: the first controlled Dev apply inserted 7
    snapshots and the follow-up dry-run skipped all 7 existing deterministic IDs.
-3. Review the implemented `value_calculation_inputs` sub-signals in the
-   Dev-only racing-form coverage report before planning any value-calculation
-   fixture, write path, prediction output, scoring, or Opportunity generation
-   work.
-4. Keep real model-backed scoring in a
+3. Treat `docs/DEV_ONLY_VALUE_CALCULATIONS_LINEAGE.md` as the completed
+   Dev-only value-calculation input-lineage record: the controlled Dev apply
+   inserted 7 `value_calculations` rows and the follow-up dry-run skipped all 7
+   existing deterministic identities.
+4. Scope the next model-version and prediction-output lineage slice separately
+   before any scoring or Opportunity generation work.
+5. Keep real model-backed scoring in a
    separate slice with feature snapshot lineage as an explicit prerequisite.
    Keep Bet Sheet, Alerts, Assistant, settlement, ROI, and wagering deferred
    until the scoring lineage is cleaner.
-5. Use the Dev-only racing-form coverage readiness report to identify the next
+6. Use the Dev-only racing-form coverage readiness report to identify the next
    source-fact or lineage blocker before any provider-ingestion, prediction,
    scoring, or production Opportunity work.
 

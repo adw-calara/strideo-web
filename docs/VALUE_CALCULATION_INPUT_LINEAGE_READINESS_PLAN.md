@@ -2,6 +2,12 @@
 
 Date: 2026-07-01
 
+Status update: this planning artifact has been followed by the Dev-only
+materialization slice documented in
+`docs/DEV_ONLY_VALUE_CALCULATIONS_LINEAGE.md`. Keep this file as historical
+planning context; use the materialization doc and current Dev coverage report
+for the latest value-calculation lineage status.
+
 ## Current Baseline
 
 - Repo: `/Users/andrewwhetsel/Documents/Strideo`

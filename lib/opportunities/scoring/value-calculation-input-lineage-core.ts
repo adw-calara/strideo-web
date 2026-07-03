@@ -6,7 +6,7 @@ export const VALUE_CALCULATION_INPUT_LINEAGE_METHOD_KEY =
 export const VALUE_CALCULATION_INPUT_LINEAGE_METHOD_VERSION =
   "dev_dry_run_v1" as const;
 export const VALUE_CALCULATION_INPUT_LINEAGE_REPLAY_STRATEGY =
-  "deterministic_dry_run_identity" as const;
+  "deterministic_identity_skip_existing" as const;
 
 const SOURCE_READ_PATHS = [
   "feature_snapshots.id",
@@ -106,6 +106,15 @@ export type ValueCalculationInputLineagePlanItem =
       sourceReadPaths: readonly string[];
     }
   | {
+      status: "skipped_existing";
+      featureSnapshotId: string;
+      calculationIdentity: string;
+      row: PlannedValueCalculationInputRow;
+      blockingReasons: readonly [];
+      sourceReadPaths: readonly string[];
+      skippedReason: "already_materialized";
+    }
+  | {
       status: "blocked";
       featureSnapshotId: string | null;
       calculationIdentity: null;
@@ -119,6 +128,7 @@ export type ValueCalculationInputLineagePlanSummary = {
   featureSnapshotsReviewed: number;
   plannedRows: number;
   blockedRows: number;
+  skippedExistingRows: number;
   writesPerformed: false;
 };
 
@@ -127,8 +137,32 @@ export type ValueCalculationInputLineagePlan = {
   items: readonly ValueCalculationInputLineagePlanItem[];
 };
 
+export type ValueCalculationInputLineagePlanOptions = {
+  existingCalculationIdentities?: ReadonlySet<string>;
+};
+
 function isProbability(value: number | null | undefined) {
-  return value !== null && value !== undefined && Number.isFinite(value) && value >= 0 && value <= 1;
+  return (
+    value !== null &&
+    value !== undefined &&
+    Number.isFinite(value) &&
+    value >= 0 &&
+    value <= 1
+  );
+}
+
+export function getValueCalculationInputLineageIdentity(parts: {
+  featureSnapshotId: string;
+  oddsSnapshotId: string | null;
+  predictionOutputId: null;
+}) {
+  return calculationIdentity([
+    parts.featureSnapshotId,
+    parts.oddsSnapshotId,
+    parts.predictionOutputId,
+    VALUE_CALCULATION_INPUT_LINEAGE_METHOD_KEY,
+    VALUE_CALCULATION_INPUT_LINEAGE_METHOD_VERSION,
+  ]);
 }
 
 function calculationIdentity(parts: readonly unknown[]) {
@@ -158,8 +192,14 @@ function validateLineage(
     reasons.push("Feature snapshot lineage is missing featureSnapshotId.");
   }
 
-  if (row.id && snapshot.lineage.featureSnapshotId && snapshot.lineage.featureSnapshotId !== row.id) {
-    reasons.push("Feature snapshot row id does not match snapshot lineage featureSnapshotId.");
+  if (
+    row.id &&
+    snapshot.lineage.featureSnapshotId &&
+    snapshot.lineage.featureSnapshotId !== row.id
+  ) {
+    reasons.push(
+      "Feature snapshot row id does not match snapshot lineage featureSnapshotId.",
+    );
   }
 
   if (!row.race_id || row.race_id !== snapshot.race.raceId) {
@@ -191,14 +231,19 @@ function validateMarketInput(row: ValueCalculationInputFeatureSnapshotRow) {
   }
 
   if (!isProbability(market.marketImpliedProbability)) {
-    reasons.push("Feature snapshot market implied probability is missing or invalid.");
+    reasons.push(
+      "Feature snapshot market implied probability is missing or invalid.",
+    );
   }
 
   if (market.marketProbabilitySource === "unavailable") {
     reasons.push("Feature snapshot market input is unavailable.");
   }
 
-  if (market.marketProbabilitySource === "latest_odds" && !market.latestOddsSnapshotId) {
+  if (
+    market.marketProbabilitySource === "latest_odds" &&
+    !market.latestOddsSnapshotId
+  ) {
     reasons.push("Latest-odds market input is missing latestOddsSnapshotId.");
   }
 
@@ -269,6 +314,7 @@ function buildDryRunOutput(
 
 function buildItem(
   row: ValueCalculationInputFeatureSnapshotRow,
+  options: ValueCalculationInputLineagePlanOptions,
 ): ValueCalculationInputLineagePlanItem {
   const lineageReasons = validateLineage(row);
   const marketInput = validateMarketInput(row);
@@ -287,13 +333,11 @@ function buildItem(
 
   const marketSource = marketInput.marketSource!;
   const marketProbability = marketInput.marketProbability!;
-  const identity = calculationIdentity([
-    row.id,
-    marketInput.oddsSnapshotId,
-    null,
-    VALUE_CALCULATION_INPUT_LINEAGE_METHOD_KEY,
-    VALUE_CALCULATION_INPUT_LINEAGE_METHOD_VERSION,
-  ]);
+  const identity = getValueCalculationInputLineageIdentity({
+    featureSnapshotId: row.id!,
+    oddsSnapshotId: marketInput.oddsSnapshotId,
+    predictionOutputId: null,
+  });
   const plannedRow: PlannedValueCalculationInputRow = {
     race_id: row.race_id!,
     race_date: row.race_date!,
@@ -323,6 +367,18 @@ function buildItem(
     source_job_run_id: null,
   };
 
+  if (options.existingCalculationIdentities?.has(identity)) {
+    return {
+      status: "skipped_existing",
+      featureSnapshotId: row.id!,
+      calculationIdentity: identity,
+      row: plannedRow,
+      blockingReasons: [],
+      sourceReadPaths: SOURCE_READ_PATHS,
+      skippedReason: "already_materialized",
+    };
+  }
+
   return {
     status: "planned",
     featureSnapshotId: row.id!,
@@ -342,14 +398,18 @@ function summarize(
     featureSnapshotsReviewed,
     plannedRows: items.filter((item) => item.status === "planned").length,
     blockedRows: items.filter((item) => item.status === "blocked").length,
+    skippedExistingRows: items.filter(
+      (item) => item.status === "skipped_existing",
+    ).length,
     writesPerformed: false,
   };
 }
 
 export function buildValueCalculationInputLineagePlan(
   featureSnapshots: readonly ValueCalculationInputFeatureSnapshotRow[],
+  options: ValueCalculationInputLineagePlanOptions = {},
 ): ValueCalculationInputLineagePlan {
-  const items = featureSnapshots.map(buildItem);
+  const items = featureSnapshots.map((row) => buildItem(row, options));
 
   return {
     summary: summarize(featureSnapshots.length, items),
