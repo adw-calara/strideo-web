@@ -32,11 +32,11 @@ These are source-fact and lineage paths only. They do not prove ingestion covera
 | horse past performances | partial | Schema exists for historical form, figures, fractions, times, and source lineage; coverage is not proven. |
 | horse workouts | partial | Schema exists for workout timing, rank, type, and source lineage; coverage is not proven. |
 | trainer performance stats | partial | Schema exists; source quality, context taxonomy, and coverage are not proven. |
-| value calculations | partial | Append-only lineage table exists; 7 Dev-only market-input lineage rows are populated for the initial Dev feature snapshots, but production, model-backed, prediction-backed, and score-linked value lineage are not validated. |
+| value calculations | partial | Append-only lineage table exists; 7 Dev-only market-input lineage rows are populated for the initial Dev feature snapshots, and a dry-run-only model/prediction lineage planner can propose the next row shapes. Production, materialized model-backed, materialized prediction-backed, and score-linked value lineage are not validated. |
 | Opportunity score lineage | partial | `opportunity_scores.value_calculation_id` exists; generator wiring and real value evidence are not complete. |
 | model versions | ready | Structural registry exists; no fake model rows should be inserted for demo scoring. |
 | feature snapshots | partial | Storage exists; Dev-only pre-race materialization is merged and replay-verified for the first 7 Dev rows; production coverage, broader leakage validation, and model linkage are still required. |
-| prediction outputs | partial | Storage exists; depends on real model versions and feature snapshots. |
+| prediction outputs | partial | Storage exists; the Dev dry-run planner can propose market-derived baseline row shapes from existing feature snapshots, but no rows are written and no trained/calibrated ML output is claimed. |
 | odds snapshots | partial | Live odds storage exists; final/closing odds semantics and pool taxonomy are incomplete. |
 | result versions | ready | Append-only result versions exist. |
 | result entries | partial | Entry-level result and WPS payout storage exists; exotic payouts are incomplete. |
@@ -280,6 +280,7 @@ wagering recommendation, or production scoring runtime.
 
 ## Recommended Next Prompt
 
-Run and review the Dev-only racing-form coverage report, then scope the smallest
-model-version and prediction-output lineage blocker separately without training
-models, fake scoring, wager recommendations, or production Opportunities.
+Run and review the Dev-only model/prediction lineage dry-run report, then decide
+whether a separate Dev-only materialization slice should be authorized. Any
+materialization must stay non-production, avoid fake ML and fake scoring, and
+defer wager recommendations and production Opportunities.

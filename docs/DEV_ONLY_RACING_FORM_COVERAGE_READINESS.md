@@ -57,6 +57,14 @@ the 7 existing Dev pre-race `feature_snapshots`. That update is documented in
 prediction outputs, Opportunity scores, wagers, provider ingestion, migrations,
 or production writes.
 
+Dry-run planning update: a follow-up Dev-only model/prediction lineage report
+can now propose one honest non-production model-version row shape and 7
+market-derived baseline prediction-output row shapes from the existing Dev
+feature snapshots. That report is documented in
+`docs/DEV_ONLY_MODEL_PREDICTION_LINEAGE_PLAN.md`. It is dry-run-only: it writes
+no rows, adds no migrations or grants, and does not make trained ML,
+calibrated-probability, scoring, wagering, or production claims.
+
 Pre-implementation audit finding:
 
 - The repo did not previously define seven named
@@ -69,10 +77,10 @@ Pre-implementation audit finding:
 - The `7` therefore refers to the seven Dev-only feature snapshot rows
   materialized by the PR #89 path, not seven pre-existing value-input
   sub-signals.
-- After the 2026-07-01 Dev-only materialization, the domain remains `partial`
-  because model-version lineage, prediction-output lineage, calibrated
-  `model_probability`, and Opportunity-score linkage are still absent by
-  design.
+- After the 2026-07-01 Dev-only materialization and later dry-run planning, the
+  domain remains `partial` because model-version rows, prediction-output rows,
+  calibrated `model_probability`, and Opportunity-score linkage are still not
+  materialized by design.
 
 Reconciliation:
 
@@ -83,9 +91,11 @@ seven value signals already exist. The seven rows are the controlled Dev
 feature snapshots documented in
 `docs/DEV_ONLY_FEATURE_SNAPSHOTS_MATERIALIZATION.md`. Those rows are useful
 lineage prerequisites, and the 2026-07-01 Dev-only value rows now prove the
-market-input value-calculation bridge for that scoped Dev set. They still do
-not prove model-backed probabilities, prediction outputs, Opportunity score
-linkage, wagering guidance, or production readiness.
+market-input value-calculation bridge for that scoped Dev set. The dry-run
+model/prediction report can plan the next model-version and prediction-output
+row shapes, but it still does not prove materialized model-backed
+probabilities, prediction outputs, Opportunity score linkage, wagering
+guidance, or production readiness.
 
 ### Implemented Canonical Value Input Readiness Model
 
@@ -108,8 +118,8 @@ Each signal reports:
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `feature_snapshot_lineage` | A value calculation can point to the exact pre-race feature payload used at calculation time. | `feature_snapshots`, `value_calculations.feature_snapshot_id` | Seven Dev `feature_snapshots` exist and 7 Dev `value_calculations` reference them. | Ready for the scoped Dev set | None for the Dev-only input-lineage bridge. | Count feature snapshots eligible for value calculation and matching value rows by `feature_snapshot_id`. | Keep this Dev-only until production ingestion and model lineage are separately authorized. |
 | `pre_race_leakage_boundary` | Inputs used for value calculation are provably captured before outcome facts. | `feature_snapshots.feature_set_key`, `feature_snapshots.captured_at`, `feature_snapshots.features` | Pre-race builder excludes post-cutoff odds and result/payout/settlement inputs; 7 Dev value rows use those pre-race snapshots. | Ready for the scoped Dev set | None for the Dev-only input-lineage bridge. | Count pre-race feature snapshots and require value rows before the signal can be sufficient. | Extend bounded metadata checks only when broader provider-ingested data exists. |
-| `model_version_lineage` | Value output can identify the model or value method version that produced it. | `model_versions`, `value_calculations.model_version_id`, `value_method_key`, `value_method_version` | Schema supports model and method lineage; the ML contract says no fake model rows should be inserted for demo scoring. | Partial | No real model-backed value calculation rows exist. | Count value rows with `model_version_id`; method key/version are required by schema. | Define an approved non-production model-version policy before any prediction or value write path. |
-| `prediction_probability_lineage` | Value calculation uses a real prediction output or explicitly records why prediction lineage is unavailable. | `prediction_outputs`, `value_calculations.prediction_output_id`, `model_probability`, `output` | Schema supports prediction lineage and model probability. The value overlay contract requires calibrated win probabilities. | Partial | No real prediction output lineage or calibration evidence is populated. | Count value rows with `prediction_output_id` and valid `model_probability`. | Add calibration contract evidence before any real prediction-output generation. |
+| `model_version_lineage` | Value output can identify the model or value method version that produced it. | `model_versions`, `value_calculations.model_version_id`, `value_method_key`, `value_method_version` | Schema supports model and method lineage; the dry-run planner proposes an honest Dev-only `market_implied_probability_v1` lineage fixture, but no model-version rows are written. | Partial | No materialized model-version lineage is linked from value calculations. | Count value rows with `model_version_id`; method key/version are required by schema. | Authorize a separate Dev-only materialization slice with narrow grants before any write path. |
+| `prediction_probability_lineage` | Value calculation uses a real prediction output or explicitly records why prediction lineage is unavailable. | `prediction_outputs`, `value_calculations.prediction_output_id`, `model_probability`, `output` | Schema supports prediction lineage and model probability; the dry-run planner can propose market-derived baseline prediction-output row shapes without trained ML or calibrated model claims. | Partial | No prediction-output lineage or calibrated `model_probability` is materialized. | Count value rows with `prediction_output_id` and valid `model_probability`. | Add materialized prediction-output lineage only in a separately authorized slice; keep calibrated probability behind real model/calibration evidence. |
 | `market_odds_input` | Value calculation uses a measured pre-race market input rather than fabricated odds. | `odds_snapshots`, `race_entries.morning_line_odds`, `value_calculations.odds_snapshot_id`, `market_probability` | The 7 Dev value rows preserve market probability from the pre-race feature snapshot envelope, using explicit morning-line fallback provenance where no odds snapshot applies. | Ready for the scoped Dev set | Production market-close semantics remain out of scope. | Count value rows with valid `market_probability` and either eligible `odds_snapshot_id` lineage or explicit morning-line fallback provenance. | Add broader live-odds and market-close checks when provider-ingested market data is in scope. |
 | `append_only_value_fact` | An append-only value fact exists for each eligible feature snapshot/value method input set. | `value_calculations`, unique calculation identity, value output columns | Seven Dev `value_calculations` exist for the seven Dev feature snapshots, and replay skips all 7 existing deterministic identities. | Ready for the scoped Dev set | None for the Dev-only input-lineage bridge. | Count value rows; schema preserves append-oriented calculation identity. | Keep model-backed value facts in a later model/prediction lineage slice. |
 | `opportunity_score_lineage` | Opportunity scoring can trace back to the exact value fact that supported it. | `opportunities`, `opportunity_scores.value_calculation_id`, `value_calculations.opportunity_id` | Schema supports value-to-Opportunity and score-to-value linkage; the 7 Dev value rows intentionally keep `opportunity_id` null. | Partial | No linked Opportunity score rows exist, and `opportunity_scores.value_calculation_id` remains empty. | Count value rows with `opportunity_id` and Opportunity score rows with `value_calculation_id`. | Add linkage checks only after a separately authorized score write path exists. |
@@ -167,8 +177,9 @@ before those read blockers can clear.
 ## Next Use
 
 Review the Dev report to decide which coverage blockers should be addressed
-next. After the Dev-only value-calculation lineage slice, the smallest remaining
-blockers are model-version lineage, prediction-output lineage, calibrated
+next. After the Dev-only value-calculation lineage slice and dry-run
+model/prediction planner, the smallest remaining blockers are materialized
+model-version lineage, materialized prediction-output lineage, calibrated
 `model_probability`, and later Opportunity-score linkage. Any provider
 ingestion, model-readiness, scoring, or production work should remain
 separately scoped and explicitly authorized.
