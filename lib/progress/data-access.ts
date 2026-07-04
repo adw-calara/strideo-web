@@ -44,6 +44,7 @@ export type ProgressDashboardData = {
   generatedAt: string;
   metrics: ProgressMetric[];
   phases: ProgressPhase[];
+  dailyTasks: ProgressTask[];
   tasks: ProgressTask[];
   activeWork: string[];
   nextSteps: string[];
@@ -197,6 +198,65 @@ const nextSteps = [
   "Treat current value_calculation_inputs partial status as missing model-version, prediction-output, calibrated model_probability, and Opportunity-score linkage, not as missing Dev value_calculations.",
   "Defer real ML, fake ML, scoring runtime, Bet Sheet, Assistant, Alerts, wager settlement, and ROI workflows until Opportunity scoring lineage is cleaner.",
   "Keep production untouched until explicitly authorized.",
+];
+
+const dailyTasks: ProgressTask[] = [
+  {
+    id: "today-startup-check",
+    title: "Complete beginning-of-session readiness check",
+    status: "complete",
+    phase: "Today",
+    summary:
+      "Clean main, Dev migration dry-run, verify, racing-form coverage, localhost, and smoke checks were completed with no writes or production touch.",
+  },
+  {
+    id: "today-close-pr-61",
+    title: "Reconcile and close stale PR #61",
+    status: "complete",
+    phase: "Today",
+    summary:
+      "Draft PR #61 was triaged as superseded by current main, commented, and closed without merging or cherry-picking.",
+  },
+  {
+    id: "today-review-model-prediction-dry-run",
+    title: "Review model/prediction lineage dry-run",
+    status: "complete",
+    phase: "Today",
+    summary:
+      "Dev-only dry-run completed read-only: 7 feature snapshots, 7 value calculations, 1 planned model version, 7 planned prediction outputs, and 0 blockers.",
+  },
+  {
+    id: "today-add-dashboard-task-list",
+    title: "Show today's active task list on the dashboard",
+    status: "complete",
+    phase: "Today",
+    summary:
+      "A visible daily task list now appears on the progress dashboard so today's agreed work can be updated as tasks complete.",
+  },
+  {
+    id: "today-materialization-plan-prompt",
+    title: "Prepare materialization-plan PR prompt",
+    status: "complete",
+    phase: "Today",
+    summary:
+      "PR #107 merged the docs-only Dev model/prediction materialization plan without migrations, apply mode, Supabase writes, scoring, Opportunity generation, or production work.",
+  },
+  {
+    id: "today-model-prediction-grant-planning",
+    title: "Plan model/prediction grant authorization",
+    status: "next",
+    phase: "Today",
+    summary:
+      "Next decision is planning and authorization only for a possible Dev insert-grant slice on model_versions and prediction_outputs; do not frame this as grant creation, migration creation, materialization, apply mode, or Supabase write execution.",
+  },
+  {
+    id: "today-end-of-day-cleanup",
+    title: "End-of-day clean handoff",
+    status: "queued",
+    phase: "Today",
+    summary:
+      "After today's planned work, confirm git status, verification, Supabase touch status, and the next smallest Opportunity-lineage task.",
+  },
 ];
 
 const tasks: ProgressTask[] = [
@@ -486,6 +546,7 @@ export async function loadProgressDashboard(): Promise<ProgressDashboardData> {
     generatedAt: new Date().toISOString(),
     metrics,
     phases,
+    dailyTasks,
     tasks,
     activeWork,
     nextSteps,

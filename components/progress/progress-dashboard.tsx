@@ -277,6 +277,28 @@ export function ProgressDashboard({
         ))}
       </section>
 
+      <section>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <ListChecks
+                aria-hidden="true"
+                className="size-5 text-muted-foreground"
+              />
+              <CardTitle>Today&apos;s Task List</CardTitle>
+            </div>
+            <CardDescription>
+              Active session tasks from the current Strideo work plan.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 lg:grid-cols-2">
+            {data.dailyTasks.map((task) => (
+              <TaskRow key={task.id} task={task} />
+            ))}
+          </CardContent>
+        </Card>
+      </section>
+
       <section className="grid gap-4 lg:grid-cols-[2fr_1fr]">
         <Card>
           <CardHeader>
