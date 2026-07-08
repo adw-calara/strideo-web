@@ -18,8 +18,7 @@ export function ProgressRefresh({ generatedAt }: { generatedAt: string }) {
     const interval = window.setInterval(() => {
       setSecondsUntilRefresh((current) => {
         if (current <= 1) {
-          router.refresh();
-          return REFRESH_INTERVAL_SECONDS;
+          return 0;
         }
 
         return current - 1;
@@ -27,7 +26,16 @@ export function ProgressRefresh({ generatedAt }: { generatedAt: string }) {
     }, 1000);
 
     return () => window.clearInterval(interval);
-  }, [router]);
+  }, []);
+
+  useEffect(() => {
+    if (secondsUntilRefresh !== 0) {
+      return;
+    }
+
+    router.refresh();
+    setSecondsUntilRefresh(REFRESH_INTERVAL_SECONDS);
+  }, [router, secondsUntilRefresh]);
 
   return (
     <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
