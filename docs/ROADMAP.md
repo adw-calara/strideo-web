@@ -352,8 +352,9 @@ Goal: build long-term moat.
   through `brace-expansion` and `js-yaml` are resolved. The remaining two
   high-severity audit entries are the production `next -> sharp` path: Next.js
   16.2.11 still declares Sharp 0.34.5, while npm's forced fix proposes an
-  unacceptable Next.js 14 downgrade. The workflow is included on the branch
-  but cannot be called green or merged while that audit remains. `main` is
+  unacceptable Next.js 14 downgrade. Draft PR #112's `verify` workflow passed
+  install, migration checks, lint, all 123 tests, and build before failing only
+  at that preserved audit gate. The workflow is not green or merged. `main` is
   unprotected, vulnerability alerts are disabled, and GitHub settings remain
   unchanged.
 - Runtime verification limit: real-browser and authenticated-flow coverage was

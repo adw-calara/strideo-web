@@ -186,7 +186,7 @@ const phases: ProgressPhase[] = [
 
 const activeWork = [
   "Use docs/ROADMAP.md for phase sequencing and this dashboard as the living day-to-day status handoff.",
-  "Keep the reliability PR draft while its local migration, lint, 123-test, build, and runtime checks pass but the production Next.js-to-Sharp audit path keeps verification red; the development-tool findings, runtime/tool pins, automatic discovery, and pinned Actions are implemented on the branch.",
+  "Keep draft PR #112 open while local and GitHub migration, lint, 123-test, and build checks pass but the production Next.js-to-Sharp audit path keeps verification red; the development-tool findings, runtime/tool pins, automatic discovery, and pinned Actions are implemented on the branch.",
   "After CI is green on main, enable GitHub vulnerability/security updates and protect main with the exact stable verification check.",
   "Use the Dev-only model/prediction planner and merged insert grants for a materialization-only slice with exact one-model/seven-prediction first-run, direct-readback, and replay counts.",
   "Keep the seven existing Dev value_calculations immutable; real model-backed value work must insert new rows from an independent, time-valid prediction signal.",
@@ -236,7 +236,7 @@ const dailyTasks: ProgressTask[] = [
     status: "active",
     phase: "Today",
     summary:
-      "Locally implemented and validated on the isolated branch: development-tool audit fixes, Next.js 16.2.11, Node 24.18.0, local Supabase CLI 2.105.0, 16-file automatic test discovery, the pre-release health label, pinned Actions, and Dependabot. The production Next.js-to-Sharp audit path remains the explicit blocker, so verification is red and the PR must stay draft.",
+      "Draft PR #112 contains the locally validated development-tool audit fixes, Next.js 16.2.11, Node 24.18.0, local Supabase CLI 2.105.0, 16-file automatic test discovery, the pre-release health label, pinned Actions, and Dependabot. GitHub passed install, migrations, lint, 123 tests, and build before failing only at the production Next.js-to-Sharp audit gate, so the PR remains draft.",
   },
   {
     id: "today-github-security-settings",
@@ -447,7 +447,7 @@ const tasks: ProgressTask[] = [
     status: "active",
     phase: "Release Coordination",
     summary:
-      "Implemented and locally validated on the isolated branch with Node 24.18.0, Supabase CLI 2.105.0, Next.js 16.2.11, 16-file automatic test discovery, a pre-release health label, Dependabot, and least-privilege Actions pinned to immutable SHAs. The production Next.js-to-Sharp advisory keeps verify red and the PR draft; GitHub settings remain unchanged.",
+      "Draft PR #112 is locally validated with Node 24.18.0, Supabase CLI 2.105.0, Next.js 16.2.11, 16-file automatic test discovery, a pre-release health label, Dependabot, and immutable least-privilege Actions. GitHub passed install, migrations, lint, 123 tests, and build before the production Next.js-to-Sharp advisory kept verify red; GitHub settings remain unchanged.",
   },
   {
     id: "github-security-protection-settings",
