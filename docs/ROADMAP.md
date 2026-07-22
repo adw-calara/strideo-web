@@ -85,10 +85,12 @@ Goal: generate first measurable Opportunities.
 Current implementation note: the app has protected Opportunity feed/detail,
 tracked Opportunities, scoring contracts, pre-race feature snapshot contracts,
 Dev-only persisted feature snapshot materialization, and Dev-only racing-form
-readiness through trainer stats. The next readiness work is glossary
-track-code alias coverage and value-calculation input coverage only; real ML,
-prediction output writes, scoring runtime, wagering, and production rollout
-remain out of scope until explicitly authorized.
+readiness through trainer stats. Insert-only service-role grants for Dev
+`model_versions` and `prediction_outputs` are merged and applied. The next
+narrow lineage slice is materialization of one explicitly non-trained Dev model
+identity and seven market-derived prediction lineage fixtures only. Real
+model-backed value, scoring runtime, wagering, and production rollout remain
+separate work.
 
 - Implement baseline prediction outputs: probability, ranking, confidence score.
 - Implement value outputs: edge score, value score, Opportunity score.
@@ -215,6 +217,78 @@ Exit criteria:
 - Production deployment is repeatable.
 - Alerts and analytics are operational.
 
+## Near-Term Delivery Plan
+
+The phase roadmap above remains the product map. The following delivery slices
+are the required near-term execution order. Each slice should remain a focused
+PR unless its acceptance criteria prove that it must be split further.
+
+1. **Reliability and CI PR**
+   - Repair the `brace-expansion` and `js-yaml` findings without broad
+     dependency upgrades.
+   - Update Next.js within the supported current major and re-run the audit.
+     Treat the production-path `sharp` advisory as a release blocker until a
+     supported Next.js/Sharp combination is available and verified. Do not use
+     `npm audit fix --force` when it proposes a Next.js major downgrade.
+   - Pin the Node runtime and the Supabase CLI used by local and CI workflows.
+   - Make test discovery automatic so new test files cannot be silently omitted.
+   - Add GitHub Actions for migration checks, lint, tests, build, and dependency
+     audit, plus Dependabot configuration and least-privilege/pinned actions.
+   - Correct the stale `0-foundation` health label.
+   - Give the verification job a stable documented check name for branch
+     protection.
+2. **GitHub settings after CI is green**
+   - Enable vulnerability alerts and Dependabot security updates.
+   - Protect `main`, require pull requests, require the exact verification
+     check, and prevent direct and force pushes.
+   - Apply these settings only after the workflow exists and passes on `main`.
+3. **Codex and status consolidation**
+   - Keep `AGENTS.md`, `docs/CODEX_OPERATING_PROMPT.md`, this roadmap, and
+     `/protected/progress` aligned.
+   - Prefer repository-relative Codex instructions and reusable Strideo skills;
+     do not commit secrets or machine-specific credentials.
+4. **Dev model/prediction materialization only**
+   - Reuse the merged insert-only grants and the existing dry-run planner.
+   - Against the currently verified empty target set, the first apply inserts
+     one Dev model-version identity and seven prediction-output identities.
+   - Read back the inserted model and all seven predictions before replay.
+   - Replay must report one existing model identity and seven existing
+     prediction identities with no duplicate writes.
+   - Do not update the seven existing `value_calculations`; do not create scores,
+     Opportunities, wagers, or production behavior.
+5. **Typed boundary and preview verification**
+   - Generate Supabase database types for raw database access boundaries while
+     retaining intentional domain, projection, and UI types.
+   - Make type drift checks regenerate to a temporary location and compare
+     without rewriting tracked files. Prefer a migration-built local Supabase
+     schema in CI over shared Dev credentials when practical.
+   - Add Vercel preview deployment and Playwright smoke coverage for signed-out,
+     authentication, protected-route, and core responsive surfaces.
+   - Split database typing from deployment/browser work if the slice becomes
+     materially cross-cutting.
+6. **First real provider import**
+   - Import one provider-backed race card into Dev through the existing
+     normalization, persistence, idempotency, and job-audit paths.
+7. **First real Opportunity vertical slice**
+   - Produce a genuinely independent prediction baseline and compare it with a
+     market probability captured at the documented decision cutoff.
+   - Insert new append-only value-calculation and Opportunity lineage. Never
+     retrofit the seven existing market-lineage fixtures.
+   - A morning-line-versus-later-odds comparison is valid only when both inputs
+     were available by the decision cutoff; otherwise use an explainable
+     form-based baseline and record missing evidence rather than synthetic data.
+8. **Bet Sheet workflow**
+   - Connect a real Opportunity and recommendation to the user-owned daily card.
+9. **Settlement and performance loop**
+   - Import outcomes, settle recommendations, and attribute ROI and model or
+     strategy performance back to Opportunity.
+
+Repository visibility is a decision gate, not a code task. The GitHub repository
+is currently public. The owner must explicitly choose to keep it public or make
+it private before provider credentials, proprietary scoring logic, or sensitive
+deployment configuration are introduced. `"private": true` in `package.json`
+only prevents npm publication; it does not make the GitHub repository private.
+
 ## Phase 9 - Elite/Future Platform
 
 Status: deferred
@@ -253,42 +327,62 @@ Goal: build long-term moat.
   initial 7 Dev pre-race `feature_snapshots`. The rows are linked to their
   source feature snapshots and market inputs, replay as skip-existing, and keep
   `model_version_id`, `prediction_output_id`, `model_probability`,
-  `opportunity_id`, and `opportunity_scores` linkage empty until real
-  model/prediction/scoring lineage is explicitly authorized.
+  `opportunity_id`, and `opportunity_scores` linkage empty permanently for
+  these fixtures. Later real lineage must use new append-only rows.
 - Complete: Dev-only model/prediction lineage dry-run planning exists. The
   report proposes one honest non-production model-version identity and 7
   market-derived baseline prediction-output row shapes without database writes,
   migrations, trained ML claims, scoring, `value_calculations` updates, or
   `opportunity_scores` updates.
+- Complete: the insert-only Dev service-role grants for `model_versions` and
+  `prediction_outputs` merged in PR #109 and are present in the Dev migration
+  lineage. No additional grant slice is required before materialization.
+- Active: delivery reliability is now an early prerequisite rather than a late
+  commercial-readiness concern. CI, runtime/tool pinning, automatic test
+  discovery, preview deployment, and browser smoke coverage are not complete.
+- Verified 2026-07-22: migration-file checks, lint, all 121 configured tests,
+  production build, Dev migration alignment, Dev schema lint, read-only lineage
+  reports, provider readiness, and HTTP runtime smoke checks pass. All 15
+  discovered test files are currently included, but discovery is manually
+  enumerated.
+- Release readiness blocker: `npm run verify` passes migration checks, lint,
+  tests, and build, then fails dependency audit. The 2026-07-22 audit reports
+  four high-severity dependency findings: fixable development-tool paths through
+  `brace-expansion` and `js-yaml`, plus a production path through
+  `next -> sharp`. The latest reviewed stable Next.js patch still declares the
+  vulnerable Sharp range, and npm's forced fix proposes an unacceptable Next.js
+  major downgrade. GitHub has no CI workflow, `main` is unprotected,
+  vulnerability alerts are disabled, and repository runtime/browser tooling is
+  not pinned or installed.
+- Runtime verification limit: real-browser and authenticated-flow coverage was
+  not executed because repository Playwright tooling is not installed. The
+  missing local `agent-browser` executable is a Codex convenience gap, not a
+  release requirement. Signed-out HTTP routing behaves as expected.
 - Queued: Wager construction, Bet Sheet, performance verification, assistant,
   and commercial readiness remain behind the next Opportunity-centered slices.
-- Blocked: no current roadmap phase is blocked by a known P0/P1 issue.
+- Blocked for release, not for local development: the reliability and browser
+  verification gaps above must close before deployment or real provider/scoring
+  work.
 - Deferred: native mobile apps, marketplace/community systems, and broad scale
   operations remain Phase 9/future work unless explicitly requested.
 
 ## Next Recommended Sequence
 
-1. Keep the roadmap plus `/protected/progress` aligned after each merged
-   Opportunity slice.
-2. Treat `docs/DEV_ONLY_FEATURE_SNAPSHOTS_MATERIALIZATION.md` as the completed
-   Dev-only materialization record: the first controlled Dev apply inserted 7
-   snapshots and the follow-up dry-run skipped all 7 existing deterministic IDs.
-3. Treat `docs/DEV_ONLY_VALUE_CALCULATIONS_LINEAGE.md` as the completed
-   Dev-only value-calculation input-lineage record: the controlled Dev apply
-   inserted 7 `value_calculations` rows and the follow-up dry-run skipped all 7
-   existing deterministic identities.
-4. Treat `docs/DEV_ONLY_MODEL_PREDICTION_LINEAGE_PLAN.md` as the dry-run-only
-   model/prediction lineage planning record. Review the report before any
-   materialization, grant, scoring, or Opportunity generation work.
-5. Scope any model-version and prediction-output materialization separately
-   before any scoring or Opportunity generation work.
-6. Keep real model-backed scoring in a
-   separate slice with feature snapshot lineage as an explicit prerequisite.
-   Keep Bet Sheet, Alerts, Assistant, settlement, ROI, and wagering deferred
-   until the scoring lineage is cleaner.
-7. Use the Dev-only racing-form coverage readiness report to identify the next
-   source-fact or lineage blocker before any provider-ingestion, prediction,
-   scoring, or production Opportunity work.
+1. Complete the reliability and CI PR, then keep its stable verification check
+   green for every later slice.
+2. Apply the GitHub protection/security settings after CI is green.
+3. Resolve the currently public repository visibility before proprietary or
+   credential-bearing integration work.
+4. Keep this roadmap and `/protected/progress` aligned after each merged slice.
+5. Materialize only the scoped Dev model/prediction fixtures using the existing
+   grant and dry-run plan; verify first-run counts, direct readback of all eight
+   rows, and replay counts exactly.
+6. Add generated database boundary types and preview/browser verification.
+7. Import one real provider-backed race card into Dev.
+8. Build one end-to-end Opportunity from an independent, time-valid prediction
+   baseline and new append-only value evidence.
+9. Continue vertically through Bet Sheet, settlement, and performance before
+   broadening into Alerts, Assistant, payments, or scale operations.
 
 ## Risk And Drift Watchlist
 
@@ -298,6 +392,13 @@ Goal: build long-term moat.
   unless explicitly requested.
 - Keep source-fact, glossary, model, prediction, value, and operational tables
   server-only until a reviewed product surface needs access.
+- Treat the seven existing Dev `value_calculations` as immutable market-input
+  lineage facts. Real model-backed value work inserts new rows; it does not
+  backfill or update those fixtures.
+- Never use the same market-derived probability as both the independent
+  prediction and the market comparator for a value claim.
+- Record the feature, prediction, and market timestamps plus the decision cutoff
+  so later odds or outcome data cannot leak into pre-race scoring.
 - Keep future ML, wagering, alerts, assistant, and performance work linked back
   to Opportunity lineage wherever the PRD expects it.
 - Do not present contract-only value-scoring shapes as real predictions or

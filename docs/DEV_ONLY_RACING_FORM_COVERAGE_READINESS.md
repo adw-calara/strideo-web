@@ -1,6 +1,7 @@
 # Dev-Only Racing-Form Coverage Readiness
 
 Date: 2026-06-28
+Updated: 2026-07-22
 
 ## Goal
 
@@ -158,9 +159,10 @@ The output includes explicit no-write flags:
 Read failures are classified for planning only. A `permission_or_api_exposure`
 classification means the checker could not read the table through the current
 Dev API path; it does not apply grants, change RLS, or fix schema exposure.
-The prepared service-role read-access migration for model/result lineage tables
-must be reviewed and applied to Dev in a separate explicitly authorized task
-before those read blockers can clear.
+The service-role read-access migration for model/result lineage tables is now
+merged and applied to Dev. The 2026-07-21 report completed with no read errors;
+future permission errors should still stop the task rather than trigger an
+unreviewed grant expansion.
 
 ## Boundaries
 
@@ -176,10 +178,10 @@ before those read blockers can clear.
 
 ## Next Use
 
-Review the Dev report to decide which coverage blockers should be addressed
-next. After the Dev-only value-calculation lineage slice and dry-run
-model/prediction planner, the smallest remaining blockers are materialized
-model-version lineage, materialized prediction-output lineage, calibrated
-`model_probability`, and later Opportunity-score linkage. Any provider
-ingestion, model-readiness, scoring, or production work should remain
-separately scoped and explicitly authorized.
+After the reliability baseline is green, use the existing planner and merged
+insert-only grants for the Dev-only one-model/seven-prediction materialization
+slice. Keep the seven existing value calculations unchanged. Later real scoring
+must insert new append-only value evidence from an independent prediction and a
+time-valid market comparator before Opportunity-score linkage can be trusted.
+Provider writes, real scoring, and production work remain separately scoped and
+explicitly authorized.

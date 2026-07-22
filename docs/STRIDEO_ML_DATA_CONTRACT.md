@@ -32,11 +32,11 @@ These are source-fact and lineage paths only. They do not prove ingestion covera
 | horse past performances | partial | Schema exists for historical form, figures, fractions, times, and source lineage; coverage is not proven. |
 | horse workouts | partial | Schema exists for workout timing, rank, type, and source lineage; coverage is not proven. |
 | trainer performance stats | partial | Schema exists; source quality, context taxonomy, and coverage are not proven. |
-| value calculations | partial | Append-only lineage table exists; 7 Dev-only market-input lineage rows are populated for the initial Dev feature snapshots, and a dry-run-only model/prediction lineage planner can propose the next row shapes. Production, materialized model-backed, materialized prediction-backed, and score-linked value lineage are not validated. |
+| value calculations | partial | Append-only lineage table exists; 7 immutable Dev-only market-input lineage rows are populated for the initial Dev feature snapshots, and a dry-run-only model/prediction lineage planner can propose the next row shapes. Those seven rows will not be backfilled. Production, materialized model-backed, materialized prediction-backed, and score-linked value lineage are not validated. |
 | Opportunity score lineage | partial | `opportunity_scores.value_calculation_id` exists; generator wiring and real value evidence are not complete. |
 | model versions | ready | Structural registry exists; no fake model rows should be inserted for demo scoring. |
 | feature snapshots | partial | Storage exists; Dev-only pre-race materialization is merged and replay-verified for the first 7 Dev rows; production coverage, broader leakage validation, and model linkage are still required. |
-| prediction outputs | partial | Storage exists; the Dev dry-run planner can propose market-derived baseline row shapes from existing feature snapshots, but no rows are written and no trained/calibrated ML output is claimed. |
+| prediction outputs | partial | Storage and the insert-only Dev service-role grants exist; the Dev dry-run planner can propose market-derived baseline row shapes from existing feature snapshots, but no rows are written and no trained/calibrated ML output is claimed. |
 | odds snapshots | partial | Live odds storage exists; final/closing odds semantics and pool taxonomy are incomplete. |
 | result versions | ready | Append-only result versions exist. |
 | result entries | partial | Entry-level result and WPS payout storage exists; exotic payouts are incomplete. |
@@ -236,6 +236,12 @@ Current status: `blocked` until calibrated win probabilities, finish-order outpu
 
 Feature snapshots must be pre-race. Any feature snapshot used for a prediction or value calculation must be captured before the outcome facts it is trying to predict. Result rows, payouts, result corrections, next-out indicators, ROI rollups, and user wager outcomes cannot leak into pre-race prediction features.
 
+A value claim also requires signal independence. The same market-derived
+probability cannot be both the prediction and the market comparator. Preserve
+the feature capture time, prediction time, market snapshot time, and decision
+cutoff. Morning-line-versus-later-live-odds analysis is valid only when the
+decision occurs after both inputs exist and before any prohibited outcome data.
+
 The checker is intentionally schema-aware but not database-live. It evaluates a typed capability object so future agents can wire in real coverage checks without changing the contract.
 
 ## Duplicate-Avoidance Rules
@@ -280,7 +286,12 @@ wagering recommendation, or production scoring runtime.
 
 ## Recommended Next Prompt
 
-Run and review the Dev-only model/prediction lineage dry-run report, then decide
-whether a separate Dev-only materialization slice should be authorized. Any
-materialization must stay non-production, avoid fake ML and fake scoring, and
-defer wager recommendations and production Opportunities.
+After the reliability and CI baseline is green, implement and verify the
+smallest Dev-only model/prediction materialization path using the existing
+planner and merged insert-only grants. Against the currently verified empty
+target set, the first run should insert one model identity plus seven prediction
+identities. Direct readback must confirm all eight inserted rows before replay;
+replay should then skip all eight identities with zero planned inserts. Keep the
+existing seven `value_calculations` unchanged, stay non-production, avoid fake
+ML and fake scoring, and defer wager recommendations and production
+Opportunities.
