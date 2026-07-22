@@ -1,13 +1,9 @@
-import { isFoundationEnvReady } from "@/lib/env/server";
+import { hasPublicEnv } from "@/lib/env/public";
+import { buildHealthStatus } from "@/lib/health/status";
 import { NextResponse } from "next/server";
 
 export function GET() {
-  return NextResponse.json({
-    status: "ok",
-    app: "strideo",
-    phase: "0-foundation",
-    env: {
-      supabase: isFoundationEnvReady() ? "configured" : "missing",
-    },
-  });
+  return NextResponse.json(
+    buildHealthStatus({ supabaseConfigured: hasPublicEnv() }),
+  );
 }

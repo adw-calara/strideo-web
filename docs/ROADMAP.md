@@ -337,23 +337,25 @@ Goal: build long-term moat.
 - Complete: the insert-only Dev service-role grants for `model_versions` and
   `prediction_outputs` merged in PR #109 and are present in the Dev migration
   lineage. No additional grant slice is required before materialization.
-- Active: delivery reliability is now an early prerequisite rather than a late
-  commercial-readiness concern. CI, runtime/tool pinning, automatic test
-  discovery, preview deployment, and browser smoke coverage are not complete.
-- Verified 2026-07-22: migration-file checks, lint, all 121 configured tests,
-  production build, Dev migration alignment, Dev schema lint, read-only lineage
-  reports, provider readiness, and HTTP runtime smoke checks pass. All 15
-  discovered test files are currently included, but discovery is manually
-  enumerated.
+- Active: the reliability branch now pins Node 24.18.0 and the repository-local
+  Supabase CLI, discovers tests automatically, adds the `verify` workflow and
+  Dependabot, and corrects the health phase to `pre-release`. These changes are
+  locally validated but are not merged; preview deployment and browser smoke
+  coverage remain separate work.
+- Verified 2026-07-22: a clean install under Node 24.18.0 passes migration-file
+  checks, lint, all 123 tests across 16 automatically discovered test files,
+  production build, and development/production HTTP smoke checks. The local
+  Supabase CLI reports the pinned version, while linked read-only checks fail
+  closed at the password guard in the credential-free worktree.
 - Release readiness blocker: `npm run verify` passes migration checks, lint,
-  tests, and build, then fails dependency audit. The 2026-07-22 audit reports
-  four high-severity dependency findings: fixable development-tool paths through
-  `brace-expansion` and `js-yaml`, plus a production path through
-  `next -> sharp`. The latest reviewed stable Next.js patch still declares the
-  vulnerable Sharp range, and npm's forced fix proposes an unacceptable Next.js
-  major downgrade. GitHub has no CI workflow, `main` is unprotected,
-  vulnerability alerts are disabled, and repository runtime/browser tooling is
-  not pinned or installed.
+  tests, and build, then fails dependency audit. The development-tool findings
+  through `brace-expansion` and `js-yaml` are resolved. The remaining two
+  high-severity audit entries are the production `next -> sharp` path: Next.js
+  16.2.11 still declares Sharp 0.34.5, while npm's forced fix proposes an
+  unacceptable Next.js 14 downgrade. The workflow is included on the branch
+  but cannot be called green or merged while that audit remains. `main` is
+  unprotected, vulnerability alerts are disabled, and GitHub settings remain
+  unchanged.
 - Runtime verification limit: real-browser and authenticated-flow coverage was
   not executed because repository Playwright tooling is not installed. The
   missing local `agent-browser` executable is a Codex convenience gap, not a

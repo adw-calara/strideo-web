@@ -186,7 +186,7 @@ const phases: ProgressPhase[] = [
 
 const activeWork = [
   "Use docs/ROADMAP.md for phase sequencing and this dashboard as the living day-to-day status handoff.",
-  "Complete the reliability code PR first: repair brace-expansion and js-yaml narrowly, update Next.js within its supported major, track the production next-to-sharp advisory as a release blocker, pin runtime/tools, discover tests automatically, and add pinned GitHub Actions.",
+  "Keep the reliability PR draft while its local migration, lint, 123-test, build, and runtime checks pass but the production Next.js-to-Sharp audit path keeps verification red; the development-tool findings, runtime/tool pins, automatic discovery, and pinned Actions are implemented on the branch.",
   "After CI is green on main, enable GitHub vulnerability/security updates and protect main with the exact stable verification check.",
   "Use the Dev-only model/prediction planner and merged insert grants for a materialization-only slice with exact one-model/seven-prediction first-run, direct-readback, and replay counts.",
   "Keep the seven existing Dev value_calculations immutable; real model-backed value work must insert new rows from an independent, time-valid prediction signal.",
@@ -194,7 +194,7 @@ const activeWork = [
 ];
 
 const nextSteps = [
-  "Repair the dependency audit without a forced framework downgrade and add pinned, automatic CI verification with a stable check name.",
+  "Publish and inspect the draft reliability PR, preserving the real audit failure until a supported Next.js and Sharp combination is available.",
   "After that workflow is green on main, enable GitHub vulnerability alerts, Dependabot security updates, and branch protection.",
   "Confirm whether the public GitHub repository should remain public.",
   "Materialize one Dev model-version fixture and seven prediction-output fixtures against the currently empty target set, read back all eight rows, then verify replay skips one plus seven identities with no other writes.",
@@ -233,10 +233,10 @@ const dailyTasks: ProgressTask[] = [
   {
     id: "today-reliability-ci",
     title: "Implement reliability and CI baseline",
-    status: "next",
+    status: "active",
     phase: "Today",
     summary:
-      "Repair brace-expansion and js-yaml narrowly, update Next.js within its supported major, re-audit the production Sharp path without a forced downgrade, pin Node and Supabase CLI, make test discovery automatic, fix the stale health label, and add pinned GitHub Actions with a stable check name.",
+      "Locally implemented and validated on the isolated branch: development-tool audit fixes, Next.js 16.2.11, Node 24.18.0, local Supabase CLI 2.105.0, 16-file automatic test discovery, the pre-release health label, pinned Actions, and Dependabot. The production Next.js-to-Sharp audit path remains the explicit blocker, so verification is red and the PR must stay draft.",
   },
   {
     id: "today-github-security-settings",
@@ -444,10 +444,10 @@ const tasks: ProgressTask[] = [
   {
     id: "delivery-reliability-ci",
     title: "Reliability and CI baseline",
-    status: "next",
+    status: "active",
     phase: "Release Coordination",
     summary:
-      "Repair brace-expansion and js-yaml narrowly, update Next.js within the supported major and re-audit the production Sharp blocker without a forced downgrade, pin Node and Supabase CLI versions, discover tests automatically, fix the stale health label, and add least-privilege Actions pinned to immutable SHAs with a stable check name.",
+      "Implemented and locally validated on the isolated branch with Node 24.18.0, Supabase CLI 2.105.0, Next.js 16.2.11, 16-file automatic test discovery, a pre-release health label, Dependabot, and least-privilege Actions pinned to immutable SHAs. The production Next.js-to-Sharp advisory keeps verify red and the PR draft; GitHub settings remain unchanged.",
   },
   {
     id: "github-security-protection-settings",
