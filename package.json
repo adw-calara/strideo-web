@@ -1,12 +1,15 @@
 {
   "name": "strideo-web",
   "private": true,
+  "engines": {
+    "node": ">=24.18.0 <25"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "tsx --test lib/auth/access-control.test.ts lib/ml/data-contract/readiness-check.test.ts lib/opportunities/scoring/contracts.test.ts lib/opportunities/scoring/pre-race-snapshot.test.ts lib/opportunities/scoring/pre-race-snapshot-materialization-core.test.ts lib/opportunities/scoring/value-calculation-input-lineage-core.test.ts lib/opportunities/scoring/model-prediction-lineage-core.test.ts lib/racing-codes/normalization-core.test.ts lib/racing-form/coverage-readiness-core.test.ts lib/provider-ingestion/racing-form-parser-core.test.ts lib/provider-ingestion/provider-race-entry-adapter-core.test.ts lib/provider-ingestion/provider-race-entry-persistence-core.test.ts lib/provider-ingestion/provider-race-entry-readiness-core.test.ts lib/provider-ingestion/provider-race-entry-job-audit-core.test.ts lib/imports/provider-race-entry-readiness-core.test.ts",
+    "test": "node scripts/run-tests.mjs",
     "db:migrations:check": "node scripts/check-supabase-migrations.mjs",
     "db:migrations:list": "node scripts/supabase-cli-with-env.mjs migration list --linked",
     "db:migrations:dry-run": "node scripts/supabase-cli-with-env.mjs db push --linked --dry-run",
@@ -32,7 +35,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.511.0",
-    "next": "16.2.7",
+    "next": "16.2.11",
     "next-themes": "^0.4.6",
     "react": "19.2.7",
     "react-dom": "19.2.7",
@@ -41,15 +44,16 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@types/node": "^20",
+    "@types/node": "24.13.3",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.20",
     "eslint": "^9",
-    "eslint-config-next": "16.2.7",
+    "eslint-config-next": "16.2.11",
     "postcss": "8.5.15",
     "tailwindcss": "^3.4.1",
     "tailwindcss-animate": "^1.0.7",
+    "supabase": "2.105.0",
     "tsx": "^4.22.4",
     "typescript": "^5"
   },
