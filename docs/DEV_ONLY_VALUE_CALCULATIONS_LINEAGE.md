@@ -79,9 +79,9 @@ Replay dry-run after apply reported:
 The Dev racing-form coverage report now shows 7 available
 `value_calculations` for the 7 existing Dev feature snapshots.
 
-## Fields That Must Remain Null
+## Immutable Fixture Boundary
 
-These fields intentionally remain null in this slice:
+These fields intentionally remain null on these seven rows:
 
 - `value_calculations.model_version_id`
 - `value_calculations.prediction_output_id`
@@ -89,8 +89,11 @@ These fields intentionally remain null in this slice:
 - `value_calculations.opportunity_id`
 - `opportunity_scores.value_calculation_id`
 
-Do not backfill these fields until a separate task explicitly authorizes real
-model-version, prediction-output, and Opportunity-score lineage.
+Do not backfill or update these rows. They are append-only market-input lineage
+facts, not incomplete mutable records. Future real model-version,
+prediction-output, value, and Opportunity-score lineage must create new
+`value_calculations` rows with an independent prediction signal, a time-valid
+market comparator, and explicit decision-cutoff evidence.
 
 ## Readiness Status
 
@@ -112,7 +115,8 @@ Still partial by design:
 
 ## Recommended Next Slice
 
-Plan the smallest Dev-only model-version and prediction-output lineage slice.
-That next slice should still avoid fake ML claims, production writes,
-`opportunity_scores` updates, wagers, Bet Sheet, Assistant, Alerts, and launch
-readiness claims.
+Use the existing dry-run planner and the insert-only grants merged in PR #109 to
+implement the smallest Dev-only model-version and prediction-output
+materialization slice. That next slice must leave these seven rows unchanged and
+must still avoid fake ML claims, production writes, `opportunity_scores`
+updates, wagers, Bet Sheet, Assistant, Alerts, and launch-readiness claims.

@@ -106,13 +106,22 @@ The later Dev-only value-calculation lineage path materializes 7 scoped
 `value_calculations` rows from those persisted feature snapshots. Those rows
 prove feature-snapshot and market-input lineage for Dev only; they keep
 `model_version_id`, `prediction_output_id`, `model_probability`, and
-Opportunity-score linkage empty until real model and prediction lineage are
-explicitly authorized.
+Opportunity-score linkage empty. They are immutable lineage fixtures and will
+not be backfilled; later real model-backed scoring must insert new append-only
+value-calculation rows.
 
-## Next Slice
+## Next Slices
 
-The next recommended slice should build on the Dev-only persisted feature and
-value-calculation lineage without creating fake model outputs or writing
-production data. Real model-backed scoring should come only after model-version
-registry usage, prediction output lineage, broader leakage checks, and
-production-readiness boundaries are validated.
+After the delivery reliability baseline is green, the next lineage slice should
+materialize only the planned Dev model-version and seven prediction-output
+fixtures using the merged insert grants. It must not change the seven existing
+value calculations or create scores or Opportunities.
+
+The first real scoring slice comes later and must use a genuinely independent
+prediction signal. It must not compare a market-derived prediction with the
+same market probability and describe the result as value. Morning line may be
+compared with later live odds only when the prediction and market snapshots were
+both available at the recorded decision cutoff. Otherwise, use an explainable
+form-based baseline or remain blocked. Real scoring inserts new append-only
+value evidence and preserves model, feature, odds, cutoff, and Opportunity
+lineage.

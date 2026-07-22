@@ -126,7 +126,7 @@ const phases: ProgressPhase[] = [
     summary:
       "Protected race-card reads, Dev fixtures, and generator-ready race context are available.",
     nextStep:
-      "Implement the first real provider import path for Dev after the Opportunity detail surface is stable.",
+      "Implement the first real provider import path for Dev after reliability, lineage materialization, and preview verification are complete.",
   },
   {
     phase: "3",
@@ -134,9 +134,9 @@ const phases: ProgressPhase[] = [
     status: "active",
     progress: 85,
     summary:
-      "Demo generation, narrow service-role grants, candidate quality, feed visibility, detail display, tracked Opportunities, scoring contracts, pre-race snapshot contracts, Dev-only persisted feature snapshot materialization, the Dev-only racing-form readiness ladder through glossary normalization, and Dev-only value-calculation input lineage rows are validated.",
+      "Demo generation, narrow service-role grants, candidate quality, feed visibility, detail display, tracked Opportunities, scoring contracts, pre-race snapshot contracts, Dev-only persisted feature snapshot materialization, racing-form readiness, value-calculation input lineage, and the model/prediction dry-run plus insert-grant prerequisite are validated.",
     nextStep:
-      "Plan model-version and prediction-output lineage separately while keeping real ML, scoring, wagers, and production rollout out of scope until lineage is cleaner.",
+      "After the reliability baseline is green, materialize only one Dev model identity and seven prediction outputs; keep existing value calculations, scoring, Opportunities, wagers, and production untouched.",
   },
   {
     phase: "4",
@@ -154,7 +154,7 @@ const phases: ProgressPhase[] = [
     summary:
       "Dashboard, races, imports, strategies, predictions, Opportunities, detail views, tracked Opportunities, progress reporting, and mobile/PWA shell improvements are scaffolded.",
     nextStep:
-      "Preserve the current Opportunity UI surfaces while the next slice focuses on Dev-only data-quality readiness.",
+      "Add preview deployment and focused Playwright smoke coverage while preserving current Opportunity and mobile surfaces.",
   },
   {
     phase: "6",
@@ -177,77 +177,82 @@ const phases: ProgressPhase[] = [
     title: "Commercial Readiness",
     status: "queued",
     progress: 5,
-    summary: "Entitlement schema exists; Stripe, analytics, alerts, and deployment hardening remain future work.",
-    nextStep: "Introduce Pro access enforcement when subscription flow work begins.",
+    summary:
+      "Entitlement schema exists; CI, preview verification, repository visibility, Stripe, analytics, alerts, and broader deployment hardening remain incomplete.",
+    nextStep:
+      "Move reliability, CI, and preview verification earlier; keep payments and broader commercial integrations behind the Opportunity vertical slice.",
   },
 ];
 
 const activeWork = [
   "Use docs/ROADMAP.md for phase sequencing and this dashboard as the living day-to-day status handoff.",
-  "Use the merged Dev-only feature snapshot materialization as the completed persisted-readiness baseline for the next Opportunity/ML foundation slice.",
-  "Use the Dev-only value-calculation lineage rows as the completed market-input lineage baseline before model training, prediction output, or scoring work.",
-  "Use the Dev-only model/prediction lineage dry-run report to review planned row shapes before any model_versions or prediction_outputs materialization work.",
-  "Keep the merged tracked Opportunities, scoring contracts, pre-race snapshot builder, mobile shell, race-card work, and Dev-only materialization intact while future work stays scoped and non-production unless explicitly authorized.",
+  "Complete the reliability code PR first: repair brace-expansion and js-yaml narrowly, update Next.js within its supported major, track the production next-to-sharp advisory as a release blocker, pin runtime/tools, discover tests automatically, and add pinned GitHub Actions.",
+  "After CI is green on main, enable GitHub vulnerability/security updates and protect main with the exact stable verification check.",
+  "Use the Dev-only model/prediction planner and merged insert grants for a materialization-only slice with exact one-model/seven-prediction first-run, direct-readback, and replay counts.",
+  "Keep the seven existing Dev value_calculations immutable; real model-backed value work must insert new rows from an independent, time-valid prediction signal.",
+  "Resolve the currently public GitHub repository visibility before provider credentials, proprietary scoring logic, or sensitive deployment configuration are introduced.",
 ];
 
 const nextSteps = [
-  "Review docs/DEV_ONLY_FEATURE_SNAPSHOTS_MATERIALIZATION.md as the completed Dev-only materialization record.",
-  "Run and review the Dev-only racing-form coverage readiness report before planning provider ingestion, prediction output, or Opportunity scoring work.",
-  "Review docs/DEV_ONLY_VALUE_CALCULATIONS_LINEAGE.md as the completed Dev-only value-calculation input-lineage record.",
-  "Review docs/DEV_ONLY_MODEL_PREDICTION_LINEAGE_PLAN.md and the dry-run report before authorizing any model/prediction materialization or grant changes.",
-  "Treat current value_calculation_inputs partial status as missing model-version, prediction-output, calibrated model_probability, and Opportunity-score linkage, not as missing Dev value_calculations.",
-  "Defer real ML, fake ML, scoring runtime, Bet Sheet, Assistant, Alerts, wager settlement, and ROI workflows until Opportunity scoring lineage is cleaner.",
+  "Repair the dependency audit without a forced framework downgrade and add pinned, automatic CI verification with a stable check name.",
+  "After that workflow is green on main, enable GitHub vulnerability alerts, Dependabot security updates, and branch protection.",
+  "Confirm whether the public GitHub repository should remain public.",
+  "Materialize one Dev model-version fixture and seven prediction-output fixtures against the currently empty target set, read back all eight rows, then verify replay skips one plus seven identities with no other writes.",
+  "Generate Supabase boundary types through a temporary local-schema comparison and add Vercel preview plus Playwright smoke verification, splitting the work if needed.",
+  "Import one real provider-backed race card into Dev through the audited ingestion path.",
+  "Create the first real Opportunity from an independent pre-race prediction and a time-valid market comparator using new append-only value evidence.",
+  "Continue through Bet Sheet, settlement, and performance attribution before Alerts, Assistant, payments, or scale work.",
   "Keep production untouched until explicitly authorized.",
 ];
 
 const dailyTasks: ProgressTask[] = [
   {
-    id: "today-startup-check",
-    title: "Complete beginning-of-session readiness check",
+    id: "today-amend-delivery-plan",
+    title: "Amend the near-term delivery plan",
     status: "complete",
     phase: "Today",
     summary:
-      "Clean main, Dev migration dry-run, verify, racing-form coverage, localhost, and smoke checks were completed with no writes or production touch.",
+      "Roadmap, architecture, Codex guidance, lineage contracts, and the living progress surface now use the reliability-to-provider-to-Opportunity vertical sequence.",
   },
   {
-    id: "today-close-pr-61",
-    title: "Reconcile and close stale PR #61",
+    id: "today-full-system-validation",
+    title: "Run full safe system validation",
     status: "complete",
     phase: "Today",
     summary:
-      "Draft PR #61 was triaged as superseded by current main, commented, and closed without merging or cherry-picking.",
+      "Migration checks, lint, 121 tests, build, Dev migration alignment, schema lint, read-only lineage/provider reports, and HTTP runtime smoke checks passed. Verify fails dependency audit on four high-severity findings: narrow development-tool paths through brace-expansion and js-yaml plus the production next-to-sharp path. Playwright/authenticated UI coverage is not installed; agent-browser is optional Codex convenience tooling.",
   },
   {
-    id: "today-review-model-prediction-dry-run",
-    title: "Review model/prediction lineage dry-run",
-    status: "complete",
-    phase: "Today",
-    summary:
-      "Dev-only dry-run completed read-only: 7 feature snapshots, 7 value calculations, 1 planned model version, 7 planned prediction outputs, and 0 blockers.",
-  },
-  {
-    id: "today-add-dashboard-task-list",
-    title: "Show today's active task list on the dashboard",
-    status: "complete",
-    phase: "Today",
-    summary:
-      "A visible daily task list now appears on the progress dashboard so today's agreed work can be updated as tasks complete.",
-  },
-  {
-    id: "today-materialization-plan-prompt",
-    title: "Prepare materialization-plan PR prompt",
-    status: "complete",
-    phase: "Today",
-    summary:
-      "PR #107 merged the docs-only Dev model/prediction materialization plan without migrations, apply mode, Supabase writes, scoring, Opportunity generation, or production work.",
-  },
-  {
-    id: "today-model-prediction-grant-planning",
-    title: "Plan model/prediction grant authorization",
+    id: "today-repository-visibility",
+    title: "Resolve public repository visibility",
     status: "next",
     phase: "Today",
     summary:
-      "Next decision is planning and authorization only for a possible Dev insert-grant slice on model_versions and prediction_outputs; do not frame this as grant creation, migration creation, materialization, apply mode, or Supabase write execution.",
+      "The GitHub repository is public. Owner decision is required before provider credentials, proprietary scoring logic, or sensitive deployment configuration are added.",
+  },
+  {
+    id: "today-reliability-ci",
+    title: "Implement reliability and CI baseline",
+    status: "next",
+    phase: "Today",
+    summary:
+      "Repair brace-expansion and js-yaml narrowly, update Next.js within its supported major, re-audit the production Sharp path without a forced downgrade, pin Node and Supabase CLI, make test discovery automatic, fix the stale health label, and add pinned GitHub Actions with a stable check name.",
+  },
+  {
+    id: "today-github-security-settings",
+    title: "Apply GitHub security and protection settings",
+    status: "queued",
+    phase: "Today",
+    summary:
+      "Only after CI is green on main, enable vulnerability alerts and Dependabot security updates, then protect main with required pull requests, the exact verification check, and no direct or force pushes.",
+  },
+  {
+    id: "today-model-prediction-materialization",
+    title: "Materialize Dev model/prediction lineage",
+    status: "queued",
+    phase: "Today",
+    summary:
+      "Use the existing planner and merged grants to insert one model identity and seven prediction identities into the currently empty target set; read back all eight rows before replay, which must skip all eight while existing value calculations remain unchanged.",
   },
   {
     id: "today-end-of-day-cleanup",
@@ -410,7 +415,7 @@ const tasks: ProgressTask[] = [
     status: "complete",
     phase: "Release Coordination",
     summary:
-      "docs/ROADMAP.md and the living progress dashboard now agree that Phase 0 and Phase 1 are complete enough for continued product work, Opportunity Engine work is active, and the next sequence remains Dev-only value-calculation lineage readiness before real ML, scoring, wagers, Bet Sheet, Assistant, Alerts, or production rollout.",
+      "docs/ROADMAP.md and the living progress dashboard now agree on an early reliability baseline followed by Dev model/prediction materialization, typed preview verification, one provider import, and the first independently scored Opportunity vertical slice.",
   },
   {
     id: "dev-only-value-calculation-lineage-plan",
@@ -418,7 +423,7 @@ const tasks: ProgressTask[] = [
     status: "complete",
     phase: "Opportunity Engine",
     summary:
-      "Dev-only materialization inserted 7 public.value_calculations rows linked to the 7 existing Dev feature_snapshots, replay dry-run skips all 7 existing deterministic identities, and model_version_id, prediction_output_id, model_probability, opportunity_id, and opportunity_scores linkage remain null until real model/prediction/scoring lineage is explicitly authorized.",
+      "Dev-only materialization inserted 7 immutable public.value_calculations rows linked to the 7 existing Dev feature_snapshots, replay skips all 7 identities, and their model, prediction, probability, Opportunity, and score linkage remains null permanently; later real value work inserts new rows.",
   },
   {
     id: "dev-only-model-prediction-lineage-plan",
@@ -434,7 +439,39 @@ const tasks: ProgressTask[] = [
     status: "next",
     phase: "Opportunity Engine",
     summary:
-      "Review the dry-run model/prediction lineage report before separately authorizing any service-role grants, model_versions writes, prediction_outputs writes, value_calculations linkage changes, or calibrated model_probability work.",
+      "PR #109 completed the insert-only grant prerequisite. After reliability work, implement the apply path for one Dev model identity and seven prediction identities only; direct readback must confirm all eight before replay skips one plus seven, and existing value_calculations must remain unchanged.",
+  },
+  {
+    id: "delivery-reliability-ci",
+    title: "Reliability and CI baseline",
+    status: "next",
+    phase: "Release Coordination",
+    summary:
+      "Repair brace-expansion and js-yaml narrowly, update Next.js within the supported major and re-audit the production Sharp blocker without a forced downgrade, pin Node and Supabase CLI versions, discover tests automatically, fix the stale health label, and add least-privilege Actions pinned to immutable SHAs with a stable check name.",
+  },
+  {
+    id: "github-security-protection-settings",
+    title: "GitHub security and branch protection settings",
+    status: "queued",
+    phase: "Release Coordination",
+    summary:
+      "After the verification workflow is green on main, enable vulnerability alerts and Dependabot security updates, then require pull requests and the exact verification check while preventing direct and force pushes.",
+  },
+  {
+    id: "repository-visibility-decision",
+    title: "Public repository visibility decision",
+    status: "next",
+    phase: "Release Coordination",
+    summary:
+      "The GitHub repository is currently public. An owner decision is required before proprietary scoring logic, provider credentials, or sensitive deployment configuration are introduced.",
+  },
+  {
+    id: "typed-preview-browser-verification",
+    title: "Typed boundary and preview verification",
+    status: "queued",
+    phase: "Release Coordination",
+    summary:
+      "Generate Supabase types at raw database boundaries by comparing temporary output from a migration-built local schema, configure Vercel preview deployment, and add focused Playwright smoke coverage without replacing intentional domain or UI types; agent-browser remains optional Codex tooling.",
   },
   {
     id: "watch-pr-82-mobile-shell",
@@ -506,7 +543,15 @@ const tasks: ProgressTask[] = [
     status: "queued",
     phase: "Race Data",
     summary:
-      "Keep queued until the next Opportunity-centered validation path is chosen and scoped.",
+      "After reliability, materialization, and preview verification, import one provider-backed race card through the existing normalization, idempotency, persistence, and job-audit path.",
+  },
+  {
+    id: "first-real-opportunity-vertical-slice",
+    title: "First real Opportunity vertical slice",
+    status: "queued",
+    phase: "Opportunity Engine",
+    summary:
+      "Use an independent pre-race prediction and time-valid market comparator to insert new append-only value evidence, score, explanation, and Opportunity lineage without updating the seven existing fixtures.",
   },
 ];
 

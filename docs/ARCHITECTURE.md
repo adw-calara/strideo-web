@@ -269,12 +269,67 @@ Target MVP routes:
 - PostHog: analytics should avoid leaking sensitive wager details unless intentionally configured.
 - OneSignal: notification preferences should respect user alert settings.
 
+## Prediction And Value Boundary
+
+Prediction evidence and market comparison evidence must be independently
+identifiable. A market-derived probability may be persisted as an explicit
+lineage or market-baseline fixture, but it cannot also serve as the independent
+prediction used to claim value against that same market input.
+
+Every real value calculation should preserve:
+
+- the immutable feature snapshot and its capture time
+- the model version and immutable prediction output
+- the market or odds snapshot used for comparison
+- the decision cutoff proving that every input was available before the wager
+  decision and before any outcome facts
+- a new append-only value-calculation row and downstream Opportunity lineage
+
+The seven initial Dev market-input `value_calculations` are evidence fixtures.
+They remain unchanged; later real model-backed calculations create new rows.
+
+## Type Boundaries
+
+Use generated Supabase database types at the raw query and persistence boundary.
+Keep intentional domain contracts, read-model projections, and UI view models
+when they express product meaning beyond the storage schema. Do not replace
+those types wholesale with generated table shapes.
+
+## Delivery Architecture
+
+Delivery readiness is a prerequisite for the next vertical product slice:
+
+- remediate dependency findings with the smallest supported compatible changes,
+  distinguish production paths from development-tool paths, and never accept a
+  forced major downgrade as an audit fix
+- pin the Node runtime and Supabase CLI used locally and in CI
+- discover tests automatically
+- run migration validation, lint, tests, build, and dependency audit in GitHub
+  Actions
+- give the verification job one stable documented check name and pin third-party
+  actions to immutable commit SHAs with least-privilege permissions
+- land the code workflow first; only after it is green on `main`, enable
+  vulnerability alerts/security updates and protect `main` with that required
+  check
+- regenerate Supabase types from a migration-built local schema into a temporary
+  location in CI and compare them with the tracked raw-boundary types without
+  rewriting tracked files
+- validate preview deployments with Playwright smoke coverage across signed-out,
+  auth, protected-route, and responsive core surfaces; local `agent-browser`
+  support is optional Codex convenience tooling, not the release test foundation
+
+The GitHub repository is currently public. Repository visibility must be an
+explicit owner decision before proprietary scoring logic, provider credentials,
+or sensitive deployment configuration are introduced.
+
 ## Verification
 
 Application checks:
 
 ```bash
+npm run verify
 npm run lint
+npm run test
 npm run build
 ```
 

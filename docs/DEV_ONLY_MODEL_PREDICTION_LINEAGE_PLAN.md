@@ -1,7 +1,7 @@
 # Dev-Only Model And Prediction Lineage Plan
 
 Date: 2026-07-03
-Updated: 2026-07-04
+Updated: 2026-07-22
 
 ## Scope
 
@@ -10,8 +10,10 @@ and `public.prediction_outputs` lineage after the Dev-only value-calculation
 lineage slice.
 
 This document is also the planning home for a future, separately authorized
-Dev-only materialization slice. It does not authorize migrations, Supabase
-writes, an apply mode, or a materialization script by itself.
+Dev-only materialization slice. PR #109 subsequently merged the required
+insert-only service-role grant migration. The grant prerequisite is complete;
+this document still does not authorize Supabase writes, an apply mode, or a
+materialization script by itself.
 
 Target:
 
@@ -26,7 +28,7 @@ Target:
 Out of scope:
 
 - database writes
-- migrations or service-role insert grants
+- new migrations or service-role grant changes
 - production access
 - provider ingestion
 - model training
@@ -130,8 +132,8 @@ A future materialization slice, if separately authorized, should be the smallest
 Dev-only write path that turns the successful dry-run row shapes into lineage
 fixtures:
 
-1. Add a migration that grants only the required `service_role` insert access
-   described below.
+1. Reuse the insert-only service-role grants merged in PR #109; do not add or
+   broaden grants.
 2. Keep the current dry-run planner as the source of row shapes and replay
    identities.
 3. Add a Dev-only apply path only after explicit reauthorization.
@@ -140,16 +142,21 @@ fixtures:
 5. Insert or skip one deterministic `public.model_versions` identity.
 6. Insert or skip deterministic `public.prediction_outputs` identities linked
    to the existing Dev feature snapshots.
-7. Verify replay by rerunning dry-run after apply and requiring all previously
-   materialized prediction identities to report as skipped existing rows.
+7. Read back the model-version row and all seven prediction-output rows directly
+   before replay.
+8. Verify replay by requiring one existing model-version identity and all seven
+   previously materialized prediction identities to report as skipped existing
+   rows, with zero planned inserts.
 
 That future slice must stop before linking these fixtures into
 `value_calculations`, `opportunity_scores`, scoring, wagering, provider
 ingestion, Opportunity generation, or production runtime behavior.
 
-## Narrow Service-Role Grant Plan
+## Narrow Service-Role Grant Status
 
-No grant is created in this PR. The future grant decision should be limited to:
+PR #109 merged migration
+`20260704203738_service_role_model_prediction_insert_grants.sql`, containing
+only:
 
 ```sql
 grant insert on table public.model_versions to service_role;
@@ -157,9 +164,8 @@ grant insert on table public.prediction_outputs to service_role;
 ```
 
 The existing read path already expects server-only service-role reads for the
-dry-run report. The future migration should not add `anon` or `authenticated`
-access, should not add browser-facing policies, and should not grant update or
-delete access for this materialization slice.
+dry-run report. The merged migration adds no `anon` or `authenticated` access,
+no browser-facing policies, and no update or delete access.
 
 The insert-only grant is enough for the planned append-only fixture behavior:
 
@@ -169,9 +175,9 @@ The insert-only grant is enough for the planned append-only fixture behavior:
   `(model_version_id, feature_snapshot_id, prediction_type)`.
 - Existing rows are detected before insert and treated as replay skips.
 
-If a future implementation discovers that a different permission is required,
-the task should stop and document the blocker rather than broadening grants in
-the same slice.
+If materialization discovers that a different permission is required, the task
+must stop and document the blocker rather than broadening grants in the same
+slice.
 
 ## Deterministic Replay Expectations
 
@@ -194,6 +200,7 @@ The materialization result should be considered valid only if replay reports:
 - the same linked value-calculation count,
 - zero blocked rows,
 - zero new planned prediction rows after apply,
+- the model-version identity as `skipped_existing`,
 - all previously inserted prediction rows as `skipped_existing`,
 - no writes to prohibited side-effect targets.
 
@@ -217,14 +224,18 @@ output.
 ## Fields And Links To Keep Untouched
 
 The future materialization plan must keep these existing fields and links
-untouched unless a later task explicitly authorizes real model, prediction,
-value, and Opportunity-score linkage work:
+untouched:
 
 - `value_calculations.model_probability`
 - `value_calculations.opportunity_id`
 - `opportunity_scores.value_calculation_id`
 - `opportunity_scores.model_version_id`
 - `opportunity_scores.prediction_output_id`
+
+The seven existing Dev `value_calculations` are append-only market-input lineage
+fixtures. They must not be updated by this or a later real-scoring slice. Future
+real model-backed value work must insert new value-calculation rows with their
+own model, prediction, market, cutoff, and Opportunity lineage.
 
 This planning slice also does not authorize updates to:
 
@@ -242,27 +253,26 @@ Ready for the scoped dry-run:
   `value_calculations`,
 - confirming the planner performs no writes.
 
-Ready for a future planning-only grant review:
+Ready for a separately authorized Dev-only materialization implementation:
 
 - row shapes are already defined by the dry-run planner,
-- service-role grant need is isolated to insert-only access on
-  `model_versions` and `prediction_outputs`,
-- deterministic replay expectations are defined,
-- fixture semantics are explicit and non-production.
+- the insert-only service-role grant prerequisite is merged,
+- deterministic first-run and replay expectations are defined,
+- fixture semantics are explicit and non-production,
+- existing `value_calculations` remain unchanged.
 
 Still partial by design:
 
 - materialized `model_versions` rows,
 - materialized `prediction_outputs` rows,
-- existing `value_calculations.model_version_id`,
-- existing `value_calculations.prediction_output_id`,
-- existing `value_calculations.model_probability`,
+- new real model-backed value-calculation rows and their model/prediction links,
 - Opportunity score linkage,
 - real model training, calibration, scoring, and production readiness.
 
 ## Fields That Must Remain Null
 
-These fields intentionally remain null or out of scope in this slice:
+These fields intentionally remain null on the seven existing Dev
+`value_calculations` and must not be backfilled:
 
 - existing `value_calculations.model_version_id`
 - existing `value_calculations.prediction_output_id`
@@ -274,13 +284,20 @@ These fields intentionally remain null or out of scope in this slice:
 
 ## Recommended Next Slice
 
-Decide whether to authorize a separate Dev-only grant/migration slice for the
-two insert-only service-role grants above. That later slice should create the
-migration with `supabase migration new`, inspect the generated SQL before any
-execution, and follow the full migration dry-run workflow before any Dev
-application is considered.
+After the repository reliability baseline is green, implement the smallest
+Dev-only materialization path using the existing planner and merged grants.
 
-Only after that grant slice is reviewed should a separate Dev-only apply path be
-authorized. The apply-path slice should still avoid `value_calculations`
-linkage updates, `opportunity_scores`, scoring, wagers, provider ingestion,
-Opportunity generation, production access, and launch-readiness claims.
+Acceptance criteria:
+
+- against the currently verified empty target set, the first authorized apply
+  inserts exactly one model-version identity and seven prediction-output
+  identities
+- direct readback confirms that model row and all seven prediction rows before
+  replay is attempted
+- replay reports one skipped existing model identity, seven skipped existing
+  prediction identities, zero planned inserts, and zero blockers
+- the seven existing `value_calculations` keep their model, prediction,
+  probability, Opportunity, and score-lineage fields unchanged
+- no `opportunity_scores`, scoring runtime, wagers, provider ingestion,
+  Opportunity generation, production access, or launch-readiness claims are
+  introduced

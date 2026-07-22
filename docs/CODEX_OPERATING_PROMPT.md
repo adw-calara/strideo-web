@@ -21,6 +21,8 @@ review the relevant source material:
 - current migrations and tests
 - current implementation docs, especially
   `docs/DEV_ONLY_FEATURE_SNAPSHOTS_MATERIALIZATION.md`,
+  `docs/DEV_ONLY_VALUE_CALCULATIONS_LINEAGE.md`,
+  `docs/DEV_ONLY_MODEL_PREDICTION_LINEAGE_PLAN.md`,
   `docs/STRIDEO_ML_DATA_CONTRACT.md`, and
   `docs/OPPORTUNITY_SCORING_CONTRACT.md`
 - open PRs, recently merged PRs, current branch state, and roadmap status
@@ -139,6 +141,16 @@ Design data, prediction, value, recommendation, and analytics paths to support:
 Do not overwrite high-value generated facts when history is needed for
 reconstruction, backtesting, or performance evaluation.
 
+The seven initial Dev `value_calculations` are immutable market-input lineage
+fixtures. Do not backfill model, prediction, probability, Opportunity, or score
+links into those rows. A later real scoring path must insert new append-only
+value calculations with authentic prediction and market lineage.
+
+Do not use one market-derived probability as both a value prediction and its
+market comparator. A real Opportunity requires an independent prediction signal
+and a market observation that were both available by a recorded pre-race
+decision cutoff.
+
 ## Maintainability, Upgrade, And Deployment Rules
 
 Prefer the repo's existing patterns before introducing new ones.
@@ -165,7 +177,53 @@ For upgrades and dependency changes:
   Vercel architecture
 - keep upgrade PRs separate from product feature PRs unless the feature requires
   the upgrade
+- distinguish production dependency paths from development-tool paths, prefer
+  the smallest supported compatible upgrade, and do not use
+  `npm audit fix --force` when it proposes a framework major downgrade
 - run the standard verification required by `AGENTS.md`
+
+For delivery readiness:
+
+- treat a clean dependency audit, automatic test discovery, pinned Node and
+  Supabase CLI versions, and passing CI as prerequisites for the next provider
+  and real-Opportunity vertical slice
+- add generated Supabase types at raw database boundaries without deleting
+  intentional domain, projection, or UI types
+- generate type-check output into a temporary location and compare it without
+  rewriting tracked files; prefer a migration-built local Supabase schema in CI
+  over shared Dev credentials
+- validate preview deployments through focused Playwright smoke tests; treat
+  `agent-browser` as optional Codex convenience tooling, not the release test
+  foundation
+- keep repository settings and Vercel configuration explicit in the handoff;
+  they are external state and are not completed merely by merging code
+- use least-privilege GitHub Actions pinned to immutable commit SHAs and give the
+  verification job a stable documented check name
+- land and prove the workflow green on `main` before enabling vulnerability
+  alerts, Dependabot security updates, or required `main` checks
+- record that the GitHub repository is currently public and require an explicit
+  owner visibility decision before proprietary logic or credential-bearing
+  integration work
+
+## Near-Term Slice Order
+
+Unless a blocking defect changes the sequence, prefer:
+
+1. reliability and CI baseline
+2. GitHub security/protection settings after CI is green
+3. Codex/status consolidation
+4. Dev-only model/prediction materialization with exact first-run, direct
+   readback, and replay counts, and no updates to existing value-calculation
+   fixtures
+5. generated database boundary types plus preview/browser verification, split
+   when needed to preserve focused changes
+6. first real provider-backed Dev import
+7. first independently scored, time-valid Opportunity
+8. Bet Sheet workflow
+9. settlement and performance attribution
+
+Alerts, Assistant, payments, broad PWA work, and scale operations remain behind
+this vertical path unless explicitly requested or needed to remove a blocker.
 
 ## Mobile And PWA Readiness
 
